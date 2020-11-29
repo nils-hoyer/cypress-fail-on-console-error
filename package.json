@@ -1,0 +1,31 @@
+{
+  "name": "cypress-fail-on-console-error",
+  "version": "1.0.0",
+  "description": "fail cypress test on console error",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nils-hoyer/cypress-fail-on-console-error.git"
+  },
+  "keywords": [
+    "cypress",
+    "testing",
+    "console"
+  ],
+  "author": "nils-hoyer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nils-hoyer/cypress-fail-on-console-error/issues"
+  },
+  "homepage": "https://github.com/nils-hoyer/cypress-fail-on-console-error#readme",
+  "devDependencies": {
+    "typescript": "^4.1.2"
+  }
+}
