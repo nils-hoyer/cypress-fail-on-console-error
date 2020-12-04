@@ -8,10 +8,10 @@ function failOnConsoleError() {
     Cypress.on('window:before:load', function (win) {
         spy = cy.spy(win.console, 'error');
     });
-    beforeEach(function () {
+    Cypress.on('command:enqueued', function () {
         spy = undefined;
     });
-    afterEach(function () {
+    Cypress.on('command:end', function () {
         if (spy) {
             cy.window().then(function (win) {
                 expect(win.console.error).to.have.callCount(0);

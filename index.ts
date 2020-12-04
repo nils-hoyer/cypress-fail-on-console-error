@@ -11,11 +11,11 @@ export default function failOnConsoleError() {
     spy = cy.spy(win.console, 'error');
   });
 
-  beforeEach(() => {
+  Cypress.on('command:enqueued', () => {
     spy = undefined;
   });
 
-  afterEach(() => {
+  Cypress.on('command:end', () => {
     if (spy) {
       cy.window().then((win) => {
         expect(win.console.error).to.have.callCount(0);

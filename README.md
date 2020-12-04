@@ -23,3 +23,5 @@ failOnConsoleError()
 2. blacklist console messages
 3. create console type log files 
 4. fail test or just create log entry
+5. apply console.error message to AssertionError 
+6. add tests
