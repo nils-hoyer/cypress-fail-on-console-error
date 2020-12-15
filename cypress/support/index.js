@@ -14,11 +14,11 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import './commands'
+import './commands';
 
 import failOnConsoleError from '../../dist/index';
 
-failOnConsoleError()
+failOnConsoleError();
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')

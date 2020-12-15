@@ -1,5 +1,5 @@
 {
     "env": {
-       "failOnConsoleError": true 
+        "failOnConsoleError": true
     }
 }
