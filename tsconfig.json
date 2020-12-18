@@ -9,5 +9,5 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true
     },
-    "exclude": ["node_modules", "dist", "cypress", "test"]
+    "include": ["src", "types"]
 }

@@ -8,8 +8,8 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build": "tsc",
-    "test": "ts-mocha test/**/*.ts --timeout 10000",
+    "build": "rm -rf dist/ && tsc",
+    "test": "ts-mocha test/**/*.ts --timeout 15000",
     "prettier": "prettier --write '**/*'"
   },
   "repository": {

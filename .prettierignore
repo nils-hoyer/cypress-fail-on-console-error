@@ -2,10 +2,7 @@ dist/
 node_modules/
 types/
 package*
-cypress/plugins/
-cypress/videos/
-cypress/screenshots/
-LICENSE
 .DS_Store
 .gitignore
 .prettierignore
+LICENSE
