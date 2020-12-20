@@ -1,7 +1,9 @@
+import * as chai from 'chai';
 import Agent = Cypress.Agent;
 
 export default function failOnConsoleError() {
-    if (!Cypress.env('failOnConsoleError')) {
+    const config: Config = Cypress.env('failOnConsoleError');
+    if (!config) {
         return;
     }
 
@@ -16,10 +18,26 @@ export default function failOnConsoleError() {
     });
 
     Cypress.on('command:end', () => {
-        if (spy) {
+        if (!spy) {
+            return;
+        }
+
+        if (!isSpyExluded(spy, config)) {
+
             cy.window().then((win) => {
                 expect(win.console.error).to.have.callCount(0);
             });
         }
     });
 }
+
+export const isSpyExluded = (spy: Agent<sinon.SinonSpy>, config: Config) => {
+    if (!config.exclude) {
+        return false;
+    }
+
+    const errorMessage: string = spy.args[0][0];
+    chai.expect(errorMessage).not.to.be.undefined;
+
+    return config.exclude.includes(errorMessage);
+};

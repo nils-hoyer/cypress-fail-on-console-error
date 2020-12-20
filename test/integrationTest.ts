@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as process from 'child_process';
 import * as util from 'util';
 import { expect } from 'chai';
@@ -6,7 +5,7 @@ import { expect } from 'chai';
 const exec = util.promisify(process.exec);
 const cypressRun = 'cypress run --browser chrome --headless';
 
-describe('', () => {
+describe('cypress', () => {
     it('cypress should fail on console.error', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldFailOnConsoleError.js';
@@ -40,7 +39,22 @@ describe('', () => {
     it('cypress should pass without failOnConsoleError config', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldPassWithoutFailOnConsoleErrorConfig.js';
-        const configFile = ' --config-file ./cypress/fixtures/cypress2.json';
+        const configFile =
+            ' --config-file ./cypress/fixtures/cypressMissingConfig.json';
+
+        const { stdout } = await exec(cypressRun + spec + configFile);
+        const testResult = stdout;
+
+        // console.log(testResult);
+        const expectedTestResult = 'All specs passed';
+        expect(testResult).contains(expectedTestResult);
+    });
+
+    it('cypress should pass with config exclude matching console.error message', async () => {
+        const spec =
+            ' --spec ./cypress/integration/shouldPassOnConsoleErrorExclude.js';
+        const configFile =
+            ' --config-file ./cypress/fixtures/cypressExclude.json';
 
         const { stdout } = await exec(cypressRun + spec + configFile);
         const testResult = stdout;
