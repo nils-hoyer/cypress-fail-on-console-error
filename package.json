@@ -9,8 +9,10 @@
   ],
   "scripts": {
     "build": "rm -rf dist/ && tsc",
-    "test": "ts-mocha test/**/*.ts --timeout 15000",
-    "prettier": "prettier --write '**/*'"
+    "prettier": "prettier --write '**/*'",
+    "test": "ts-mocha test/**/*.ts --timeout 30000",
+    "verify": "npm run build && npm run prettier && npm run test",
+    "debug": "cypress open"
   },
   "repository": {
     "type": "git",

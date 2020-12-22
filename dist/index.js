@@ -38,9 +38,7 @@ function failOnConsoleError() {
             return;
         }
         if (!exports.isSpyExluded(spy, config)) {
-            cy.window().then(function (win) {
-                expect(win.console.error).to.have.callCount(0);
-            });
+            expect(spy).to.have.callCount(0);
         }
     });
 }
@@ -51,6 +49,15 @@ var isSpyExluded = function (spy, config) {
     }
     var errorMessage = spy.args[0][0];
     chai.expect(errorMessage).not.to.be.undefined;
-    return config.exclude.includes(errorMessage);
+    return config.exclude.some(function (_exclude) {
+        var _a;
+        var isEmptyExclude = _exclude.trim().length === 0;
+        if (isEmptyExclude) {
+            return false;
+        }
+        var hasMatch = ((_a = errorMessage.match(_exclude)) === null || _a === void 0 ? void 0 : _a.length) || 0;
+        return hasMatch > 0;
+    });
 };
 exports.isSpyExluded = isSpyExluded;
+//# sourceMappingURL=index.js.map

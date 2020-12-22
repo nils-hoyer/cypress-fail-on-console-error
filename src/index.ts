@@ -1,5 +1,5 @@
-import * as chai from 'chai';
 import Agent = Cypress.Agent;
+import * as chai from 'chai';
 
 export default function failOnConsoleError() {
     const config: Config = Cypress.env('failOnConsoleError');
@@ -23,10 +23,7 @@ export default function failOnConsoleError() {
         }
 
         if (!isSpyExluded(spy, config)) {
-
-            cy.window().then((win) => {
-                expect(win.console.error).to.have.callCount(0);
-            });
+            expect(spy).to.have.callCount(0);
         }
     });
 }
@@ -39,5 +36,13 @@ export const isSpyExluded = (spy: Agent<sinon.SinonSpy>, config: Config) => {
     const errorMessage: string = spy.args[0][0];
     chai.expect(errorMessage).not.to.be.undefined;
 
-    return config.exclude.includes(errorMessage);
+    return config.exclude.some((_exclude) => {
+        const isEmptyExclude: boolean = _exclude.trim().length === 0;
+        if (isEmptyExclude) {
+            return false;
+        }
+
+        const hasMatch: number = errorMessage.match(_exclude)?.length || 0;
+        return hasMatch > 0;
+    });
 };

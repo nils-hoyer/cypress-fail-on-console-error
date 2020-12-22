@@ -1,4 +1,4 @@
-describe('', () => {
+describe('shouldPassOnConsoleErrorExclude', () => {
     it('should pass on exclude matching console.error', () => {
         expect(Cypress.env('failOnConsoleError')).not.to.be.undefined;
         expect(Cypress.env('failOnConsoleError').exclude[0]).to.equal(
