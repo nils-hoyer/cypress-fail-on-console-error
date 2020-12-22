@@ -2,16 +2,32 @@
 
 ### Installation
 
-`npm i cypress-fail-on-console-error`
+`npm install cypress-fail-on-console-error --save-dev`
 
 ### Usage
 
 cypress.json
 
 ```
-"env": {
-    "failOnConsoleError": true
-  }
+{
+    ...
+    "env": {
+        "failOnConsoleError": true
+    }
+}
+```
+
+use `excludeMessages?:[string]` to exclude console.error messages by regex from throwning assertionError.
+
+```
+{
+    ...
+    "env": {
+        "failOnConsoleError": {
+            "excludeMessages": ["foo", "^bar-regex.*$"]
+        }
+    }
+}
 ```
 
 cypress/support/index.ts
@@ -19,12 +35,9 @@ cypress/support/index.ts
 ```
 import failOnConsoleError from 'cypress-fail-on-console-error'
 
-failOnConsoleError()
+failOnConsoleError();
 ```
 
 ### Backlog
 
-1. whitelist console types (log, info, debug, warn, error)
-2. blacklist console messages
-3. create console type log files
-4. fail test or just create log entry
+1. whitelist console levels (log, info, debug, warn, error)
