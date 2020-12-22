@@ -1,7 +1,7 @@
 {
     "env": {
         "failOnConsoleError": {
-            "exclude": ["console.error"]
+            "excludeMessages": ["console.error"]
         }
     }
 }

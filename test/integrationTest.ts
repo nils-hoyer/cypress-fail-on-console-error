@@ -50,11 +50,11 @@ describe('cypress integration', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
-    it('cypress should pass with config exclude matching console.error message', async () => {
+    it('cypress should pass with config excludeMessages matching console.error message', async () => {
         const spec =
-            ' --spec ./cypress/integration/shouldPassOnConsoleErrorExclude.js';
+            ' --spec ./cypress/integration/shouldPassOnConsoleErrorExcludeMessages.js';
         const configFile =
-            ' --config-file ./cypress/fixtures/cypressExclude.json';
+            ' --config-file ./cypress/fixtures/cypressExcludeMessages.json';
 
         const { stdout } = await exec(cypressRun + spec + configFile);
         const testResult = stdout;

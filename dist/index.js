@@ -44,18 +44,18 @@ function failOnConsoleError() {
 }
 exports.default = failOnConsoleError;
 var isSpyExluded = function (spy, config) {
-    if (!config.exclude) {
+    if (!config.excludeMessages) {
         return false;
     }
     var errorMessage = spy.args[0][0];
     chai.expect(errorMessage).not.to.be.undefined;
-    return config.exclude.some(function (_exclude) {
+    return config.excludeMessages.some(function (_excludeMessage) {
         var _a;
-        var isEmptyExclude = _exclude.trim().length === 0;
-        if (isEmptyExclude) {
+        var isEmpty = _excludeMessage.trim().length === 0;
+        if (isEmpty) {
             return false;
         }
-        var hasMatch = ((_a = errorMessage.match(_exclude)) === null || _a === void 0 ? void 0 : _a.length) || 0;
+        var hasMatch = ((_a = errorMessage.match(_excludeMessage)) === null || _a === void 0 ? void 0 : _a.length) || 0;
         return hasMatch > 0;
     });
 };

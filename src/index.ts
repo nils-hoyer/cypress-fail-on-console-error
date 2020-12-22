@@ -29,20 +29,21 @@ export default function failOnConsoleError() {
 }
 
 export const isSpyExluded = (spy: Agent<sinon.SinonSpy>, config: Config) => {
-    if (!config.exclude) {
+    if (!config.excludeMessages) {
         return false;
     }
 
     const errorMessage: string = spy.args[0][0];
     chai.expect(errorMessage).not.to.be.undefined;
 
-    return config.exclude.some((_exclude) => {
-        const isEmptyExclude: boolean = _exclude.trim().length === 0;
-        if (isEmptyExclude) {
+    return config.excludeMessages.some((_excludeMessage) => {
+        const isEmpty: boolean = _excludeMessage.trim().length === 0;
+        if (isEmpty) {
             return false;
         }
 
-        const hasMatch: number = errorMessage.match(_exclude)?.length || 0;
+        const hasMatch: number =
+            errorMessage.match(_excludeMessage)?.length || 0;
         return hasMatch > 0;
     });
 };

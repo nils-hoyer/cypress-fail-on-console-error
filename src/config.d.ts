@@ -1,3 +1,3 @@
 interface Config {
-    exclude: ?[string];
+    excludeMessages: ?[string];
 }

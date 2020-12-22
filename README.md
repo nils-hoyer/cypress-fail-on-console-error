@@ -17,14 +17,14 @@ cypress.json
 }
 ```
 
-use `exclude?:[string]` to exclude messages by regex from console.error throwning assertionError.
+use `excludeMessages?:[string]` to exclude messages by regex from console.error throwning assertionError.
 
 ```
 {
     ...
     "env": {
         "failOnConsoleError": {
-            "exclude": ["fooMessage", "$barMessage.*^"]
+            "excludeMessages": ["foo", "$bar.*^"]
         }
     }
 }
