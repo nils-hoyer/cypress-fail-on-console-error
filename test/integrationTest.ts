@@ -36,27 +36,11 @@ describe('cypress integration', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
-    it('cypress should pass without failOnConsoleError config', async () => {
-        const spec =
-            ' --spec ./cypress/integration/shouldPassWithoutFailOnConsoleErrorConfig.js';
-        const configFile =
-            ' --config-file ./cypress/fixtures/cypressMissingConfig.json';
-
-        const { stdout } = await exec(cypressRun + spec + configFile);
-        const testResult = stdout;
-
-        // console.log(testResult);
-        const expectedTestResult = 'All specs passed';
-        expect(testResult).contains(expectedTestResult);
-    });
-
     it('cypress should pass with config excludeMessages matching console.error message', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldPassOnConsoleErrorExcludeMessages.js';
-        const configFile =
-            ' --config-file ./cypress/fixtures/cypressExcludeMessages.json';
 
-        const { stdout } = await exec(cypressRun + spec + configFile);
+        const { stdout } = await exec(cypressRun + spec);
         const testResult = stdout;
 
         // console.log(testResult);

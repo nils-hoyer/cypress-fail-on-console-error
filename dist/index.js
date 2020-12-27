@@ -21,11 +21,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isSpyExluded = void 0;
 var chai = __importStar(require("chai"));
-function failOnConsoleError() {
-    var config = Cypress.env('failOnConsoleError');
-    if (!config) {
-        return;
-    }
+function failOnConsoleError(config) {
     var spy;
     Cypress.on('window:before:load', function (win) {
         spy = cy.spy(win.console, 'error');

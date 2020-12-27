@@ -1,12 +1,7 @@
 import Agent = Cypress.Agent;
 import * as chai from 'chai';
 
-export default function failOnConsoleError() {
-    const config: Config = Cypress.env('failOnConsoleError');
-    if (!config) {
-        return;
-    }
-
+export default function failOnConsoleError(config: Config) {
     let spy: Agent<sinon.SinonSpy> | undefined;
 
     Cypress.on('window:before:load', (win) => {
