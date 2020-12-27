@@ -18,7 +18,7 @@ export default function failOnConsoleError() {
     });
 
     Cypress.on('command:end', () => {
-        if (!spy) {
+        if (!spy || !spy.called) {
             return;
         }
 

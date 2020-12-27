@@ -34,7 +34,7 @@ function failOnConsoleError() {
         spy = undefined;
     });
     Cypress.on('command:end', function () {
-        if (!spy) {
+        if (!spy || !spy.called) {
             return;
         }
         if (!exports.isSpyExluded(spy, config)) {
