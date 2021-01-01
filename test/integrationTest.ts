@@ -47,4 +47,19 @@ describe('cypress integration', () => {
         const expectedTestResult = 'All specs passed';
         expect(testResult).contains(expectedTestResult);
     });
+
+    it('cypress should finish multiple test files and tests', async () => {
+        const spec = ' --spec ./cypress/integration/**/*';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
+            const expectedTestResult = /2 of 4 failed \(50%\).*7.*4.*3/;
+            expect(testResult).to.match(expectedTestResult);
+        }
+    });
 });

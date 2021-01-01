@@ -29,38 +29,35 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isExludeMessage = exports.someSpyCalled = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.isExludeMessage = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var sinon = __importStar(require("sinon"));
+var sinon_chai_1 = __importDefault(require("sinon-chai"));
 var ConsoleType_1 = require("./types/ConsoleType");
-//TODO: how to use es6 import in sinon-chai
-// import * as sinonChai from 'sinon-chai';
-var sinonChai = require('sinon-chai');
 chai.should();
-chai.use(sinonChai);
-//TODO
-//1. extend isExlcudeMessage for spiesMap
-//2. delete spies and set undefined? add tests for deleteSpies
+chai.use(sinon_chai_1.default);
 function failOnConsoleError(config) {
     if (config === void 0) { config = {}; }
-    //TODO: should be type Spies - get() set() not available
-    var spies; // Map<number, sinon.SinonSpy>
+    var spies;
     exports.validateConfig(config);
     config = exports.createConfig(config);
     Cypress.on('window:before:load', function (win) {
         spies = exports.createSpies(config, win.console);
     });
-    // needs to be cleaned to ensure multiple tests are failing
-    // create 1 cypress integration test to run with multiple tests, ensuring its contine executing tests
     Cypress.on('command:enqueued', function () {
-        spies = undefined;
+        if (spies) {
+            spies = exports.resetSpies(spies);
+        }
     });
     Cypress.on('command:end', function () {
-        if (!spies.get(ConsoleType_1.ConsoleType.ERROR) || !exports.someSpyCalled(spies)) {
+        if (!spies || !exports.someSpyCalled(spies)) {
             return;
         }
-        if (!exports.isExludeMessage(spies.get(ConsoleType_1.ConsoleType.ERROR), config)) {
+        if (exports.getIncludedSpy(spies, config)) {
             chai.expect(spies.get(ConsoleType_1.ConsoleType.ERROR)).to.have.callCount(0);
         }
     });
@@ -93,6 +90,11 @@ var createSpies = function (config, console) {
     return spies;
 };
 exports.createSpies = createSpies;
+var resetSpies = function (spies) {
+    spies.forEach(function (_spy) { return _spy.resetHistory(); });
+    return spies;
+};
+exports.resetSpies = resetSpies;
 var someSpyCalled = function (spies) {
     return Array.from(spies).some(function (_a) {
         var key = _a[0], value = _a[1];
@@ -100,6 +102,10 @@ var someSpyCalled = function (spies) {
     });
 };
 exports.someSpyCalled = someSpyCalled;
+var getIncludedSpy = function (spies, config) {
+    return Array.from(spies.values()).find(function (value) { return !exports.isExludeMessage(value, config); });
+};
+exports.getIncludedSpy = getIncludedSpy;
 var isExludeMessage = function (spy, config) {
     if (!config.excludeMessages) {
         return false;

@@ -1,21 +1,14 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import { Config } from './types/Config';
 import { ConsoleType, containsConsoleType } from './types/ConsoleType';
 
-//TODO: how to use es6 import in sinon-chai
-// import * as sinonChai from 'sinon-chai';
-var sinonChai = require('sinon-chai');
 chai.should();
 chai.use(sinonChai);
 
-//TODO
-//1. extend isExlcudeMessage for spiesMap
-//2. delete spies and set undefined? add tests for deleteSpies
-
 export default function failOnConsoleError(config: Config = {}): void {
-    //TODO: should be type Spies - get() set() not available
-    let spies: any | undefined; // Map<number, sinon.SinonSpy>
+    let spies: Map<number, sinon.SinonSpy> | undefined;
 
     validateConfig(config);
     config = createConfig(config);
@@ -24,18 +17,18 @@ export default function failOnConsoleError(config: Config = {}): void {
         spies = createSpies(config, win.console);
     });
 
-    // needs to be cleaned to ensure multiple tests are failing
-    // create 1 cypress integration test to run with multiple tests, ensuring its contine executing tests
     Cypress.on('command:enqueued', () => {
-        spies = undefined;
+        if (spies) {
+            spies = resetSpies(spies);
+        }
     });
 
     Cypress.on('command:end', () => {
-        if (!spies.get(ConsoleType.ERROR) || !someSpyCalled(spies)) {
+        if (!spies || !someSpyCalled(spies)) {
             return;
         }
 
-        if (!isExludeMessage(spies.get(ConsoleType.ERROR), config)) {
+        if (getIncludedSpy(spies, config)) {
             chai.expect(spies.get(ConsoleType.ERROR)).to.have.callCount(0);
         }
     });
@@ -68,12 +61,22 @@ export const createConfig = (config: Config): Config => {
     };
 };
 
-export const createSpies = (config: Config, console: Console): any => {
-    let spies: any = new Map();
+export const createSpies = (
+    config: Config,
+    console: Console
+): Map<ConsoleType, sinon.SinonSpy> => {
+    let spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
     config.includeConsoleTypes?.forEach((_consoleType) => {
         const functionName: any = ConsoleType[_consoleType].toLowerCase();
         spies.set(_consoleType, sinon.spy(console, functionName));
     });
+    return spies;
+};
+
+export const resetSpies = (
+    spies: Map<ConsoleType, sinon.SinonSpy>
+): Map<ConsoleType, sinon.SinonSpy> => {
+    spies.forEach((_spy) => _spy.resetHistory());
     return spies;
 };
 
@@ -82,6 +85,12 @@ export const someSpyCalled = (
 ): boolean => {
     return Array.from(spies).some(([key, value]) => value.called);
 };
+
+export const getIncludedSpy = (
+    spies: Map<ConsoleType, sinon.SinonSpy>,
+    config: Config
+): sinon.SinonSpy | undefined =>
+    Array.from(spies.values()).find((value) => !isExludeMessage(value, config));
 
 export const isExludeMessage = (
     spy: sinon.SinonSpy,
