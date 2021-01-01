@@ -15,10 +15,11 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands';
-
 import failOnConsoleError from '../../dist/index';
 
-failOnConsoleError();
+const config = { excludeMessages: ['excludeErrorMessage', 'foo'] };
+
+failOnConsoleError(config);
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')

@@ -6,30 +6,6 @@
 
 ### Usage
 
-cypress.json
-
-```
-{
-    ...
-    "env": {
-        "failOnConsoleError": true
-    }
-}
-```
-
-use `excludeMessages?:[string]` to exclude console.error messages by regex from throwning assertionError.
-
-```
-{
-    ...
-    "env": {
-        "failOnConsoleError": {
-            "excludeMessages": ["foo", "^bar-regex.*$"]
-        }
-    }
-}
-```
-
 cypress/support/index.ts
 
 ```
@@ -38,6 +14,14 @@ import failOnConsoleError from 'cypress-fail-on-console-error'
 failOnConsoleError();
 ```
 
-### Backlog
+use `excludeMessages:string[]` to exclude console.error messages by regex from throwning assertionError. Default value is `undefined`.
+use `includeConsoleTypes:ConsoleType[]` to include console types. Default value is `[ConsoleType.ERROR]`.
 
-1. whitelist console levels (log, info, debug, warn, error)
+```
+const config = {
+    excludeMessages: ["foo", "^bar-regex.*$"],
+    includeConsoleTypes: [Console.ERROR, ConsoleType.WARN, ConsoleType.INFO],
+};
+
+failOnConsoleError(config);
+```
