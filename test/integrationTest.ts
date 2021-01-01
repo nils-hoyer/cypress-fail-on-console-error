@@ -1,6 +1,6 @@
+import { expect } from 'chai';
 import * as process from 'child_process';
 import * as util from 'util';
-import { expect } from 'chai';
 
 const exec = util.promisify(process.exec);
 const cypressRun = 'cypress run --browser chrome --headless';
@@ -19,7 +19,7 @@ describe('cypress integration', () => {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
             const expectedError =
-                'expected error to have been called exactly "0 times", but it was called once';
+                'AssertionError: expected error to have been called exactly 0 times, but it was called once';
             expect(testResult).contains(expectedTestResult);
             expect(testResult).contains(expectedError);
         }

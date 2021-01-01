@@ -17,7 +17,7 @@
 import './commands';
 import failOnConsoleError from '../../dist/index';
 
-const config = { excludeMessages: ['excludeErrorMessage', 'bar'] };
+const config = { excludeMessages: ['excludeErrorMessage', 'foo'] };
 
 failOnConsoleError(config);
 
