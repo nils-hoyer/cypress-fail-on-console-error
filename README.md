@@ -14,8 +14,11 @@ import failOnConsoleError from 'cypress-fail-on-console-error'
 failOnConsoleError();
 ```
 
-use `excludeMessages:string[]` to exclude console.error messages by regex from throwning assertionError. Default value is `undefined`.
-use `includeConsoleTypes:ConsoleType[]` to include console types. Default value is `[ConsoleType.ERROR]`.
+### Config (optional)
+use `excludeMessages:string[]` to exclude console.error messages by regex from throwning assertionError.<br/>
+Default value is `undefined`.<br/><br/>
+use `includeConsoleTypes:ConsoleType[]` to include console types.<br/>
+Default value is `[ConsoleType.ERROR]`.
 
 ```
 const config = {
