@@ -69,7 +69,7 @@ var validateConfig = function (config) {
         chai.expect(_excludeMessage.trim().length === 0, 'excludeMessages contains empty string').not.to.be.true;
     });
     (_b = config.includeConsoleTypes) === null || _b === void 0 ? void 0 : _b.forEach(function (_includeConsoleType) {
-        chai.expect(!ConsoleType_1.containsConsoleType(_includeConsoleType), 'includeConsoleTypes contains unknown ConsoleType').not.to.be.true;
+        chai.expect(!ConsoleType_1.someConsoleType(_includeConsoleType), 'includeConsoleTypes contains unknown ConsoleType').not.to.be.true;
     });
 };
 exports.validateConfig = validateConfig;
@@ -96,10 +96,7 @@ var resetSpies = function (spies) {
 };
 exports.resetSpies = resetSpies;
 var someSpyCalled = function (spies) {
-    return Array.from(spies).some(function (_a) {
-        var key = _a[0], value = _a[1];
-        return value.called;
-    });
+    return Array.from(spies.values()).some(function (value) { return value.called; });
 };
 exports.someSpyCalled = someSpyCalled;
 var getIncludedSpy = function (spies, config) {

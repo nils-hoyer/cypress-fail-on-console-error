@@ -12,9 +12,8 @@
     "prettier": "prettier --write '**/*'",
     "test": "ts-mocha test/**/*.ts --timeout 60000",
     "verify": "npm run build && npm run prettier && npm run test",
-    "debug:it": "ts-mocha --inspect-brk test/**/unitTest.ts",
-    "debug:ut": "cypress open"
-
+    "debug:ut": "ts-mocha --inspect-brk test/**/unitTest.ts",
+    "debug:it": "cypress open"
   },
   "repository": {
     "type": "git",

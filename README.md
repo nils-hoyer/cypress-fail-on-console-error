@@ -15,13 +15,14 @@ failOnConsoleError();
 ```
 
 ### Config (optional)
-use `excludeMessages:string[]` to exclude console.error messages by regex from throwning assertionError.<br/>
+
+use `excludeMessages:string[]` to exclude console messages by regex from throwing assertionError.<br/>
 Default value is `undefined`.<br/><br/>
-use `includeConsoleTypes:ConsoleType[]` to include console types.<br/>
+use `includeConsoleTypes:ConsoleType[]` to overwrite console types.<br/>
 Default value is `[ConsoleType.ERROR]`.
 
 ```
-const config = {
+const config:Config = {
     excludeMessages: ["foo", "^bar-regex.*$"],
     includeConsoleTypes: [Console.ERROR, ConsoleType.WARN, ConsoleType.INFO],
 };

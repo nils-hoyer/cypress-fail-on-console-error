@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { Config } from './types/Config';
-import { ConsoleType, containsConsoleType } from './types/ConsoleType';
+import { ConsoleType, someConsoleType } from './types/ConsoleType';
 
 chai.should();
 chai.use(sinonChai);
@@ -44,7 +44,7 @@ export const validateConfig = (config: Config): void => {
 
     config.includeConsoleTypes?.forEach((_includeConsoleType) => {
         chai.expect(
-            !containsConsoleType(_includeConsoleType),
+            !someConsoleType(_includeConsoleType),
             'includeConsoleTypes contains unknown ConsoleType'
         ).not.to.be.true;
     });
@@ -83,7 +83,7 @@ export const resetSpies = (
 export const someSpyCalled = (
     spies: Map<ConsoleType, sinon.SinonSpy>
 ): boolean => {
-    return Array.from(spies).some(([key, value]) => value.called);
+    return Array.from(spies.values()).some((value) => value.called);
 };
 
 export const getIncludedSpy = (

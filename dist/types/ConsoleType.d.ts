@@ -3,4 +3,4 @@ export declare enum ConsoleType {
     WARN = 1,
     ERROR = 2
 }
-export declare const containsConsoleType: (consoleType: ConsoleType) => boolean;
+export declare const someConsoleType: (consoleType: ConsoleType) => boolean;
