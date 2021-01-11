@@ -18,10 +18,10 @@ failOnConsoleError();
 
 ### Config (optional)
 
-Config | Default | Description
+Parameter | Default | Description
 ------ | ------- | -----------
-`excludeMessages:string[]` | `undefined` | Exclude console messages by regex from throwing `assertionError`
-`includeConsoleTypes:ConsoleType[]` | `[ConsoleType.ERROR]` | Overwrite console types
+`excludeMessages:string[]` | `undefined` | Exclude console messages from throwing `assertionError`
+`includeConsoleTypes:ConsoleType[]` | `[ConsoleType.ERROR]` | Include console types
 
 ```js
 const config:Config = {
