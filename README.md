@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-Cypress Plugin to observe for console errors which causes the cypress test to fail.
+Cypress Plugin to observe for console errors which causes the test to fail.
 
 ### Installation
 
@@ -32,7 +32,7 @@ const config: Config = {
     excludeMessages: ['foo', '^bar-regex.*$'],
     // prettier-ignore
     includeConsoleTypes: [
-        Console.ERROR, 
+        ConsoleType.ERROR, 
         ConsoleType.WARN, 
         ConsoleType.INFO
     ],
