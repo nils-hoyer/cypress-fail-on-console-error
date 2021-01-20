@@ -5,7 +5,7 @@ import * as util from 'util';
 const exec = util.promisify(process.exec);
 const cypressRun = 'cypress run --browser chrome --headless';
 
-describe('cypress integration', () => {
+describe('Cypress', () => {
     it('when console.error is called then cypress fails', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldFailOnConsoleError.js';

@@ -27,13 +27,13 @@ failOnConsoleError();
 
 <br/>
 
+<!-- prettier-ignore -->
 ```js
 const config: Config = {
     excludeMessages: ['foo', '^bar-regex.*$'],
-    // prettier-ignore
     includeConsoleTypes: [
-        ConsoleType.ERROR, 
-        ConsoleType.WARN, 
+        ConsoleType.ERROR,
+        ConsoleType.WARN,
         ConsoleType.INFO
     ],
 };
