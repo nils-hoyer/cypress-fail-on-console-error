@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-Cypress Plugin to observe for console errors which causes the test to fail.
+Cypress plugin to observe for console errors which causes the test to fail.
 
 ### Installation
 
@@ -34,7 +34,7 @@ const config: Config = {
     includeConsoleTypes: [
         ConsoleType.ERROR,
         ConsoleType.WARN,
-        ConsoleType.INFO
+        ConsoleType.INFO,
     ],
 };
 
