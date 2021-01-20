@@ -18,7 +18,7 @@ chai.should();
 chai.use(sinonChai);
 
 describe('createConfig()', () => {
-    it('when includeConsoleType is not set use default ConsoleType.ERROR', () => {
+    it('when includeConsoleType is not set then use default ConsoleType.ERROR', () => {
         const config: Config = {};
 
         const given = createConfig(config);
@@ -27,7 +27,7 @@ describe('createConfig()', () => {
         chai.expect(given.includeConsoleTypes[0]).to.equal(ConsoleType.ERROR);
     });
 
-    it('when includeConsoleType is set overwrite default ConsoleType.ERROR', () => {
+    it('when includeConsoleType is set then overwrite default ConsoleType.ERROR', () => {
         const config: Config = {
             includeConsoleTypes: [ConsoleType.WARN, ConsoleType.INFO],
         };
@@ -41,7 +41,7 @@ describe('createConfig()', () => {
 });
 
 describe('validateConfig()', () => {
-    it('excludeMessages contains empty string', () => {
+    it('when excludeMessages contains empty string then throw AssertionError', () => {
         const config: Config = { excludeMessages: [''] };
 
         chai.expect(() => validateConfig(config)).to.throw(
@@ -50,7 +50,7 @@ describe('validateConfig()', () => {
         );
     });
 
-    it('includeConsoleTypes contains unknown ConsoleType', () => {
+    it('when includeConsoleTypes contains unknown ConsoleType then throw AssertionError', () => {
         const config: Config = {
             includeConsoleTypes: ['unknownConsoleType'] as any,
         };
@@ -63,7 +63,7 @@ describe('validateConfig()', () => {
 });
 
 describe('createSpies()', () => {
-    it('createSpies map', () => {
+    it('when includeConsoleTypes then create createSpies map', () => {
         const config: Config = {
             includeConsoleTypes: [
                 ConsoleType.INFO,
@@ -97,7 +97,7 @@ describe('createSpies()', () => {
 });
 
 describe('resetSpies()', () => {
-    it('when resetHistory on spies called should be false', () => {
+    it('when resetHistory is called then spies should be resetted', () => {
         const objectToSpy: any = { error: () => true, warn: () => true };
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, sinon.spy(objectToSpy, 'error'));
@@ -116,7 +116,7 @@ describe('resetSpies()', () => {
 });
 
 describe('someSpyCalled()', () => {
-    it('return true if spy was called', () => {
+    it('when spy was called then return true', () => {
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, { called: true } as sinon.SinonSpy);
         spies.set(ConsoleType.WARN, { called: false } as sinon.SinonSpy);
@@ -126,7 +126,7 @@ describe('someSpyCalled()', () => {
         chai.expect(called).to.be.true;
     });
 
-    it('return false if spy was not called', () => {
+    it('when spy was not called then return false', () => {
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, { called: false } as sinon.SinonSpy);
         spies.set(ConsoleType.WARN, { called: false } as sinon.SinonSpy);
@@ -138,7 +138,7 @@ describe('someSpyCalled()', () => {
 });
 
 describe('getIncludedSpy()', () => {
-    it('when spies contains some spy not matching exludeMessage should return spy', () => {
+    it('when spies contains some spy not matching exludeMessage then return spy', () => {
         const config: Config = { excludeMessages: ['foo', 'bar'] };
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, {
@@ -155,7 +155,7 @@ describe('getIncludedSpy()', () => {
         chai.expect(expectedSpy.args[0][0]).to.equals('expectedSpy');
     });
 
-    it('when spies contains not called or spy matching exludeMessage should return undefined', () => {
+    it('when spies contains not called or spy matching exludeMessage then return undefined', () => {
         const config: Config = { excludeMessages: ['foo'] };
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, { called: false } as sinon.SinonSpy);
@@ -175,7 +175,7 @@ describe('getIncludedSpy()', () => {
 });
 
 describe('isExludeMessage()', () => {
-    it('with config.excludeMessages matching spy error message should return true', () => {
+    it('when config.excludeMessages matching spy error message then return true', () => {
         const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
         const config: Config = { excludeMessages: ['foo'] };
 
@@ -184,7 +184,7 @@ describe('isExludeMessage()', () => {
         chai.expect(expected).to.be.true;
     });
 
-    it('without config.excludeMessages should return false', () => {
+    it('when not config.excludeMessages then return false', () => {
         const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
         const config: Config = {};
 
@@ -193,7 +193,7 @@ describe('isExludeMessage()', () => {
         chai.expect(expected).to.be.false;
     });
 
-    it('without config.excludeMessages matching spy error message should return false', () => {
+    it('when config.excludeMessages matching spy error message then return false', () => {
         const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
         const config: Config = { excludeMessages: ['bar'] };
 

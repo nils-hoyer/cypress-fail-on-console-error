@@ -6,7 +6,7 @@ const exec = util.promisify(process.exec);
 const cypressRun = 'cypress run --browser chrome --headless';
 
 describe('cypress integration', () => {
-    it('cypress should fail on console.error', async () => {
+    it('when console.error is called then cypress fails', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldFailOnConsoleError.js';
         let testResult = '';
@@ -19,13 +19,13 @@ describe('cypress integration', () => {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
             const expectedError =
-                'AssertionError: expected error to have been called exactly \'0 times\', but it was called once';
+                "AssertionError: expected error to have been called exactly '0 times', but it was called once";
             expect(testResult).contains(expectedTestResult);
             expect(testResult).contains(expectedError);
         }
     });
 
-    it('cypress should pass on console.info', async () => {
+    it('when console.info is called then cypress passes', async () => {
         const spec = ' --spec ./cypress/integration/shouldPassOnConsoleInfo.js';
 
         const { stdout } = await exec(cypressRun + spec);
@@ -36,7 +36,7 @@ describe('cypress integration', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
-    it('cypress should pass with config excludeMessages matching console.error message', async () => {
+    it('when console.error with config excludeMessages matching console.error message then cypress passes', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldPassOnConsoleErrorExcludeMessages.js';
 
@@ -48,7 +48,7 @@ describe('cypress integration', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
-    it('cypress should fail with config includeConsoleTypes matching ConsoleType.ERROR and ConsoleType.WARN ', async () => {
+    it('when config includeConsoleTypes ConsoleType.ERROR and ConsoleType.WARN then cypress fails with two errors ', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldFailOnConsoleErrorAndConsoleWarn.js';
         let testResult = '';
@@ -66,7 +66,7 @@ describe('cypress integration', () => {
         }
     });
 
-    it('cypress should run all tests with multiple files and tests', async () => {
+    it('when run multiple tests files and tests cases then cypress run all files and test cases', async () => {
         const spec =
             ' --spec "cypress/integration/shouldRunAllTestsAlthoughConsoleError.js,cypress/integration/shouldRunAllTestsAlthoughConsoleError2.js"';
         let testResult = '';
