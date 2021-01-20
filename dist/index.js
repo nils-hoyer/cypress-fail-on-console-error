@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -57,8 +46,9 @@ function failOnConsoleError(config) {
         if (!spies || !exports.someSpyCalled(spies)) {
             return;
         }
-        if (exports.getIncludedSpy(spies, config)) {
-            chai.expect(spies.get(ConsoleType_1.ConsoleType.ERROR)).to.have.callCount(0);
+        var spy = exports.getIncludedSpy(spies, config);
+        if (spy) {
+            chai.expect(spy).to.have.callCount(0);
         }
     });
 }
@@ -75,9 +65,11 @@ var validateConfig = function (config) {
 exports.validateConfig = validateConfig;
 var createConfig = function (config) {
     var _a;
-    var includeConsoleTypes = ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length) ? config.includeConsoleTypes
-        : [ConsoleType_1.ConsoleType.ERROR];
-    return __assign(__assign({}, config), { includeConsoleTypes: includeConsoleTypes });
+    return {
+        excludeMessages: config.excludeMessages,
+        includeConsoleTypes: ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length) ? config.includeConsoleTypes
+            : [ConsoleType_1.ConsoleType.ERROR],
+    };
 };
 exports.createConfig = createConfig;
 var createSpies = function (config, console) {
@@ -100,7 +92,7 @@ var someSpyCalled = function (spies) {
 };
 exports.someSpyCalled = someSpyCalled;
 var getIncludedSpy = function (spies, config) {
-    return Array.from(spies.values()).find(function (value) { return !exports.isExludeMessage(value, config); });
+    return Array.from(spies.values()).find(function (spy) { return spy.called && !exports.isExludeMessage(spy, config); });
 };
 exports.getIncludedSpy = getIncludedSpy;
 var isExludeMessage = function (spy, config) {

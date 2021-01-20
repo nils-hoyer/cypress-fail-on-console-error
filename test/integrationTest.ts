@@ -19,14 +19,14 @@ describe('cypress integration', () => {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
             const expectedError =
-                'AssertionError: expected error to have been called exactly 0 times, but it was called once';
+                'AssertionError: expected error to have been called exactly \'0 times\', but it was called once';
             expect(testResult).contains(expectedTestResult);
             expect(testResult).contains(expectedError);
         }
     });
 
-    it('cypress should pass on console.warn', async () => {
-        const spec = ' --spec ./cypress/integration/shouldPassOnConsoleWarn.js';
+    it('cypress should pass on console.info', async () => {
+        const spec = ' --spec ./cypress/integration/shouldPassOnConsoleInfo.js';
 
         const { stdout } = await exec(cypressRun + spec);
         const testResult = stdout;
@@ -48,8 +48,9 @@ describe('cypress integration', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
-    it('cypress should finish multiple test files and tests', async () => {
-        const spec = ' --spec ./cypress/integration/**/*';
+    it('cypress should fail with config includeConsoleTypes matching ConsoleType.ERROR and ConsoleType.WARN ', async () => {
+        const spec =
+            ' --spec ./cypress/integration/shouldFailOnConsoleErrorAndConsoleWarn.js';
         let testResult = '';
 
         try {
@@ -58,8 +59,28 @@ describe('cypress integration', () => {
             testResult = error.stdout;
         } finally {
             // console.log(testResult);
-            const expectedTestResult = /2 of 4 failed \(50%\).*7.*4.*3/;
+            const expectedTestResult = /1 of 1 failed.*3.*1.*2/;
+            const expectedError = /AssertionError: expected (error|warn) to have been called exactly '0 times', but it was called once/g;
             expect(testResult).to.match(expectedTestResult);
+            expect(testResult.match(expectedError).length).to.be.equal(2);
+        }
+    });
+
+    it('cypress should run all tests with multiple files and tests', async () => {
+        const spec =
+            ' --spec "cypress/integration/shouldRunAllTestsAlthoughConsoleError.js,cypress/integration/shouldRunAllTestsAlthoughConsoleError2.js"';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
+            const expectedTestResult = /2 of 2 failed.*6.*3.*3/;
+            const expectedError = /AssertionError: expected error to have been called exactly '0 times', but it was called once/g;
+            expect(testResult).to.match(expectedTestResult);
+            expect(testResult.match(expectedError).length).to.be.equal(3);
         }
     });
 });

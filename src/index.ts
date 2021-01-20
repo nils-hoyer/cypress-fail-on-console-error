@@ -28,8 +28,10 @@ export default function failOnConsoleError(config: Config = {}): void {
             return;
         }
 
-        if (getIncludedSpy(spies, config)) {
-            chai.expect(spies.get(ConsoleType.ERROR)).to.have.callCount(0);
+        const spy: sinon.SinonSpy | undefined = getIncludedSpy(spies, config);
+
+        if (spy) {
+            chai.expect(spy).to.have.callCount(0);
         }
     });
 }
@@ -51,13 +53,11 @@ export const validateConfig = (config: Config): void => {
 };
 
 export const createConfig = (config: Config): Config => {
-    const includeConsoleTypes: ConsoleType[] = config.includeConsoleTypes
-        ?.length
-        ? config.includeConsoleTypes
-        : [ConsoleType.ERROR];
     return {
-        ...config,
-        includeConsoleTypes,
+        excludeMessages: config.excludeMessages,
+        includeConsoleTypes: config.includeConsoleTypes?.length
+            ? config.includeConsoleTypes
+            : [ConsoleType.ERROR],
     };
 };
 
@@ -90,7 +90,9 @@ export const getIncludedSpy = (
     spies: Map<ConsoleType, sinon.SinonSpy>,
     config: Config
 ): sinon.SinonSpy | undefined =>
-    Array.from(spies.values()).find((value) => !isExludeMessage(value, config));
+    Array.from(spies.values()).find(
+        (spy) => spy.called && !isExludeMessage(spy, config)
+    );
 
 export const isExludeMessage = (
     spy: sinon.SinonSpy,
