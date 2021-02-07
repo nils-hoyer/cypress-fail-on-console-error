@@ -6,7 +6,7 @@ import {
     createConfig,
     createSpies,
     getIncludedSpy,
-    isExludeMessage,
+    isExcludeMessage,
     resetSpies,
     someSpyCalled,
     validateConfig,
@@ -174,12 +174,12 @@ describe('getIncludedSpy()', () => {
     });
 });
 
-describe('isExludeMessage()', () => {
+describe('isExcludeMessage()', () => {
     it('when config.excludeMessages matching spy error message then return true', () => {
         const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
         const config: Config = { excludeMessages: ['foo'] };
 
-        const expected = isExludeMessage(spy, config);
+        const expected = isExcludeMessage(spy, config);
 
         chai.expect(expected).to.be.true;
     });
@@ -188,7 +188,7 @@ describe('isExludeMessage()', () => {
         const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
         const config: Config = {};
 
-        const expected = isExludeMessage(spy, config);
+        const expected = isExcludeMessage(spy, config);
 
         chai.expect(expected).to.be.false;
     });
@@ -197,7 +197,7 @@ describe('isExludeMessage()', () => {
         const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
         const config: Config = { excludeMessages: ['bar'] };
 
-        const expected = isExludeMessage(spy, config);
+        const expected = isExcludeMessage(spy, config);
 
         chai.expect(expected).to.be.false;
     });

@@ -91,10 +91,10 @@ export const getIncludedSpy = (
     config: Config
 ): sinon.SinonSpy | undefined =>
     Array.from(spies.values()).find(
-        (spy) => spy.called && !isExludeMessage(spy, config)
+        (spy) => spy.called && !isExcludeMessage(spy, config)
     );
 
-export const isExludeMessage = (
+export const isExcludeMessage = (
     spy: sinon.SinonSpy,
     config: Config
 ): boolean => {

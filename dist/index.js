@@ -22,7 +22,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.consoleType = exports.isExludeMessage = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.consoleType = exports.isExcludeMessage = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var sinon = __importStar(require("sinon"));
 var sinon_chai_1 = __importDefault(require("sinon-chai"));
@@ -92,10 +92,10 @@ var someSpyCalled = function (spies) {
 };
 exports.someSpyCalled = someSpyCalled;
 var getIncludedSpy = function (spies, config) {
-    return Array.from(spies.values()).find(function (spy) { return spy.called && !exports.isExludeMessage(spy, config); });
+    return Array.from(spies.values()).find(function (spy) { return spy.called && !exports.isExcludeMessage(spy, config); });
 };
 exports.getIncludedSpy = getIncludedSpy;
-var isExludeMessage = function (spy, config) {
+var isExcludeMessage = function (spy, config) {
     if (!config.excludeMessages) {
         return false;
     }
@@ -107,5 +107,5 @@ var isExludeMessage = function (spy, config) {
         return hasMatch > 0;
     });
 };
-exports.isExludeMessage = isExludeMessage;
+exports.isExcludeMessage = isExcludeMessage;
 exports.consoleType = ConsoleType_1.ConsoleType;
