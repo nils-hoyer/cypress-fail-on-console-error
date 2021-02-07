@@ -20,10 +20,10 @@ failOnConsoleError();
 
 ### Config (optional)
 
-| Parameter             | Default               | Description                                             |
-| --------------------- | --------------------- | ------------------------------------------------------- |
-| `excludeMessages`     | `undefined`           | Exclude console messages from throwing `assertionError` |
-| `includeConsoleTypes` | `[ConsoleType.ERROR]` | Include console types for observation                   |
+| Parameter             | Default               | Description                                                                                                               |
+| --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `excludeMessages`     | `undefined`           | Exclude console messages from throwing `assertionError` <br /> String parameter will be interpreted as regular expression |
+| `includeConsoleTypes` | `[consoleType.ERROR]` | Include console types for observation                                                                                     |
 
 <br/>
 
@@ -31,6 +31,8 @@ failOnConsoleError();
 ```js
 import failOnConsoleError, { consoleType } from 'cypress-fail-on-console-error';
 
+const config = {
+    excludeMessages: ['foo', '^some bar-regex.*'],
     includeConsoleTypes: [
         consoleType.ERROR,
         consoleType.WARN,
@@ -40,6 +42,9 @@ import failOnConsoleError, { consoleType } from 'cypress-fail-on-console-error';
 
 failOnConsoleError(config);
 
+// excludeMessages[0] matches example console message 'this is a foo message'
+// excludeMessages[1] matches example console message 'some bar-regex message'
+// includeConsoleTypes observe console types ERROR, WARN and INFO
 ```
 
 Javascript user can pass enum values instead
