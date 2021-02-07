@@ -9,3 +9,4 @@ export declare const resetSpies: (spies: Map<ConsoleType, sinon.SinonSpy>) => Ma
 export declare const someSpyCalled: (spies: Map<ConsoleType, sinon.SinonSpy>) => boolean;
 export declare const getIncludedSpy: (spies: Map<ConsoleType, sinon.SinonSpy>, config: Config) => sinon.SinonSpy | undefined;
 export declare const isExludeMessage: (spy: sinon.SinonSpy, config: Config) => boolean;
+export declare const consoleType: typeof ConsoleType;

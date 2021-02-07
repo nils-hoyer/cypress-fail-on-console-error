@@ -111,3 +111,5 @@ export const isExludeMessage = (
         return hasMatch > 0;
     });
 };
+
+export const consoleType = ConsoleType;

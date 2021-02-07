@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-Cypress plugin to observe for console errors which causes the test to fail.
+Fail cypress test on console error.
 
 ### Installation
 
@@ -29,14 +29,27 @@ failOnConsoleError();
 
 <!-- prettier-ignore -->
 ```js
-const config: Config = {
-    excludeMessages: ['foo', '^bar-regex.*$'],
+import failOnConsoleError, { consoleType } from 'cypress-fail-on-console-error';
+
     includeConsoleTypes: [
-        ConsoleType.ERROR,
-        ConsoleType.WARN,
-        ConsoleType.INFO,
+        consoleType.ERROR,
+        consoleType.WARN,
+        consoleType.INFO,
     ],
 };
 
 failOnConsoleError(config);
+
+```
+
+Javascript user can pass enum values instead
+
+```js
+failOnConsoleError({
+    includeConsoleTypes: [1, 2],
+});
+
+// 0 = INFO
+// 1 = WARN
+// 2 = ERROR
 ```

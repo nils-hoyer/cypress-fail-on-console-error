@@ -1,10 +1,9 @@
 import './commands';
-import failOnConsoleError from '../../dist/index';
-import { ConsoleType } from '../../dist/types/ConsoleType';
+import failOnConsoleError, { consoleType } from '../../dist/index';
 
 const config = {
     excludeMessages: ['excludeErrorMessage', 'foo'],
-    includeConsoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
+    includeConsoleTypes: [consoleType.ERROR, consoleType.WARN],
 };
 
 failOnConsoleError(config);
