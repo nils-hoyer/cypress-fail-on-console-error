@@ -54,13 +54,19 @@ function failOnConsoleError(config) {
 }
 exports.default = failOnConsoleError;
 var validateConfig = function (config) {
-    var _a, _b;
-    (_a = config.excludeMessages) === null || _a === void 0 ? void 0 : _a.forEach(function (_excludeMessage) {
-        chai.expect(_excludeMessage.trim().length === 0, 'excludeMessages contains empty string').not.to.be.true;
-    });
-    (_b = config.includeConsoleTypes) === null || _b === void 0 ? void 0 : _b.forEach(function (_includeConsoleType) {
-        chai.expect(!ConsoleType_1.someConsoleType(_includeConsoleType), 'includeConsoleTypes contains unknown ConsoleType').not.to.be.true;
-    });
+    if (config.excludeMessages) {
+        chai.expect(config.excludeMessages).not.to.be.empty;
+        config.excludeMessages.forEach(function (_excludeMessage) {
+            chai.expect(_excludeMessage).to.be.a('string');
+            chai.expect(_excludeMessage).to.have.length.above(0);
+        });
+    }
+    if (config.includeConsoleTypes) {
+        chai.expect(config.includeConsoleTypes).not.to.be.empty;
+        config.includeConsoleTypes.forEach(function (_includeConsoleType) {
+            chai.expect(ConsoleType_1.someConsoleType(_includeConsoleType), "includeConsoleTypes '" + _includeConsoleType + "' is an unknown ConsoleType").to.be.true;
+        });
+    }
 };
 exports.validateConfig = validateConfig;
 var createConfig = function (config) {

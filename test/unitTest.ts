@@ -42,24 +42,31 @@ describe('createConfig()', () => {
 });
 
 describe('validateConfig()', () => {
-    it('when excludeMessages contains empty string then throw AssertionError', () => {
-        const config: Config = { excludeMessages: [''] };
-
-        chai.expect(() => validateConfig(config)).to.throw(
-            AssertionError,
-            'excludeMessages contains empty string'
-        );
-    });
-
-    it('when includeConsoleTypes contains unknown ConsoleType then throw AssertionError', () => {
+    it('when excludeMessages and includeConsoleTypes is valid no assertion error is throwed', () => {
         const config: Config = {
-            includeConsoleTypes: ['unknownConsoleType'] as any,
+            excludeMessages: ['foo', 'bar'],
+            includeConsoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
         };
 
-        chai.expect(() => validateConfig(config)).to.throw(
-            AssertionError,
-            'includeConsoleTypes contains unknown ConsoleType'
-        );
+        chai.expect(() => validateConfig(config)).not.to.throw(AssertionError);
+    });
+
+    const excludeMessages = [[], [''], [3]];
+    excludeMessages.forEach((_excludeMessage: any) => {
+        it('when excludeMessages is not valid then throw AssertionError', () => {
+            const config: Config = { excludeMessages: _excludeMessage };
+
+            chai.expect(() => validateConfig(config)).to.throw(AssertionError);
+        });
+    });
+
+    const includeConsoleTypes = [[], [''], [3]];
+    includeConsoleTypes.forEach((_includeConsoleType: any) => {
+        it('when includeConsoleTypes is not valid then throw AssertionError', () => {
+            const config: Config = { includeConsoleTypes: _includeConsoleType };
+
+            chai.expect(() => validateConfig(config)).to.throw(AssertionError);
+        });
     });
 });
 
