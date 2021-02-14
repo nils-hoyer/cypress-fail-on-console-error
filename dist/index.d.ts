@@ -8,5 +8,6 @@ export declare const createSpies: (config: Config, console: Console) => Map<Cons
 export declare const resetSpies: (spies: Map<ConsoleType, sinon.SinonSpy>) => Map<ConsoleType, sinon.SinonSpy>;
 export declare const someSpyCalled: (spies: Map<ConsoleType, sinon.SinonSpy>) => boolean;
 export declare const getIncludedSpy: (spies: Map<ConsoleType, sinon.SinonSpy>, config: Config) => sinon.SinonSpy | undefined;
-export declare const isExcludeMessage: (spy: sinon.SinonSpy, config: Config) => boolean;
+export declare const someIncludedCall: (spy: sinon.SinonSpy, config: Config) => boolean;
+export declare const isExcludedMessage: (excludeMessages: string[], message: string) => boolean;
 export declare const consoleType: typeof ConsoleType;

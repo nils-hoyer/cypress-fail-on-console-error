@@ -6,8 +6,9 @@ import {
     createConfig,
     createSpies,
     getIncludedSpy,
-    isExcludeMessage,
+    isExcludedMessage,
     resetSpies,
+    someIncludedCall,
     someSpyCalled,
     validateConfig,
 } from '../dist/index';
@@ -137,33 +138,12 @@ describe('someSpyCalled()', () => {
     });
 });
 
+//TODO stub inner function
 describe('getIncludedSpy()', () => {
-    it('when spies contains some spy not matching exludeMessage then return spy', () => {
-        const config: Config = { excludeMessages: ['foo', 'bar'] };
-        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set(ConsoleType.ERROR, {
-            called: true,
-            args: [['foo']],
-        } as sinon.SinonSpy);
-        spies.set(ConsoleType.WARN, {
-            called: true,
-            args: [['expectedSpy']],
-        } as sinon.SinonSpy);
-
-        const expectedSpy: sinon.SinonSpy = getIncludedSpy(spies, config);
-
-        chai.expect(expectedSpy.args[0][0]).to.equals('expectedSpy');
-    });
-
-    it('when spies contains not called or spy matching exludeMessage then return undefined', () => {
+    it('when spies contains some spy called but not included call', () => {
         const config: Config = { excludeMessages: ['foo'] };
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set(ConsoleType.ERROR, { called: false } as sinon.SinonSpy);
-        spies.set(ConsoleType.WARN, {
-            called: false,
-            args: [['bar']],
-        } as sinon.SinonSpy);
-        spies.set(ConsoleType.INFO, {
+        spies.set(ConsoleType.ERROR, {
             called: true,
             args: [['foo']],
         } as sinon.SinonSpy);
@@ -172,32 +152,80 @@ describe('getIncludedSpy()', () => {
 
         chai.expect(expectedSpy).to.be.undefined;
     });
+
+    it('when spies contains some spy called and included call', () => {
+        const config: Config = { excludeMessages: ['foo'] };
+        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
+        spies.set(ConsoleType.ERROR, {
+            called: true,
+            args: [['bar']],
+        } as sinon.SinonSpy);
+
+        const expectedSpy: sinon.SinonSpy = getIncludedSpy(spies, config);
+
+        chai.expect(expectedSpy).not.to.be.undefined;
+    });
+
+    it('when spies contains all spy not called', () => {
+        const config: Config = { excludeMessages: ['foo'] };
+        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
+        spies.set(ConsoleType.ERROR, {
+            called: false,
+        } as sinon.SinonSpy);
+
+        const expectedSpy: sinon.SinonSpy = getIncludedSpy(spies, config);
+
+        chai.expect(expectedSpy).to.be.undefined;
+    });
 });
 
-describe('isExcludeMessage()', () => {
-    it('when config.excludeMessages matching spy error message then return true', () => {
+//TODO stub inner function
+describe('someIncludedCall()', () => {
+    it('when isExcludedMessage always is true then someIncludedCall return false', () => {
         const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
         const config: Config = { excludeMessages: ['foo'] };
 
-        const expected = isExcludeMessage(spy, config);
-
-        chai.expect(expected).to.be.true;
-    });
-
-    it('when not config.excludeMessages then return false', () => {
-        const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
-        const config: Config = {};
-
-        const expected = isExcludeMessage(spy, config);
+        const expected = someIncludedCall(spy, config);
 
         chai.expect(expected).to.be.false;
     });
 
-    it('when config.excludeMessages matching spy error message then return false', () => {
-        const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
+    it('when isExcludedMessage once is false then someIncludedCall return true', () => {
+        const spy: sinon.SinonSpy = {
+            args: [['foo']],
+        } as sinon.SinonSpy;
         const config: Config = { excludeMessages: ['bar'] };
 
-        const expected = isExcludeMessage(spy, config);
+        const expected = someIncludedCall(spy, config);
+
+        chai.expect(expected).to.be.true;
+    });
+
+    it('when not config.excludeMessages then return true', () => {
+        const spy: sinon.SinonSpy = { args: [['foo']] } as sinon.SinonSpy;
+        const config: Config = {};
+
+        const expected = someIncludedCall(spy, config);
+
+        chai.expect(expected).to.be.true;
+    });
+});
+
+describe('isExcludeMessage()', () => {
+    it('when config.excludeMessages matching spy call message then return true', () => {
+        const callMessage: string = 'foo';
+        const excludeMessages: string[] = ['some', 'foo'];
+
+        const expected = isExcludedMessage(excludeMessages, callMessage);
+
+        chai.expect(expected).to.be.true;
+    });
+
+    it('when config.excludeMessages not matching spy call message then return false', () => {
+        const callMessage: string = 'foo';
+        const excludeMessages: string[] = ['some', 'bar'];
+
+        const expected = isExcludedMessage(excludeMessages, callMessage);
 
         chai.expect(expected).to.be.false;
     });

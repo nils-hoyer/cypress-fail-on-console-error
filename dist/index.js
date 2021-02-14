@@ -22,7 +22,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.consoleType = exports.isExcludeMessage = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.consoleType = exports.isExcludedMessage = exports.someIncludedCall = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var sinon = __importStar(require("sinon"));
 var sinon_chai_1 = __importDefault(require("sinon-chai"));
@@ -92,20 +92,24 @@ var someSpyCalled = function (spies) {
 };
 exports.someSpyCalled = someSpyCalled;
 var getIncludedSpy = function (spies, config) {
-    return Array.from(spies.values()).find(function (spy) { return spy.called && !exports.isExcludeMessage(spy, config); });
+    return Array.from(spies.values()).find(function (spy) { return spy.called && exports.someIncludedCall(spy, config); });
 };
 exports.getIncludedSpy = getIncludedSpy;
-var isExcludeMessage = function (spy, config) {
+var someIncludedCall = function (spy, config) {
     if (!config.excludeMessages) {
-        return false;
+        return true;
     }
-    var errorMessage = spy.args[0][0];
-    chai.expect(errorMessage).not.to.be.undefined;
-    return config.excludeMessages.some(function (_excludeMessage) {
+    return spy.args.some(function (call) {
+        return !exports.isExcludedMessage(config.excludeMessages, call[0]);
+    });
+};
+exports.someIncludedCall = someIncludedCall;
+var isExcludedMessage = function (excludeMessages, message) {
+    return excludeMessages.some(function (_excludeMessage) {
         var _a;
-        var hasMatch = ((_a = errorMessage.match(_excludeMessage)) === null || _a === void 0 ? void 0 : _a.length) || 0;
+        var hasMatch = ((_a = message.match(_excludeMessage)) === null || _a === void 0 ? void 0 : _a.length) || 0;
         return hasMatch > 0;
     });
 };
-exports.isExcludeMessage = isExcludeMessage;
+exports.isExcludedMessage = isExcludedMessage;
 exports.consoleType = ConsoleType_1.ConsoleType;

@@ -37,19 +37,23 @@ export default function failOnConsoleError(config: Config = {}): void {
 }
 
 export const validateConfig = (config: Config): void => {
-    config.excludeMessages?.forEach((_excludeMessage) => {
-        chai.expect(
-            _excludeMessage.trim().length === 0,
-            'excludeMessages contains empty string'
-        ).not.to.be.true;
-    });
+    if (config.excludeMessages) {
+        chai.expect(config.excludeMessages).not.to.be.empty;
+        config.excludeMessages.forEach((_excludeMessage) => {
+            chai.expect(_excludeMessage).to.be.a('string');
+            chai.expect(_excludeMessage).to.have.length.above(0);
+        });
+    }
 
-    config.includeConsoleTypes?.forEach((_includeConsoleType) => {
-        chai.expect(
-            !someConsoleType(_includeConsoleType),
-            'includeConsoleTypes contains unknown ConsoleType'
-        ).not.to.be.true;
-    });
+    if (config.includeConsoleTypes) {
+        chai.expect(config.includeConsoleTypes).not.to.be.empty;
+        config.includeConsoleTypes.forEach((_includeConsoleType) => {
+            chai.expect(
+                someConsoleType(_includeConsoleType),
+                `includeConsoleTypes '${_includeConsoleType}' is an unknown ConsoleType`
+            ).to.be.true;
+        });
+    }
 };
 
 export const createConfig = (config: Config): Config => {
@@ -91,23 +95,29 @@ export const getIncludedSpy = (
     config: Config
 ): sinon.SinonSpy | undefined =>
     Array.from(spies.values()).find(
-        (spy) => spy.called && !isExcludeMessage(spy, config)
+        (spy) => spy.called && someIncludedCall(spy, config)
     );
 
-export const isExcludeMessage = (
+export const someIncludedCall = (
     spy: sinon.SinonSpy,
     config: Config
 ): boolean => {
     if (!config.excludeMessages) {
-        return false;
+        return true;
     }
 
-    const errorMessage: string = spy.args[0][0];
-    chai.expect(errorMessage).not.to.be.undefined;
+    return spy.args.some(
+        (call) =>
+            !isExcludedMessage(config.excludeMessages as string[], call[0])
+    );
+};
 
-    return config.excludeMessages.some((_excludeMessage) => {
-        const hasMatch: number =
-            errorMessage.match(_excludeMessage)?.length || 0;
+export const isExcludedMessage = (
+    excludeMessages: string[],
+    message: string
+) => {
+    return excludeMessages.some((_excludeMessage) => {
+        const hasMatch: number = message.match(_excludeMessage)?.length || 0;
         return hasMatch > 0;
     });
 };
