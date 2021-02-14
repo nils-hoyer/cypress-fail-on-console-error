@@ -47,7 +47,7 @@ failOnConsoleError(config);
 // includeConsoleTypes observe console types ERROR, WARN and INFO
 ```
 
-Javascript user can pass enum values instead
+Using Javascript consoleType Enum can be parsed as number values instead
 
 ```js
 failOnConsoleError({
