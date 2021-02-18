@@ -1,6 +1,6 @@
 {
   "name": "cypress-fail-on-console-error",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "fail cypress test on console error",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
