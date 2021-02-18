@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-Fail cypress test on console error.
+Fail cypress test on console.error()
 
 ### Installation
 
@@ -47,11 +47,11 @@ failOnConsoleError(config);
 // includeConsoleTypes observe console types ERROR, WARN and INFO
 ```
 
-Using Javascript consoleType Enum can be parsed as number values instead
+Using Javascript, consoleType Enum can be parsed as number values
 
 ```js
 failOnConsoleError({
-    includeConsoleTypes: [1, 2],
+    includeConsoleTypes: [0, 1, 2],
 });
 
 // 0 = INFO
