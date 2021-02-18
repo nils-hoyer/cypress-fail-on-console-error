@@ -106,7 +106,7 @@ var someIncludedCall = function (spy, config) {
         return true;
     }
     return spy.args.some(function (call) {
-        return !exports.isExcludedMessage(config.excludeMessages, call[0]);
+        return !exports.isExcludedMessage(config.excludeMessages, "" + call[0]);
     });
 };
 exports.someIncludedCall = someIncludedCall;

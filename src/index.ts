@@ -108,7 +108,7 @@ export const someIncludedCall = (
 
     return spy.args.some(
         (call) =>
-            !isExcludedMessage(config.excludeMessages as string[], call[0])
+            !isExcludedMessage(config.excludeMessages as string[], `${call[0]}`)
     );
 };
 
