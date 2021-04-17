@@ -3,6 +3,7 @@ import { AssertionError } from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
+    callToString,
     createConfig,
     createSpies,
     getIncludedSpy,
@@ -235,5 +236,24 @@ describe('isExcludeMessage()', () => {
         const expected = isExcludedMessage(excludeMessages, callMessage);
 
         chai.expect(expected).to.be.false;
+    });
+});
+
+describe('callToString()', () => {
+    it('when parse different types, callToString should return string', () => {
+        const call: any[] = [
+            'stringValue',
+            1,
+            { foo: 'bar' },
+            ['a', 1],
+            undefined,
+            null,
+        ];
+
+        const expected = callToString(call);
+
+        chai.expect(expected).to.equals(
+            'stringValue 1 {"foo":"bar"} ["a",1] undefined null'
+        );
     });
 });

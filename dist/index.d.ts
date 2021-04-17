@@ -10,4 +10,5 @@ export declare const someSpyCalled: (spies: Map<ConsoleType, sinon.SinonSpy>) =>
 export declare const getIncludedSpy: (spies: Map<ConsoleType, sinon.SinonSpy>, config: Config) => sinon.SinonSpy | undefined;
 export declare const someIncludedCall: (spy: sinon.SinonSpy, config: Config) => boolean;
 export declare const isExcludedMessage: (excludeMessages: string[], message: string) => boolean;
+export declare const callToString: (calls: any[]) => string;
 export declare const consoleType: typeof ConsoleType;

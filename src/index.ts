@@ -108,18 +108,31 @@ export const someIncludedCall = (
 
     return spy.args.some(
         (call) =>
-            !isExcludedMessage(config.excludeMessages as string[], `${call[0]}`)
+            !isExcludedMessage(
+                config.excludeMessages as string[],
+                callToString(call)
+            )
     );
 };
 
 export const isExcludedMessage = (
     excludeMessages: string[],
     message: string
-) => {
-    return excludeMessages.some((_excludeMessage) => {
+): boolean =>
+    excludeMessages.some((_excludeMessage) => {
         const hasMatch: number = message.match(_excludeMessage)?.length || 0;
         return hasMatch > 0;
     });
-};
+
+export const callToString = (calls: any[]): string =>
+    calls
+        .reduce((previousValue, currentValue) => {
+            const _currentValue =
+                typeof currentValue === 'string'
+                    ? currentValue
+                    : JSON.stringify(currentValue);
+            return `${previousValue} ${_currentValue}`;
+        }, '')
+        .trim();
 
 export const consoleType = ConsoleType;

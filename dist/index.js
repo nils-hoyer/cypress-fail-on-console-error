@@ -22,7 +22,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.consoleType = exports.isExcludedMessage = exports.someIncludedCall = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.consoleType = exports.callToString = exports.isExcludedMessage = exports.someIncludedCall = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var sinon = __importStar(require("sinon"));
 var sinon_chai_1 = __importDefault(require("sinon-chai"));
@@ -106,7 +106,7 @@ var someIncludedCall = function (spy, config) {
         return true;
     }
     return spy.args.some(function (call) {
-        return !exports.isExcludedMessage(config.excludeMessages, "" + call[0]);
+        return !exports.isExcludedMessage(config.excludeMessages, exports.callToString(call));
     });
 };
 exports.someIncludedCall = someIncludedCall;
@@ -118,4 +118,15 @@ var isExcludedMessage = function (excludeMessages, message) {
     });
 };
 exports.isExcludedMessage = isExcludedMessage;
+var callToString = function (calls) {
+    return calls
+        .reduce(function (previousValue, currentValue) {
+        var _currentValue = typeof currentValue === 'string'
+            ? currentValue
+            : JSON.stringify(currentValue);
+        return previousValue + " " + _currentValue;
+    }, '')
+        .trim();
+};
+exports.callToString = callToString;
 exports.consoleType = ConsoleType_1.ConsoleType;
