@@ -123,7 +123,7 @@ var callToString = function (calls) {
         .reduce(function (previousValue, currentValue) {
         var _currentValue = typeof currentValue === 'string'
             ? currentValue
-            : JSON.stringify(currentValue);
+            : (currentValue === null || currentValue === void 0 ? void 0 : currentValue.message) || JSON.stringify(currentValue);
         return previousValue + " " + _currentValue;
     }, '')
         .trim();

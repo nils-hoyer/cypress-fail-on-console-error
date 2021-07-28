@@ -130,7 +130,7 @@ export const callToString = (calls: any[]): string =>
             const _currentValue =
                 typeof currentValue === 'string'
                     ? currentValue
-                    : JSON.stringify(currentValue);
+                    : currentValue?.message || JSON.stringify(currentValue);
             return `${previousValue} ${_currentValue}`;
         }, '')
         .trim();
