@@ -19,7 +19,7 @@ describe('Cypress', () => {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
             const expectedError =
-                "AssertionError: expected error to have beeeen called exactly '0 times'";
+                "AssertionError: expected error to have been called exactly '0 times'";
             expect(testResult).contains(expectedTestResult);
             expect(testResult).contains(expectedError);
         }
