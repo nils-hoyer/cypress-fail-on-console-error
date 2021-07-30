@@ -73,7 +73,8 @@ var createConfig = function (config) {
     var _a;
     return {
         excludeMessages: config.excludeMessages,
-        includeConsoleTypes: ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length) ? config.includeConsoleTypes
+        includeConsoleTypes: ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length)
+            ? config.includeConsoleTypes
             : [ConsoleType_1.ConsoleType.ERROR],
     };
 };

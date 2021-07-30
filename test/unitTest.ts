@@ -115,9 +115,8 @@ describe('resetSpies()', () => {
         chai.expect(spies.get(ConsoleType.ERROR)).be.called;
         chai.expect(spies.get(ConsoleType.WARN)).not.be.called;
 
-        const expectedSpies: Map<ConsoleType, sinon.SinonSpy> = resetSpies(
-            spies
-        );
+        const expectedSpies: Map<ConsoleType, sinon.SinonSpy> =
+            resetSpies(spies);
 
         chai.expect(expectedSpies.get(ConsoleType.ERROR)).not.be.called;
         chai.expect(expectedSpies.get(ConsoleType.WARN)).not.be.called;

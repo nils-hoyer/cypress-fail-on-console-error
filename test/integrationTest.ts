@@ -60,7 +60,8 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = /1 of 1 failed.*3.*1.*2/;
-            const expectedError = /AssertionError: expected (error|warn) to have been called exactly '0 times'/g;
+            const expectedError =
+                /AssertionError: expected (error|warn) to have been called exactly '0 times'/g;
             expect(testResult).to.match(expectedTestResult);
             expect(testResult.match(expectedError).length).to.be.equal(2);
         }
@@ -78,7 +79,8 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = /2 of 2 failed.*6.*3.*3/;
-            const expectedError = /AssertionError: expected error to have been called exactly '0 times'/g;
+            const expectedError =
+                /AssertionError: expected error to have been called exactly '0 times'/g;
             expect(testResult).to.match(expectedTestResult);
             expect(testResult.match(expectedError).length).to.be.equal(3);
         }
