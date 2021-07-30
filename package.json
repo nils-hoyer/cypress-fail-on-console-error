@@ -10,10 +10,13 @@
   "scripts": {
     "build": "rm -rf dist/ && tsc",
     "prettier": "prettier --write '**/*'",
-    "test": "ts-mocha test/**/*.ts --timeout 60000",
+    "test": "npm run test:ut && npm run test:it",
+    "test:ut": "ts-mocha test/unitTest.ts",
+    "test:ut:debug": "ts-mocha --inspect-brk test/unitTest.ts",
+    "test:it": "ts-mocha test/integrationTest.ts --timeout 60000",
+    "test:it:debug": "cypress open",
     "verify": "npm run build && npm run prettier && npm run test",
-    "debug:ut": "ts-mocha --inspect-brk test/**/unitTest.ts",
-    "debug:it": "cypress open"
+    "ci:prettier": "prettier --check '**/*'"
   },
   "repository": {
     "type": "git",
