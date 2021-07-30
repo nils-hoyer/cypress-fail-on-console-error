@@ -27,6 +27,7 @@ describe('createConfig()', () => {
 
         chai.expect(given.includeConsoleTypes.length).to.equal(1);
         chai.expect(given.includeConsoleTypes[0]).to.equal(ConsoleType.ERROR);
+        chai.expect(true).to.be.false;
     });
 
     it('when includeConsoleType is set then overwrite default ConsoleType.ERROR', () => {
