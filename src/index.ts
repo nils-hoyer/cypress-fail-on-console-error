@@ -47,23 +47,22 @@ export const validateConfig = (config: Config): void => {
 
     if (config.includeConsoleTypes) {
         chai.expect(config.includeConsoleTypes).not.to.be.empty;
-        config.includeConsoleTypes.forEach((_includeConsoleType) => {
-            chai.expect(
-                someConsoleType(_includeConsoleType),
-                `includeConsoleTypes '${_includeConsoleType}' is an unknown ConsoleType`
-            ).to.be.true;
-        });
+        config.includeConsoleTypes.forEach(
+            (_includeConsoleType) =>
+                chai.expect(
+                    someConsoleType(_includeConsoleType),
+                    `includeConsoleTypes '${_includeConsoleType}' is an unknown ConsoleType`
+                ).to.be.true
+        );
     }
 };
 
-export const createConfig = (config: Config): Config => {
-    return {
-        excludeMessages: config.excludeMessages,
-        includeConsoleTypes: config.includeConsoleTypes?.length
-            ? config.includeConsoleTypes
-            : [ConsoleType.ERROR],
-    };
-};
+export const createConfig = (config: Config): Config => ({
+    excludeMessages: config.excludeMessages,
+    includeConsoleTypes: config.includeConsoleTypes?.length
+        ? config.includeConsoleTypes
+        : [ConsoleType.ERROR],
+});
 
 export const createSpies = (
     config: Config,
@@ -86,9 +85,7 @@ export const resetSpies = (
 
 export const someSpyCalled = (
     spies: Map<ConsoleType, sinon.SinonSpy>
-): boolean => {
-    return Array.from(spies.values()).some((value) => value.called);
-};
+): boolean => Array.from(spies.values()).some((value) => value.called);
 
 export const getIncludedSpy = (
     spies: Map<ConsoleType, sinon.SinonSpy>,

@@ -64,19 +64,19 @@ var validateConfig = function (config) {
     if (config.includeConsoleTypes) {
         chai.expect(config.includeConsoleTypes).not.to.be.empty;
         config.includeConsoleTypes.forEach(function (_includeConsoleType) {
-            chai.expect(ConsoleType_1.someConsoleType(_includeConsoleType), "includeConsoleTypes '" + _includeConsoleType + "' is an unknown ConsoleType").to.be.true;
+            return chai.expect(ConsoleType_1.someConsoleType(_includeConsoleType), "includeConsoleTypes '" + _includeConsoleType + "' is an unknown ConsoleType").to.be.true;
         });
     }
 };
 exports.validateConfig = validateConfig;
 var createConfig = function (config) {
     var _a;
-    return {
+    return ({
         excludeMessages: config.excludeMessages,
         includeConsoleTypes: ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length)
             ? config.includeConsoleTypes
             : [ConsoleType_1.ConsoleType.ERROR],
-    };
+    });
 };
 exports.createConfig = createConfig;
 var createSpies = function (config, console) {
@@ -94,9 +94,7 @@ var resetSpies = function (spies) {
     return spies;
 };
 exports.resetSpies = resetSpies;
-var someSpyCalled = function (spies) {
-    return Array.from(spies.values()).some(function (value) { return value.called; });
-};
+var someSpyCalled = function (spies) { return Array.from(spies.values()).some(function (value) { return value.called; }); };
 exports.someSpyCalled = someSpyCalled;
 var getIncludedSpy = function (spies, config) {
     return Array.from(spies.values()).find(function (spy) { return spy.called && exports.someIncludedCall(spy, config); });
