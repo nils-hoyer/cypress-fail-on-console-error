@@ -32,21 +32,21 @@ chai.use(sinon_chai_1.default);
 function failOnConsoleError(config) {
     if (config === void 0) { config = {}; }
     var spies;
-    exports.validateConfig(config);
-    config = exports.createConfig(config);
+    (0, exports.validateConfig)(config);
+    config = (0, exports.createConfig)(config);
     Cypress.on('window:before:load', function (win) {
-        spies = exports.createSpies(config, win.console);
+        spies = (0, exports.createSpies)(config, win.console);
     });
     Cypress.on('command:enqueued', function () {
         if (spies) {
-            spies = exports.resetSpies(spies);
+            spies = (0, exports.resetSpies)(spies);
         }
     });
     Cypress.on('command:end', function () {
-        if (!spies || !exports.someSpyCalled(spies)) {
+        if (!spies || !(0, exports.someSpyCalled)(spies)) {
             return;
         }
-        var spy = exports.getIncludedSpy(spies, config);
+        var spy = (0, exports.getIncludedSpy)(spies, config);
         if (spy) {
             chai.expect(spy).to.have.callCount(0);
         }
@@ -64,7 +64,7 @@ var validateConfig = function (config) {
     if (config.includeConsoleTypes) {
         chai.expect(config.includeConsoleTypes).not.to.be.empty;
         config.includeConsoleTypes.forEach(function (_includeConsoleType) {
-            return chai.expect(ConsoleType_1.someConsoleType(_includeConsoleType), "includeConsoleTypes '" + _includeConsoleType + "' is an unknown ConsoleType").to.be.true;
+            return chai.expect((0, ConsoleType_1.someConsoleType)(_includeConsoleType), "includeConsoleTypes '" + _includeConsoleType + "' is an unknown ConsoleType").to.be.true;
         });
     }
 };
@@ -97,7 +97,7 @@ exports.resetSpies = resetSpies;
 var someSpyCalled = function (spies) { return Array.from(spies.values()).some(function (value) { return value.called; }); };
 exports.someSpyCalled = someSpyCalled;
 var getIncludedSpy = function (spies, config) {
-    return Array.from(spies.values()).find(function (spy) { return spy.called && exports.someIncludedCall(spy, config); });
+    return Array.from(spies.values()).find(function (spy) { return spy.called && (0, exports.someIncludedCall)(spy, config); });
 };
 exports.getIncludedSpy = getIncludedSpy;
 var someIncludedCall = function (spy, config) {
@@ -105,7 +105,7 @@ var someIncludedCall = function (spy, config) {
         return true;
     }
     return spy.args.some(function (call) {
-        return !exports.isExcludedMessage(config.excludeMessages, exports.callToString(call));
+        return !(0, exports.isExcludedMessage)(config.excludeMessages, (0, exports.callToString)(call));
     });
 };
 exports.someIncludedCall = someIncludedCall;
