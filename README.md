@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-This Plugin observes console.error() function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). It will automatically fail the executed cypress test as soon as the error function is executed once. 
+This Plugin observes console.error() function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). It will automatically fail the executed cypress test as soon as the error function is executed once.
 
 ### Installation
 
