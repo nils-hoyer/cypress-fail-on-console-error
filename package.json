@@ -44,7 +44,7 @@
     "@types/mocha": "9.1.1",
     "@types/sinon": "10.0.11",
     "@types/sinon-chai": "3.2.8",
-    "cypress": "9.6.0",
+    "cypress": "9.6.1",
     "mocha": "10.0.0",
     "prettier": "2.6.2",
     "prettier-plugin-organize-imports": "2.3.4",
