@@ -1,7 +1,11 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -64,7 +68,7 @@ var validateConfig = function (config) {
     if (config.includeConsoleTypes) {
         chai.expect(config.includeConsoleTypes).not.to.be.empty;
         config.includeConsoleTypes.forEach(function (_includeConsoleType) {
-            return chai.expect((0, ConsoleType_1.someConsoleType)(_includeConsoleType), "includeConsoleTypes '" + _includeConsoleType + "' is an unknown ConsoleType").to.be.true;
+            return chai.expect((0, ConsoleType_1.someConsoleType)(_includeConsoleType), "includeConsoleTypes '".concat(_includeConsoleType, "' is an unknown ConsoleType")).to.be.true;
         });
     }
 };
@@ -123,7 +127,7 @@ var callToString = function (calls) {
         var _currentValue = typeof currentValue === 'string'
             ? currentValue
             : (currentValue === null || currentValue === void 0 ? void 0 : currentValue.message) || JSON.stringify(currentValue);
-        return previousValue + " " + _currentValue;
+        return "".concat(previousValue, " ").concat(_currentValue);
     }, '')
         .trim();
 };
