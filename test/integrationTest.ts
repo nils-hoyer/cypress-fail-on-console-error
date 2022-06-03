@@ -18,10 +18,35 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
+            const expectedAssertionMessage =
+                "AssertionError: expected error to have been called exactly '0 times'";
+            const expectedErrorMessage =
+                "'secondErrorNotExcluded', 1, { foo: 'bar' }, [ 'a', 1 ], undefined, null";
+            expect(testResult).contains(expectedTestResult);
+            expect(testResult).contains(expectedAssertionMessage);
+            expect(testResult).contains(expectedErrorMessage);
+        }
+    });
+
+    it('when console.error from new Error() is called then cypress fails', async () => {
+        const spec =
+            ' --spec ./cypress/integration/shouldFailOnConsoleErrorFromError.js';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
+            const expectedTestResult = '1 of 1 failed';
             const expectedError =
                 "AssertionError: expected error to have been called exactly '0 times'";
+            const expectedErrorMessage =
+                "[TypeError: Cannot read properties of undefined (reading 'map')]";
             expect(testResult).contains(expectedTestResult);
             expect(testResult).contains(expectedError);
+            expect(testResult).contains(expectedErrorMessage);
         }
     });
 
@@ -60,10 +85,12 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = /1 of 1 failed.*3.*1.*2/;
-            const expectedError =
+            const expectedAssertionMessage =
                 /AssertionError: expected (error|warn) to have been called exactly '0 times'/g;
             expect(testResult).to.match(expectedTestResult);
-            expect(testResult.match(expectedError).length).to.be.equal(2);
+            expect(
+                testResult.match(expectedAssertionMessage).length
+            ).to.be.equal(2);
         }
     });
 
@@ -79,10 +106,12 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = /2 of 2 failed.*6.*3.*3/;
-            const expectedError =
+            const expectedAssertionMessage =
                 /AssertionError: expected error to have been called exactly '0 times'/g;
             expect(testResult).to.match(expectedTestResult);
-            expect(testResult.match(expectedError).length).to.be.equal(3);
+            expect(
+                testResult.match(expectedAssertionMessage).length
+            ).to.be.equal(3);
         }
     });
 });

@@ -2,7 +2,7 @@ import failOnConsoleError, { consoleType } from '../../dist/index';
 import './commands';
 
 const config = {
-    excludeMessages: ['firstError', 'secondError'],
+    excludeMessages: ['firstErrorExcluded', 'secondErrorExcluded'],
     includeConsoleTypes: [consoleType.ERROR, consoleType.WARN],
 };
 

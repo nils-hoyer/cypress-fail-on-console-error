@@ -124,9 +124,9 @@ exports.isExcludedMessage = isExcludedMessage;
 var callToString = function (calls) {
     return calls
         .reduce(function (previousValue, currentValue) {
-        var _currentValue = typeof currentValue === 'string'
-            ? currentValue
-            : (currentValue === null || currentValue === void 0 ? void 0 : currentValue.message) || JSON.stringify(currentValue);
+        var _a;
+        var _value = (_a = currentValue === null || currentValue === void 0 ? void 0 : currentValue.stack) !== null && _a !== void 0 ? _a : currentValue;
+        var _currentValue = typeof _value !== 'string' ? JSON.stringify(_value) : _value;
         return "".concat(previousValue, " ").concat(_currentValue);
     }, '')
         .trim();

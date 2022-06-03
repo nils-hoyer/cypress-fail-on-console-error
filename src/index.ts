@@ -124,10 +124,9 @@ export const isExcludedMessage = (
 export const callToString = (calls: any[]): string =>
     calls
         .reduce((previousValue, currentValue) => {
+            const _value = currentValue?.stack ?? currentValue;
             const _currentValue =
-                typeof currentValue === 'string'
-                    ? currentValue
-                    : currentValue?.message || JSON.stringify(currentValue);
+                typeof _value !== 'string' ? JSON.stringify(_value) : _value;
             return `${previousValue} ${_currentValue}`;
         }, '')
         .trim();

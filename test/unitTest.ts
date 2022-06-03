@@ -239,25 +239,23 @@ describe('isExcludeMessage()', () => {
 });
 
 describe('callToString()', () => {
-    it('when parse different types, callToString should return string', () => {
-        try {
-            throw new Error('Test error');
-        } catch (error) {
-            const call: any[] = [
-                'stringValue',
-                1,
-                { foo: 'bar' },
-                error,
-                ['a', 1],
-                undefined,
-                null,
-            ];
+    it('when parse different args from console.log, callToString should return concated string', () => {
+        const call: any[] = [
+            'string',
+            1,
+            { foo: 'bar' },
+            ['a', 1],
+            undefined,
+            null,
+            '-[]{}()*+?.,\\^$|#s',
+            new Error('new Error()'),
+        ];
 
-            const expected = callToString(call);
+        const expected = callToString(call);
 
-            chai.expect(expected).to.equals(
-                'stringValue 1 {"foo":"bar"} Test error ["a",1] undefined null'
-            );
-        }
+        chai.expect(expected).to.contains(
+            'string 1 {"foo":"bar"} ["a",1] undefined null -[]{}()*+?.,\\^$|#s Error: new Error()'
+        );
+        chai.expect(expected).to.contains('unitTest.ts');
     });
 });
