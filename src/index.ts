@@ -13,25 +13,17 @@ export default function failOnConsoleError(config: Config = {}): void {
     validateConfig(config);
     config = createConfig(config);
 
-    Cypress.on('window:before:load', (win) => {
-        spies = createSpies(config, win.console);
-    });
-
-    Cypress.on('command:enqueued', () => {
-        if (spies) {
-            spies = resetSpies(spies);
-        }
+    Cypress.on('window:before:load', (window) => {
+        spies = createSpies(config, window.console);
     });
 
     Cypress.on('command:end', () => {
-        if (!spies || !someSpyCalled(spies)) {
-            return;
-        }
+        if (!spies) return;
 
-        const spy: sinon.SinonSpy | undefined = getIncludedSpy(spies, config);
+        const errorMessage: string | undefined = getIncludedCall(spies, config);
 
-        if (spy) {
-            chai.expect(spy).to.have.callCount(0);
+        if (errorMessage) {
+            chai.expect(errorMessage, 'console match found').to.be.undefined;
         }
     });
 }
@@ -47,13 +39,12 @@ export const validateConfig = (config: Config): void => {
 
     if (config.includeConsoleTypes) {
         chai.expect(config.includeConsoleTypes).not.to.be.empty;
-        config.includeConsoleTypes.forEach(
-            (_includeConsoleType) =>
-                chai.expect(
-                    someConsoleType(_includeConsoleType),
-                    `includeConsoleTypes '${_includeConsoleType}' is an unknown ConsoleType`
-                ).to.be.true
-        );
+        config.includeConsoleTypes.forEach((_includeConsoleType) => {
+            chai.expect(
+                someConsoleType(_includeConsoleType),
+                `includeConsoleTypes '${_includeConsoleType}' is an unknown ConsoleType`
+            ).to.be.true;
+        });
     }
 };
 
@@ -62,6 +53,7 @@ export const createConfig = (config: Config): Config => ({
     includeConsoleTypes: config.includeConsoleTypes?.length
         ? config.includeConsoleTypes
         : [ConsoleType.ERROR],
+    cypressLog: config.cypressLog ?? false,
 });
 
 export const createSpies = (
@@ -76,50 +68,68 @@ export const createSpies = (
     return spies;
 };
 
-export const resetSpies = (
-    spies: Map<ConsoleType, sinon.SinonSpy>
-): Map<ConsoleType, sinon.SinonSpy> => {
-    spies.forEach((_spy) => _spy.resetHistory());
-    return spies;
-};
-
-export const someSpyCalled = (
-    spies: Map<ConsoleType, sinon.SinonSpy>
-): boolean => Array.from(spies.values()).some((value) => value.called);
-
-export const getIncludedSpy = (
+export const getIncludedCall = (
     spies: Map<ConsoleType, sinon.SinonSpy>,
     config: Config
-): sinon.SinonSpy | undefined =>
-    Array.from(spies.values()).find(
-        (spy) => spy.called && someIncludedCall(spy, config)
-    );
+): string | undefined => {
+    let errorMessage: string | undefined;
+    Array.from(spies.values()).forEach((spy) => {
+        if (!spy.called) return;
 
-export const someIncludedCall = (
-    spy: sinon.SinonSpy,
-    config: Config
-): boolean => {
-    if (!config.excludeMessages) {
-        return true;
-    }
+        const includedCall = findIncludedCall(spy, config);
 
-    return spy.args.some(
-        (call) =>
-            !isExcludedMessage(
-                config.excludeMessages as string[],
-                callToString(call)
-            )
-    );
+        if (includedCall !== undefined) {
+            errorMessage = includedCall;
+        }
+    });
+    return errorMessage;
 };
 
-export const isExcludedMessage = (
-    excludeMessages: string[],
-    message: string
-): boolean =>
-    excludeMessages.some((_excludeMessage) => {
-        const hasMatch: number = message.match(_excludeMessage)?.length || 0;
-        return hasMatch > 0;
+export const findIncludedCall = (
+    spy: sinon.SinonSpy,
+    config: Config
+): string | undefined => {
+    const errorMessages = spy.args.map((call: any[]) => callToString(call));
+
+    if (config.excludeMessages === undefined) {
+        return errorMessages[0];
+    }
+
+    return errorMessages.find((_errorMessage: string) => {
+        const _isErrorMessageExcluded: boolean = (
+            config.excludeMessages as any
+        ).some((_excludeMessage: string) =>
+            isErrorMessageExcluded(
+                _errorMessage,
+                _excludeMessage,
+                config.cypressLog as any
+            )
+        );
+        if (config.cypressLog === true) {
+            cypressLogger('errorMessage_excluded', {
+                _errorMessage,
+                _isErrorMessageExcluded,
+            });
+        }
+        return !_isErrorMessageExcluded;
     });
+};
+
+export const isErrorMessageExcluded = (
+    errorMessage: string,
+    excludeMessage: string,
+    cypressLog: boolean
+) => {
+    const match = (errorMessage.match(excludeMessage)?.length || 0) > 0;
+    if (cypressLog) {
+        cypressLogger('errorMessage_excludeMessage_match', {
+            errorMessage,
+            excludeMessage,
+            match,
+        });
+    }
+    return match;
+};
 
 export const callToString = (calls: any[]): string =>
     calls
@@ -130,5 +140,14 @@ export const callToString = (calls: any[]): string =>
             return `${previousValue} ${_currentValue}`;
         }, '')
         .trim();
+
+export const cypressLogger = (name: string, message: any) => {
+    Cypress.log({
+        name: name,
+        displayName: name,
+        message: JSON.stringify(message),
+        consoleProps: () => message,
+    });
+};
 
 export const consoleType = ConsoleType;

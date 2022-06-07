@@ -6,7 +6,7 @@ const exec = util.promisify(process.exec);
 const cypressRun = 'cypress run --browser chrome --headless';
 
 describe('Cypress', () => {
-    it('when console.error is called then cypress fails', async () => {
+    it('WHEN console.error is called THEN cypress fails', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldFailOnConsoleError.js';
         let testResult = '';
@@ -19,16 +19,16 @@ describe('Cypress', () => {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
             const expectedAssertionMessage =
-                "AssertionError: expected error to have been called exactly '0 times'";
+                'AssertionError: console match found';
             const expectedErrorMessage =
-                "'secondErrorNotExcluded', 1, { foo: 'bar' }, [ 'a', 1 ], undefined, null";
+                'secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null';
             expect(testResult).contains(expectedTestResult);
             expect(testResult).contains(expectedAssertionMessage);
             expect(testResult).contains(expectedErrorMessage);
         }
     });
 
-    it('when console.error from new Error() is called then cypress fails', async () => {
+    it('WHEN console.error from new Error() is called THEN cypress fails', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldFailOnConsoleErrorFromError.js';
         let testResult = '';
@@ -40,17 +40,17 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
-            const expectedError =
-                "AssertionError: expected error to have been called exactly '0 times'";
+            const expectedAssertionMessage =
+                'AssertionError: console match found';
             const expectedErrorMessage =
-                "[TypeError: Cannot read properties of undefined (reading 'map')]";
+                "TypeError: Cannot read properties of undefined (reading \\'map\\')";
             expect(testResult).contains(expectedTestResult);
-            expect(testResult).contains(expectedError);
+            expect(testResult).contains(expectedAssertionMessage);
             expect(testResult).contains(expectedErrorMessage);
         }
     });
 
-    it('when console.info is called then cypress passes', async () => {
+    it('WHEN console.info is called THEN cypress passes', async () => {
         const spec = ' --spec ./cypress/integration/shouldPassOnConsoleInfo.js';
 
         const { stdout } = await exec(cypressRun + spec);
@@ -61,7 +61,7 @@ describe('Cypress', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
-    it('when console.error with config excludeMessages matching console.error message then cypress passes', async () => {
+    it('WHEN console.error with config excludeMessages matching console.error message THEN cypress passes', async () => {
         const spec =
             ' --spec ./cypress/integration/shouldPassOnConsoleErrorExcludeMessages.js';
 
@@ -73,28 +73,7 @@ describe('Cypress', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
-    it('when config includeConsoleTypes ConsoleType.ERROR and ConsoleType.WARN then cypress fails with two errors ', async () => {
-        const spec =
-            ' --spec ./cypress/integration/shouldFailOnConsoleErrorAndConsoleWarn.js';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            const expectedTestResult = /1 of 1 failed.*3.*1.*2/;
-            const expectedAssertionMessage =
-                /AssertionError: expected (error|warn) to have been called exactly '0 times'/g;
-            expect(testResult).to.match(expectedTestResult);
-            expect(
-                testResult.match(expectedAssertionMessage).length
-            ).to.be.equal(2);
-        }
-    });
-
-    it('when run multiple tests files and tests cases then cypress run all files and test cases', async () => {
+    it('WHEN run multiple tests files and tests cases THEN cypress run all files and test cases', async () => {
         const spec =
             ' --spec "cypress/integration/shouldRunAllTestsAlthoughConsoleError.js,cypress/integration/shouldRunAllTestsAlthoughConsoleError2.js"';
         let testResult = '';
@@ -107,7 +86,7 @@ describe('Cypress', () => {
             // console.log(testResult);
             const expectedTestResult = /2 of 2 failed.*6.*3.*3/;
             const expectedAssertionMessage =
-                /AssertionError: expected error to have been called exactly '0 times'/g;
+                /AssertionError: console match found/g;
             expect(testResult).to.match(expectedTestResult);
             expect(
                 testResult.match(expectedAssertionMessage).length

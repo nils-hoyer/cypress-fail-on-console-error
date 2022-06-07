@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-This Plugin observes console.error() function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). It will automatically fail the executed cypress test as soon as the error function is executed once.
+This Plugin observes `console.error()` function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). Cypress test will fail when the error function gets executed.
 
 ### Installation
 
@@ -10,7 +10,7 @@ npm install cypress-fail-on-console-error --save-dev
 
 ### Usage
 
-`cypress/support/index.ts`
+`cypress/support/index.js`
 
 ```js
 import failOnConsoleError from 'cypress-fail-on-console-error';
@@ -20,10 +20,11 @@ failOnConsoleError();
 
 ### Config (optional)
 
-| Parameter             | Default               | Description                                                                                                               |
-| --------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `excludeMessages`     | `undefined`           | Exclude console messages from throwing `assertionError` <br /> String parameter will be interpreted as regular expression |
-| `includeConsoleTypes` | `[consoleType.ERROR]` | Include console types for observation                                                                                     |
+| Parameter             | Default               | Description                                                                                                                                                                                                                                   |
+| --------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `excludeMessages`     | `undefined`           | Exclude console messages from throwing `AssertionError` <br /> When `console.error()` contains an error object from `new Error()`, then the whole stacktrace can be matched <br /> String parameter will be interpreted as regular expression |
+| `includeConsoleTypes` | `[consoleType.ERROR]` | Include console types for observation                                                                                                                                                                                                         |
+| `cypressLog`          | `false`               | Include debug logs for `errorMessage_excludeMessage_match` and `errorMessage_excluded` to cypress runner                                                                                                                                      |
 
 <br/>
 
@@ -38,6 +39,7 @@ const config = {
         consoleType.WARN,
         consoleType.INFO,
     ],
+    cypressLog: true,
 };
 
 failOnConsoleError(config);

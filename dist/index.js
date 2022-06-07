@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.consoleType = exports.callToString = exports.isExcludedMessage = exports.someIncludedCall = exports.getIncludedSpy = exports.someSpyCalled = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.consoleType = exports.cypressLogger = exports.callToString = exports.isErrorMessageExcluded = exports.findIncludedCall = exports.getIncludedCall = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var sinon = __importStar(require("sinon"));
 var sinon_chai_1 = __importDefault(require("sinon-chai"));
@@ -38,21 +38,15 @@ function failOnConsoleError(config) {
     var spies;
     (0, exports.validateConfig)(config);
     config = (0, exports.createConfig)(config);
-    Cypress.on('window:before:load', function (win) {
-        spies = (0, exports.createSpies)(config, win.console);
-    });
-    Cypress.on('command:enqueued', function () {
-        if (spies) {
-            spies = (0, exports.resetSpies)(spies);
-        }
+    Cypress.on('window:before:load', function (window) {
+        spies = (0, exports.createSpies)(config, window.console);
     });
     Cypress.on('command:end', function () {
-        if (!spies || !(0, exports.someSpyCalled)(spies)) {
+        if (!spies)
             return;
-        }
-        var spy = (0, exports.getIncludedSpy)(spies, config);
-        if (spy) {
-            chai.expect(spy).to.have.callCount(0);
+        var errorMessage = (0, exports.getIncludedCall)(spies, config);
+        if (errorMessage) {
+            chai.expect(errorMessage, 'console match found').to.be.undefined;
         }
     });
 }
@@ -68,18 +62,19 @@ var validateConfig = function (config) {
     if (config.includeConsoleTypes) {
         chai.expect(config.includeConsoleTypes).not.to.be.empty;
         config.includeConsoleTypes.forEach(function (_includeConsoleType) {
-            return chai.expect((0, ConsoleType_1.someConsoleType)(_includeConsoleType), "includeConsoleTypes '".concat(_includeConsoleType, "' is an unknown ConsoleType")).to.be.true;
+            chai.expect((0, ConsoleType_1.someConsoleType)(_includeConsoleType), "includeConsoleTypes '".concat(_includeConsoleType, "' is an unknown ConsoleType")).to.be.true;
         });
     }
 };
 exports.validateConfig = validateConfig;
 var createConfig = function (config) {
-    var _a;
+    var _a, _b;
     return ({
         excludeMessages: config.excludeMessages,
         includeConsoleTypes: ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length)
             ? config.includeConsoleTypes
             : [ConsoleType_1.ConsoleType.ERROR],
+        cypressLog: (_b = config.cypressLog) !== null && _b !== void 0 ? _b : false,
     });
 };
 exports.createConfig = createConfig;
@@ -93,34 +88,51 @@ var createSpies = function (config, console) {
     return spies;
 };
 exports.createSpies = createSpies;
-var resetSpies = function (spies) {
-    spies.forEach(function (_spy) { return _spy.resetHistory(); });
-    return spies;
+var getIncludedCall = function (spies, config) {
+    var errorMessage;
+    Array.from(spies.values()).forEach(function (spy) {
+        if (!spy.called)
+            return;
+        var includedCall = (0, exports.findIncludedCall)(spy, config);
+        if (includedCall !== undefined) {
+            errorMessage = includedCall;
+        }
+    });
+    return errorMessage;
 };
-exports.resetSpies = resetSpies;
-var someSpyCalled = function (spies) { return Array.from(spies.values()).some(function (value) { return value.called; }); };
-exports.someSpyCalled = someSpyCalled;
-var getIncludedSpy = function (spies, config) {
-    return Array.from(spies.values()).find(function (spy) { return spy.called && (0, exports.someIncludedCall)(spy, config); });
-};
-exports.getIncludedSpy = getIncludedSpy;
-var someIncludedCall = function (spy, config) {
-    if (!config.excludeMessages) {
-        return true;
+exports.getIncludedCall = getIncludedCall;
+var findIncludedCall = function (spy, config) {
+    var errorMessages = spy.args.map(function (call) { return (0, exports.callToString)(call); });
+    if (config.excludeMessages === undefined) {
+        return errorMessages[0];
     }
-    return spy.args.some(function (call) {
-        return !(0, exports.isExcludedMessage)(config.excludeMessages, (0, exports.callToString)(call));
+    return errorMessages.find(function (_errorMessage) {
+        var _isErrorMessageExcluded = config.excludeMessages.some(function (_excludeMessage) {
+            return (0, exports.isErrorMessageExcluded)(_errorMessage, _excludeMessage, config.cypressLog);
+        });
+        if (config.cypressLog === true) {
+            (0, exports.cypressLogger)('errorMessage_excluded', {
+                _errorMessage: _errorMessage,
+                _isErrorMessageExcluded: _isErrorMessageExcluded,
+            });
+        }
+        return !_isErrorMessageExcluded;
     });
 };
-exports.someIncludedCall = someIncludedCall;
-var isExcludedMessage = function (excludeMessages, message) {
-    return excludeMessages.some(function (_excludeMessage) {
-        var _a;
-        var hasMatch = ((_a = message.match(_excludeMessage)) === null || _a === void 0 ? void 0 : _a.length) || 0;
-        return hasMatch > 0;
-    });
+exports.findIncludedCall = findIncludedCall;
+var isErrorMessageExcluded = function (errorMessage, excludeMessage, cypressLog) {
+    var _a;
+    var match = (((_a = errorMessage.match(excludeMessage)) === null || _a === void 0 ? void 0 : _a.length) || 0) > 0;
+    if (cypressLog) {
+        (0, exports.cypressLogger)('errorMessage_excludeMessage_match', {
+            errorMessage: errorMessage,
+            excludeMessage: excludeMessage,
+            match: match,
+        });
+    }
+    return match;
 };
-exports.isExcludedMessage = isExcludedMessage;
+exports.isErrorMessageExcluded = isErrorMessageExcluded;
 var callToString = function (calls) {
     return calls
         .reduce(function (previousValue, currentValue) {
@@ -132,4 +144,13 @@ var callToString = function (calls) {
         .trim();
 };
 exports.callToString = callToString;
+var cypressLogger = function (name, message) {
+    Cypress.log({
+        name: name,
+        displayName: name,
+        message: JSON.stringify(message),
+        consoleProps: function () { return message; },
+    });
+};
+exports.cypressLogger = cypressLogger;
 exports.consoleType = ConsoleType_1.ConsoleType;
