@@ -35,16 +35,18 @@ chai.should();
 chai.use(sinon_chai_1.default);
 function failOnConsoleError(config) {
     if (config === void 0) { config = {}; }
-    var spies;
+    var _spies;
     (0, exports.validateConfig)(config);
-    config = (0, exports.createConfig)(config);
+    var _config = (0, exports.createConfig)(config);
     Cypress.on('window:before:load', function (window) {
-        spies = (0, exports.createSpies)(config, window.console);
+        if (!_spies) {
+        }
+        _spies = (0, exports.createSpies)(_config, window.console);
     });
     Cypress.on('command:end', function () {
-        if (!spies)
+        if (!_spies)
             return;
-        var errorMessage = (0, exports.getIncludedCall)(spies, config);
+        var errorMessage = (0, exports.getIncludedCall)(_spies, _config);
         if (errorMessage) {
             chai.expect(errorMessage, 'console match found').to.be.undefined;
         }
@@ -68,13 +70,13 @@ var validateConfig = function (config) {
 };
 exports.validateConfig = validateConfig;
 var createConfig = function (config) {
-    var _a, _b;
+    var _a, _b, _c;
     return ({
-        excludeMessages: config.excludeMessages,
-        includeConsoleTypes: ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length)
+        excludeMessages: (_a = config.excludeMessages) !== null && _a !== void 0 ? _a : [],
+        includeConsoleTypes: ((_b = config.includeConsoleTypes) === null || _b === void 0 ? void 0 : _b.length)
             ? config.includeConsoleTypes
             : [ConsoleType_1.ConsoleType.ERROR],
-        cypressLog: (_b = config.cypressLog) !== null && _b !== void 0 ? _b : false,
+        cypressLog: (_c = config.cypressLog) !== null && _c !== void 0 ? _c : false,
     });
 };
 exports.createConfig = createConfig;

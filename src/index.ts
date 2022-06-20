@@ -7,20 +7,25 @@ import { ConsoleType, someConsoleType } from './types/ConsoleType';
 chai.should();
 chai.use(sinonChai);
 
-export default function failOnConsoleError(config: Config = {}): void {
-    let spies: Map<number, sinon.SinonSpy> | undefined;
+export default function failOnConsoleError(config: Partial<Config> = {}): void {
+    let _spies: Map<number, sinon.SinonSpy> | undefined;
 
     validateConfig(config);
-    config = createConfig(config);
+    const _config = createConfig(config);
 
     Cypress.on('window:before:load', (window) => {
-        spies = createSpies(config, window.console);
+        if (!_spies) {
+        }
+        _spies = createSpies(_config, window.console);
     });
 
     Cypress.on('command:end', () => {
-        if (!spies) return;
+        if (!_spies) return;
 
-        const errorMessage: string | undefined = getIncludedCall(spies, config);
+        const errorMessage: string | undefined = getIncludedCall(
+            _spies,
+            _config
+        );
 
         if (errorMessage) {
             chai.expect(errorMessage, 'console match found').to.be.undefined;
@@ -28,7 +33,7 @@ export default function failOnConsoleError(config: Config = {}): void {
     });
 }
 
-export const validateConfig = (config: Config): void => {
+export const validateConfig = (config: Partial<Config>): void => {
     if (config.excludeMessages) {
         chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach((_excludeMessage) => {
@@ -48,8 +53,8 @@ export const validateConfig = (config: Config): void => {
     }
 };
 
-export const createConfig = (config: Config): Config => ({
-    excludeMessages: config.excludeMessages,
+export const createConfig = (config: Partial<Config>): Config => ({
+    excludeMessages: config.excludeMessages ?? [],
     includeConsoleTypes: config.includeConsoleTypes?.length
         ? config.includeConsoleTypes
         : [ConsoleType.ERROR],
@@ -96,14 +101,13 @@ export const findIncludedCall = (
     }
 
     return errorMessages.find((_errorMessage: string) => {
-        const _isErrorMessageExcluded: boolean = (
-            config.excludeMessages as any
-        ).some((_excludeMessage: string) =>
-            isErrorMessageExcluded(
-                _errorMessage,
-                _excludeMessage,
-                config.cypressLog as any
-            )
+        const _isErrorMessageExcluded: boolean = config.excludeMessages.some(
+            (_excludeMessage: string) =>
+                isErrorMessageExcluded(
+                    _errorMessage,
+                    _excludeMessage,
+                    config.cypressLog
+                )
         );
         if (config.cypressLog === true) {
             cypressLogger('errorMessage_excluded', {
