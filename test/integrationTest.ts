@@ -7,8 +7,7 @@ const cypressRun = 'cypress run --browser chrome --headless';
 
 describe('Cypress', () => {
     it('WHEN console.error is called THEN cypress fails', async () => {
-        const spec =
-            ' --spec ./cypress/integration/shouldFailOnConsoleError.js';
+        const spec = ' --spec ./cypress/e2e/shouldFailOnConsoleError.cy.js';
         let testResult = '';
 
         try {
@@ -30,7 +29,7 @@ describe('Cypress', () => {
 
     it('WHEN console.error from new Error() is called THEN cypress fails', async () => {
         const spec =
-            ' --spec ./cypress/integration/shouldFailOnConsoleErrorFromError.js';
+            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromError.cy.js';
         let testResult = '';
 
         try {
@@ -51,7 +50,7 @@ describe('Cypress', () => {
     });
 
     it('WHEN console.info is called THEN cypress passes', async () => {
-        const spec = ' --spec ./cypress/integration/shouldPassOnConsoleInfo.js';
+        const spec = ' --spec ./cypress/e2e/shouldPassOnConsoleInfo.cy.js';
 
         const { stdout } = await exec(cypressRun + spec);
         const testResult = stdout;
@@ -63,7 +62,7 @@ describe('Cypress', () => {
 
     it('WHEN console.error with config excludeMessages matching console.error message THEN cypress passes', async () => {
         const spec =
-            ' --spec ./cypress/integration/shouldPassOnConsoleErrorExcludeMessages.js';
+            ' --spec ./cypress/e2e/shouldPassOnConsoleErrorExcludeMessages.cy.js';
 
         const { stdout } = await exec(cypressRun + spec);
         const testResult = stdout;
@@ -75,7 +74,7 @@ describe('Cypress', () => {
 
     it('WHEN run multiple tests files and tests cases THEN cypress run all files and test cases', async () => {
         const spec =
-            ' --spec "cypress/integration/shouldRunAllTestsAlthoughConsoleError.js,cypress/integration/shouldRunAllTestsAlthoughConsoleError2.js"';
+            ' --spec "cypress/e2e/shouldRunAllTestsAlthoughConsoleError.cy.js,cypress/e2e/shouldRunAllTestsAlthoughConsoleError2.cy.js"';
         let testResult = '';
 
         try {
