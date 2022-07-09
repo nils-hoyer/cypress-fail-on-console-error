@@ -46,7 +46,7 @@ describe('createConfig()', () => {
 describe('validateConfig()', () => {
     it('WHEN excludeMessages and includeConsoleTypes is valid no assertion error is throwed', () => {
         const config: Config = {
-            excludeMessages: ['foo', 'bar'],
+            excludeMessages: ['foo', /bar/],
             includeConsoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
         };
 

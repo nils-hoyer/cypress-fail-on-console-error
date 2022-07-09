@@ -1,7 +1,7 @@
 import { ConsoleType } from "./ConsoleType";
 
 export interface Config {
-    excludeMessages?: string[];
+    excludeMessages?: (string | RegExp)[];
     includeConsoleTypes?: ConsoleType[];
     cypressLog?: boolean;
 }
