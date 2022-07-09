@@ -30,6 +30,7 @@ exports.consoleType = exports.cypressLogger = exports.callToString = exports.isE
 var chai = __importStar(require("chai"));
 var sinon = __importStar(require("sinon"));
 var sinon_chai_1 = __importDefault(require("sinon-chai"));
+var type_detect_1 = __importDefault(require("type-detect"));
 var ConsoleType_1 = require("./types/ConsoleType");
 chai.should();
 chai.use(sinon_chai_1.default);
@@ -55,8 +56,8 @@ var validateConfig = function (config) {
     if (config.excludeMessages) {
         chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach(function (_excludeMessage) {
-            chai.expect(_excludeMessage).to.be.a('string');
-            chai.expect(_excludeMessage).to.have.length.above(0);
+            chai.expect((0, type_detect_1.default)(_excludeMessage)).to.be.oneOf(['string', 'RegExp']);
+            chai.expect(_excludeMessage.toString()).to.have.length.above(0);
         });
     }
     if (config.includeConsoleTypes) {

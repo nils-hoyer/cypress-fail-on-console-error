@@ -1,6 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import typeDetect from 'type-detect';
 import { Config } from './types/Config';
 import { ConsoleType, someConsoleType } from './types/ConsoleType';
 
@@ -32,8 +33,8 @@ export const validateConfig = (config: Config): void => {
     if (config.excludeMessages) {
         chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach((_excludeMessage) => {
-            chai.expect(_excludeMessage).to.be.a('string');
-            chai.expect(_excludeMessage).to.have.length.above(0);
+            chai.expect(typeDetect(_excludeMessage)).to.be.oneOf(['string', 'RegExp']);
+            chai.expect(_excludeMessage.toString()).to.have.length.above(0);
         });
     }
 
