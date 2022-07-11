@@ -33,7 +33,10 @@ export const validateConfig = (config: Config): void => {
     if (config.excludeMessages) {
         chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach((_excludeMessage) => {
-            chai.expect(typeDetect(_excludeMessage)).to.be.oneOf(['string', 'RegExp']);
+            chai.expect(typeDetect(_excludeMessage)).to.be.oneOf([
+                'string',
+                'RegExp',
+            ]);
             chai.expect(_excludeMessage.toString()).to.have.length.above(0);
         });
     }
