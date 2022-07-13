@@ -8,5 +8,5 @@ package*
 .gitignore
 .prettierignore
 .editorconfig
-.gitatttributes
+.gitattributes
 LICENSE
