@@ -15,7 +15,7 @@
     "test:ut:debug": "ts-mocha --inspect-brk test/unitTest.ts",
     "test:it": "ts-mocha test/integrationTest.ts --timeout 60000",
     "test:it:debug": "cypress open",
-    "verify": "npm run build && npm run prettier && npm run test",
+    "verify": "npm run build && npm run ci:prettier && npm run test",
     "ci:prettier": "prettier --check \"**/*\""
   },
   "repository": {
