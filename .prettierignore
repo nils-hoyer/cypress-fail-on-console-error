@@ -7,4 +7,6 @@ package*
 .DS_Store
 .gitignore
 .prettierignore
+.editorconfig
+.gitatttributes
 LICENSE
