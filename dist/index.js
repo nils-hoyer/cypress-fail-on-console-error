@@ -28,6 +28,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.consoleType = exports.cypressLogger = exports.callToString = exports.isErrorMessageExcluded = exports.findIncludedCall = exports.getIncludedCall = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
+var chai_1 = require("chai");
+var os_1 = require("os");
 var sinon = __importStar(require("sinon"));
 var sinon_chai_1 = __importDefault(require("sinon-chai"));
 var type_detect_1 = __importDefault(require("type-detect"));
@@ -47,7 +49,7 @@ function failOnConsoleError(config) {
             return;
         var errorMessage = (0, exports.getIncludedCall)(spies, config);
         if (errorMessage) {
-            chai.expect(errorMessage, 'console match found').to.be.undefined;
+            throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(errorMessage));
         }
     });
 }
@@ -56,7 +58,10 @@ var validateConfig = function (config) {
     if (config.excludeMessages) {
         chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach(function (_excludeMessage) {
-            chai.expect((0, type_detect_1.default)(_excludeMessage)).to.be.oneOf(['string', 'RegExp']);
+            chai.expect((0, type_detect_1.default)(_excludeMessage)).to.be.oneOf([
+                'string',
+                'RegExp',
+            ]);
             chai.expect(_excludeMessage.toString()).to.have.length.above(0);
         });
     }
