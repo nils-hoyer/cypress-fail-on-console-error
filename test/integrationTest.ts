@@ -17,12 +17,9 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
-            const expectedAssertionMessage =
-                'AssertionError: console match found';
             const expectedErrorMessage =
                 'secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null';
             expect(testResult).contains(expectedTestResult);
-            expect(testResult).contains(expectedAssertionMessage);
             expect(testResult).contains(expectedErrorMessage);
         }
     });
@@ -39,12 +36,9 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResult = '1 of 1 failed';
-            const expectedAssertionMessage =
-                'AssertionError: console match found';
             const expectedErrorMessage =
-                "TypeError: Cannot read properties of undefined (reading \\'map\\')";
+                "TypeError: Cannot read properties of undefined (reading 'map')";
             expect(testResult).contains(expectedTestResult);
-            expect(testResult).contains(expectedAssertionMessage);
             expect(testResult).contains(expectedErrorMessage);
         }
     });
@@ -85,10 +79,10 @@ describe('Cypress', () => {
             // console.log(testResult);
             const expectedTestResult = /2 of 2 failed.*6.*3.*3/;
             const expectedAssertionMessage =
-                /AssertionError: console match found/g;
+                /AssertionError: cypress-fail-on-console-error:/g;
             expect(testResult).to.match(expectedTestResult);
             expect(
-                testResult.match(expectedAssertionMessage).length
+                testResult.match(expectedAssertionMessage)?.length
             ).to.be.equal(3);
         }
     });

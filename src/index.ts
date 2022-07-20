@@ -1,4 +1,6 @@
 import * as chai from 'chai';
+import { AssertionError } from 'chai';
+import { EOL } from 'os';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import typeDetect from 'type-detect';
@@ -24,7 +26,9 @@ export default function failOnConsoleError(config: Config = {}): void {
         const errorMessage: string | undefined = getIncludedCall(spies, config);
 
         if (errorMessage) {
-            chai.expect(errorMessage, 'console match found').to.be.undefined;
+            throw new AssertionError(
+                `cypress-fail-on-console-error: ${EOL} ${errorMessage}`
+            );
         }
     });
 }
