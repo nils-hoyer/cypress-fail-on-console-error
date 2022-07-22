@@ -62,7 +62,7 @@ failOnConsoleError({
 ```
 
 ### Debugging 
-When Cypress log is activated, debug information about the matching and exclude process is available from the cypress runner. As a plus, the generated error message string can be verified.
+When Cypress log is activated, debug information about the matching and exclude process are available from the cypress runner. As a plus, the generated error message string can be verified.
 ![image info](./docs/cypressLogTrue.png)
 
 ### Contributing
