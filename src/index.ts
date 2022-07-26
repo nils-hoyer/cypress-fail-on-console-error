@@ -25,6 +25,8 @@ export default function failOnConsoleError(config: Config = {}): void {
 
         const errorMessage: string | undefined = getIncludedCall(spies, config);
 
+        spies = resetSpies(spies);
+
         if (errorMessage) {
             throw new AssertionError(
                 `cypress-fail-on-console-error: ${EOL} ${errorMessage}`
@@ -73,6 +75,13 @@ export const createSpies = (
         const functionName: any = ConsoleType[_consoleType].toLowerCase();
         spies.set(_consoleType, sinon.spy(console, functionName));
     });
+    return spies;
+};
+
+export const resetSpies = (
+    spies: Map<ConsoleType, sinon.SinonSpy>
+): Map<ConsoleType, sinon.SinonSpy> => {
+    spies.forEach((_spy) => _spy.resetHistory());
     return spies;
 };
 

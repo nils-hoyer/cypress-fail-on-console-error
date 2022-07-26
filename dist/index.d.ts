@@ -5,6 +5,7 @@ export default function failOnConsoleError(config?: Config): void;
 export declare const validateConfig: (config: Config) => void;
 export declare const createConfig: (config: Config) => Config;
 export declare const createSpies: (config: Config, console: Console) => Map<ConsoleType, sinon.SinonSpy>;
+export declare const resetSpies: (spies: Map<ConsoleType, sinon.SinonSpy>) => Map<ConsoleType, sinon.SinonSpy>;
 export declare const getIncludedCall: (spies: Map<ConsoleType, sinon.SinonSpy>, config: Config) => string | undefined;
 export declare const findIncludedCall: (spy: sinon.SinonSpy, config: Config) => string | undefined;
 export declare const isErrorMessageExcluded: (errorMessage: string, excludeMessage: string, cypressLog: boolean) => boolean;
