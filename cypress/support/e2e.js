@@ -3,7 +3,7 @@ import './commands';
 
 const config = {
     excludeMessages: [
-        'firstErrorExcluded.*',
+        /firstErrorExcluded.*/,
         'secondErrorExcluded',
         'thirdErrorExcluded.*consoleError.*',
     ],

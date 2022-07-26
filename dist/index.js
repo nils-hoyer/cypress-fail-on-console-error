@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.consoleType = exports.cypressLogger = exports.callToString = exports.isErrorMessageExcluded = exports.findIncludedCall = exports.getIncludedCall = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.consoleType = exports.cypressLogger = exports.callToString = exports.isErrorMessageExcluded = exports.findIncludedCall = exports.getIncludedCall = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var chai_1 = require("chai");
 var os_1 = require("os");
@@ -48,6 +48,7 @@ function failOnConsoleError(config) {
         if (!spies)
             return;
         var errorMessage = (0, exports.getIncludedCall)(spies, config);
+        spies = (0, exports.resetSpies)(spies);
         if (errorMessage) {
             throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(errorMessage));
         }
@@ -94,6 +95,11 @@ var createSpies = function (config, console) {
     return spies;
 };
 exports.createSpies = createSpies;
+var resetSpies = function (spies) {
+    spies.forEach(function (_spy) { return _spy.resetHistory(); });
+    return spies;
+};
+exports.resetSpies = resetSpies;
 var getIncludedCall = function (spies, config) {
     var errorMessage;
     Array.from(spies.values()).forEach(function (spy) {

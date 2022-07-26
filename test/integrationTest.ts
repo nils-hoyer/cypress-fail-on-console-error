@@ -86,4 +86,23 @@ describe('Cypress', () => {
             ).to.be.equal(3);
         }
     });
+
+    it('WHEN run multiple tests THEN spies will be resetted between tests', async () => {
+        const spec = ' --spec ./cypress/e2e/shouldResetSpiesBetweenTests.cy.js';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
+            const expectedTestResultFailing = /Failing:\s*1/;
+            const expectedTestResultPassing = /Passing:\s*1/;
+            const expectedTestResultTests = /Tests:\s*2/;
+            expect(testResult).to.match(expectedTestResultFailing);
+            expect(testResult).to.match(expectedTestResultPassing);
+            expect(testResult).to.match(expectedTestResultTests);
+        }
+    });
 });

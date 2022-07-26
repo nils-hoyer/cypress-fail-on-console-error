@@ -9,6 +9,7 @@ import {
     findIncludedCall,
     getIncludedCall,
     isErrorMessageExcluded,
+    resetSpies,
     validateConfig,
 } from '../dist/index';
 import { Config } from '../dist/types/Config';
@@ -103,6 +104,24 @@ describe('createSpies()', () => {
         chai.expect(spiesIterator.next().value).to.equals(
             config.includeConsoleTypes[2]
         );
+    });
+});
+
+describe('resetSpies()', () => {
+    it('when resetHistory is called then spies should be resetted', () => {
+        const objectToSpy: any = { error: () => true, warn: () => true };
+        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
+        spies.set(ConsoleType.ERROR, sinon.spy(objectToSpy, 'error'));
+        spies.set(ConsoleType.WARN, sinon.spy(objectToSpy, 'warn'));
+        objectToSpy.error();
+        chai.expect(spies.get(ConsoleType.ERROR)).be.called;
+        chai.expect(spies.get(ConsoleType.WARN)).not.be.called;
+
+        const expectedSpies: Map<ConsoleType, sinon.SinonSpy> =
+            resetSpies(spies);
+
+        chai.expect(expectedSpies.get(ConsoleType.ERROR)).not.be.called;
+        chai.expect(expectedSpies.get(ConsoleType.WARN)).not.be.called;
     });
 });
 
