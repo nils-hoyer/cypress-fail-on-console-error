@@ -97,9 +97,10 @@ describe('Cypress', () => {
             testResult = error.stdout;
         } finally {
             // console.log(testResult);
-            const expectedTestResultFailing = /Failing:.*1/;
-            const expectedTestResultPassing = /Passing:.*1/;
-            const expectedTestResultTests = /Tests:.*2/;
+            //TODO: on the pipeline it should be checked with 31m -> /Failing:.*31m1/
+            const expectedTestResultFailing = /Failing:\s*1/;
+            const expectedTestResultPassing = /Passing:\s*1/;
+            const expectedTestResultTests = /Tests:\s*2/;
             expect(testResult).to.match(expectedTestResultFailing);
             expect(testResult).to.match(expectedTestResultPassing);
             expect(testResult).to.match(expectedTestResultTests);
