@@ -97,6 +97,7 @@ describe('Cypress', () => {
             testResult = error.stdout;
         } finally {
             // console.log(testResult);
+            //TODO: on the pipeline it should be checked with 31m -> /Failing:.*31m1/
             const expectedTestResultFailing = /Failing:.*1/;
             const expectedTestResultPassing = /Passing:.*1/;
             const expectedTestResultTests = /Tests:.*2/;
