@@ -29,9 +29,9 @@ failOnConsoleError();
 <br/>
 
 ```js
-import failOnConsoleError, { consoleType } from 'cypress-fail-on-console-error';
+import failOnConsoleError, { consoleType, Config } from 'cypress-fail-on-console-error';
 
-const config = {
+const config: Config = {
     excludeMessages: ['foo', /^some bar-regex.*/],
     includeConsoleTypes: [
         consoleType.ERROR,
