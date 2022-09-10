@@ -169,4 +169,5 @@ export const cypressLogger = (name: string, message: any) => {
     });
 };
 
-export const consoleType = ConsoleType;
+export { Config } from './types/Config';
+export { ConsoleType as consoleType } from './types/ConsoleType';
