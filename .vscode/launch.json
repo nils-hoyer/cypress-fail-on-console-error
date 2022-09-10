@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "args": [
+                "${workspaceFolder}/test/unitTest.ts",
+                "--timeout",
+                "60000",
+                "--colors"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "name": "mocha unit tests",
+            "program": "${workspaceFolder}/node_modules/ts-mocha/bin/ts-mocha",
+            "request": "launch",
+            "skipFiles": ["<node_internals>/**"],
+            "type": "node"
+        }
+    ]
+}
