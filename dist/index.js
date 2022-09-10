@@ -165,4 +165,5 @@ var cypressLogger = function (name, message) {
     });
 };
 exports.cypressLogger = cypressLogger;
-exports.consoleType = ConsoleType_1.ConsoleType;
+var ConsoleType_2 = require("./types/ConsoleType");
+Object.defineProperty(exports, "consoleType", { enumerable: true, get: function () { return ConsoleType_2.ConsoleType; } });
