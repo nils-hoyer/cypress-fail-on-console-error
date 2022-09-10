@@ -10,11 +10,13 @@ import { ConsoleType, someConsoleType } from './types/ConsoleType';
 chai.should();
 chai.use(sinonChai);
 
-export default function failOnConsoleError(config: Config = {}): void {
+export default function failOnConsoleError(
+    _config: Partial<Config> = {}
+): void {
     let spies: Map<number, sinon.SinonSpy> | undefined;
 
-    validateConfig(config);
-    config = createConfig(config);
+    validateConfig(_config);
+    const config = createConfig(_config);
 
     Cypress.on('window:before:load', (window) => {
         spies = createSpies(config, window.console);
@@ -35,7 +37,7 @@ export default function failOnConsoleError(config: Config = {}): void {
     });
 }
 
-export const validateConfig = (config: Config): void => {
+export const validateConfig = (config: Partial<Config>): void => {
     if (config.excludeMessages) {
         chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach((_excludeMessage) => {
@@ -58,7 +60,7 @@ export const validateConfig = (config: Config): void => {
     }
 };
 
-export const createConfig = (config: Config): Config => ({
+export const createConfig = (config: Partial<Config>): Config => ({
     excludeMessages: config.excludeMessages,
     includeConsoleTypes: config.includeConsoleTypes?.length
         ? config.includeConsoleTypes
