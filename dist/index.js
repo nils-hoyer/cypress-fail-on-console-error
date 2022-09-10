@@ -36,11 +36,11 @@ var type_detect_1 = __importDefault(require("type-detect"));
 var ConsoleType_1 = require("./types/ConsoleType");
 chai.should();
 chai.use(sinon_chai_1.default);
-function failOnConsoleError(config) {
-    if (config === void 0) { config = {}; }
+function failOnConsoleError(_config) {
+    if (_config === void 0) { _config = {}; }
     var spies;
-    (0, exports.validateConfig)(config);
-    config = (0, exports.createConfig)(config);
+    (0, exports.validateConfig)(_config);
+    var config = (0, exports.createConfig)(_config);
     Cypress.on('window:before:load', function (window) {
         spies = (0, exports.createSpies)(config, window.console);
     });
