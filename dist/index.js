@@ -75,13 +75,13 @@ var validateConfig = function (config) {
 };
 exports.validateConfig = validateConfig;
 var createConfig = function (config) {
-    var _a, _b;
+    var _a, _b, _c;
     return ({
-        excludeMessages: config.excludeMessages,
-        includeConsoleTypes: ((_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.length)
+        excludeMessages: (_a = config.excludeMessages) !== null && _a !== void 0 ? _a : [],
+        includeConsoleTypes: ((_b = config.includeConsoleTypes) === null || _b === void 0 ? void 0 : _b.length)
             ? config.includeConsoleTypes
             : [ConsoleType_1.ConsoleType.ERROR],
-        cypressLog: (_b = config.cypressLog) !== null && _b !== void 0 ? _b : false,
+        cypressLog: (_c = config.cypressLog) !== null && _c !== void 0 ? _c : false,
     });
 };
 exports.createConfig = createConfig;

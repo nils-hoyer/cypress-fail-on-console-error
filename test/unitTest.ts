@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import { AssertionError } from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import {
+import failOnConsoleError, {
     callToString,
     createConfig,
     createSpies,
@@ -21,32 +21,60 @@ chai.use(sinonChai);
 import * as indexMock from '../dist/index';
 sinon.stub(indexMock, 'cypressLogger');
 
+describe('failOnConsoleError()', () => {
+    it('WHEN failOnConsoleError is created with Config THEN expect no error', () => {
+        global['Cypress'] = { on: (f, s) => true };
+        const config: Config = {
+            excludeMessages: ['foo'],
+            includeConsoleTypes: [ConsoleType.WARN],
+            cypressLog: true,
+        };
+        failOnConsoleError();
+    });
+    it('WHEN failOnConsoleError is created with no Config THEN expect no error', () => {
+        global['Cypress'] = { on: (f, s) => true };
+
+        failOnConsoleError();
+    });
+});
+
 describe('createConfig()', () => {
-    it('WHEN includeConsoleType is not set THEN use default ConsoleType.ERROR', () => {
-        const config: Partial<Config> = {};
+    it('WHEN config properties are not set THEN use default', () => {
+        const config: Config = {};
 
         const given = createConfig(config);
 
-        chai.expect(given.includeConsoleTypes.length).to.equal(1);
-        chai.expect(given.includeConsoleTypes[0]).to.equal(ConsoleType.ERROR);
+        chai.expect(given.includeConsoleTypes).to.equal([ConsoleType.ERROR]);
+        chai.expect(given.excludeMessages).to.equal([]);
+        chai.expect(given.cypressLog).to.equal(false);
     });
 
-    it('WHEN includeConsoleType is set THEN overwrite default ConsoleType.ERROR', () => {
-        const config: Partial<Config> = {
-            includeConsoleTypes: [ConsoleType.WARN, ConsoleType.INFO],
+    it('WHEN config properties are set THEN overwrite default', () => {
+        const config: Config = {
+            includeConsoleTypes: [
+                ConsoleType.WARN,
+                ConsoleType.INFO,
+                ConsoleType.ERROR,
+            ],
+            excludeMessages: ['foo', 'bar'],
+            cypressLog: true,
         };
 
         const given = createConfig(config);
 
-        chai.expect(given.includeConsoleTypes.length).to.equal(2);
-        chai.expect(given.includeConsoleTypes[0]).to.equal(ConsoleType.WARN);
-        chai.expect(given.includeConsoleTypes[1]).to.equal(ConsoleType.INFO);
+        chai.expect(given.includeConsoleTypes).to.equal([
+            ConsoleType.WARN,
+            ConsoleType.INFO,
+            ConsoleType.ERROR,
+        ]);
+        chai.expect(given.excludeMessages).to.equal(['foo', 'bar']);
+        chai.expect(given.cypressLog).to.equal(true);
     });
 });
 
 describe('validateConfig()', () => {
     it('WHEN excludeMessages and includeConsoleTypes is valid no assertion error is throwed', () => {
-        const config: Partial<Config> = {
+        const config: Config = {
             excludeMessages: ['foo', /bar/],
             includeConsoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
         };
@@ -57,7 +85,7 @@ describe('validateConfig()', () => {
     const excludeMessages = [[], [''], [3]];
     excludeMessages.forEach((_excludeMessage: any) => {
         it('WHEN excludeMessages is not valid THEN throw AssertionError', () => {
-            const config: Partial<Config> = {
+            const config: Config = {
                 excludeMessages: _excludeMessage,
             };
 
@@ -68,7 +96,7 @@ describe('validateConfig()', () => {
     const includeConsoleTypes = [[], [''], [3]];
     includeConsoleTypes.forEach((_includeConsoleType: any) => {
         it('WHEN includeConsoleTypes is not valid THEN throw AssertionError', () => {
-            const config: Partial<Config> = {
+            const config: Config = {
                 includeConsoleTypes: _includeConsoleType,
             };
 
@@ -79,7 +107,7 @@ describe('validateConfig()', () => {
 
 describe('createSpies()', () => {
     it('WHEN includeConsoleTypes THEN create createSpies map', () => {
-        const config: Config = createConfig({
+        const config: Required<Config> = createConfig({
             includeConsoleTypes: [
                 ConsoleType.INFO,
                 ConsoleType.WARN,

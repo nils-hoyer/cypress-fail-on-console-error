@@ -10,9 +10,7 @@ import { ConsoleType, someConsoleType } from './types/ConsoleType';
 chai.should();
 chai.use(sinonChai);
 
-export default function failOnConsoleError(
-    _config: Partial<Config> = {}
-): void {
+export default function failOnConsoleError(_config: Config = {}): void {
     let spies: Map<number, sinon.SinonSpy> | undefined;
 
     validateConfig(_config);
@@ -37,7 +35,7 @@ export default function failOnConsoleError(
     });
 }
 
-export const validateConfig = (config: Partial<Config>): void => {
+export const validateConfig = (config: Config): void => {
     if (config.excludeMessages) {
         chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach((_excludeMessage) => {
@@ -60,8 +58,8 @@ export const validateConfig = (config: Partial<Config>): void => {
     }
 };
 
-export const createConfig = (config: Partial<Config>): Config => ({
-    excludeMessages: config.excludeMessages,
+export const createConfig = (config: Config): Required<Config> => ({
+    excludeMessages: config.excludeMessages ?? [],
     includeConsoleTypes: config.includeConsoleTypes?.length
         ? config.includeConsoleTypes
         : [ConsoleType.ERROR],
@@ -69,7 +67,7 @@ export const createConfig = (config: Partial<Config>): Config => ({
 });
 
 export const createSpies = (
-    config: Config,
+    config: Required<Config>,
     console: Console
 ): Map<ConsoleType, sinon.SinonSpy> => {
     let spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
@@ -89,7 +87,7 @@ export const resetSpies = (
 
 export const getIncludedCall = (
     spies: Map<ConsoleType, sinon.SinonSpy>,
-    config: Config
+    config: Required<Config>
 ): string | undefined => {
     let errorMessage: string | undefined;
     Array.from(spies.values()).forEach((spy) => {
@@ -106,7 +104,7 @@ export const getIncludedCall = (
 
 export const findIncludedCall = (
     spy: sinon.SinonSpy,
-    config: Config
+    config: Required<Config>
 ): string | undefined => {
     const errorMessages = spy.args.map((call: any[]) => callToString(call));
 
