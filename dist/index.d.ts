@@ -11,4 +11,5 @@ export declare const findIncludedCall: (spy: sinon.SinonSpy, config: Required<Co
 export declare const isErrorMessageExcluded: (errorMessage: string, excludeMessage: string, cypressLog: boolean) => boolean;
 export declare const callToString: (calls: any[]) => string;
 export declare const cypressLogger: (name: string, message: any) => void;
-export declare const consoleType: typeof ConsoleType;
+export { Config } from './types/Config';
+export { ConsoleType as consoleType } from './types/ConsoleType';
