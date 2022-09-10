@@ -44,8 +44,10 @@ describe('createConfig()', () => {
 
         const given = createConfig(config);
 
-        chai.expect(given.includeConsoleTypes).to.equal([ConsoleType.ERROR]);
-        chai.expect(given.excludeMessages).to.equal([]);
+        chai.expect(given.includeConsoleTypes).to.deep.equal([
+            ConsoleType.ERROR,
+        ]);
+        chai.expect(given.excludeMessages).to.deep.equal([]);
         chai.expect(given.cypressLog).to.equal(false);
     });
 
@@ -62,13 +64,13 @@ describe('createConfig()', () => {
 
         const given = createConfig(config);
 
-        chai.expect(given.includeConsoleTypes).to.equal([
+        chai.expect(given.includeConsoleTypes).to.deep.equal([
             ConsoleType.WARN,
             ConsoleType.INFO,
             ConsoleType.ERROR,
         ]);
-        chai.expect(given.excludeMessages).to.equal(['foo', 'bar']);
-        chai.expect(given.cypressLog).to.equal(true);
+        chai.expect(given.excludeMessages).to.deep.equal(['foo', 'bar']);
+        chai.expect(given.cypressLog).to.deep.equal(true);
     });
 });
 
