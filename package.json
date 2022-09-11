@@ -10,12 +10,11 @@
   "scripts": {
     "build": "npx rimraf dist/ && tsc",
     "prettier": "prettier --write \"**/*\"",
+    "lint": "tsc --noEmit && tsc -p ./test/tsconfig.json && tsc -p ./cypress/tsconfig.json",
     "test": "npm run test:ut && npm run test:it",
     "test:ut": "ts-mocha test/unitTest.ts",
-    "test:ut:debug": "ts-mocha --inspect-brk test/unitTest.ts",
     "test:it": "ts-mocha test/integrationTest.ts --timeout 60000",
-    "test:it:debug": "cypress open",
-    "verify": "npm run build && npm run ci:prettier && npm run test",
+    "verify": "npm run build && npm run lint && npm run ci:prettier && npm run test",
     "ci:prettier": "prettier --check \"**/*\""
   },
   "repository": {

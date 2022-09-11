@@ -20,10 +20,11 @@ chai.use(sinonChai);
 
 import * as indexMock from '../dist/index';
 sinon.stub(indexMock, 'cypressLogger');
+//@ts-ignore
+global['Cypress'] = { on: (f, s) => true };
 
 describe('failOnConsoleError()', () => {
     it('WHEN failOnConsoleError is created with Config THEN expect no error', () => {
-        global['Cypress'] = { on: (f, s) => true };
         const config: Config = {
             excludeMessages: ['foo'],
             includeConsoleTypes: [ConsoleType.WARN],
@@ -32,8 +33,6 @@ describe('failOnConsoleError()', () => {
         failOnConsoleError();
     });
     it('WHEN failOnConsoleError is created with no Config THEN expect no error', () => {
-        global['Cypress'] = { on: (f, s) => true };
-
         failOnConsoleError();
     });
 });
@@ -171,7 +170,7 @@ describe('getIncludedCall()', () => {
     });
 
     it('WHEN call is excluded THEN return undefined', () => {
-        const config: Config = createConfig({ excludeMessages: ['foo'] });
+        const config = createConfig({ excludeMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, {
             called: true,
@@ -184,7 +183,7 @@ describe('getIncludedCall()', () => {
     });
 
     it('WHEN call is included THEN return call', () => {
-        const config: Config = createConfig({ excludeMessages: ['foo'] });
+        const config = createConfig({ excludeMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, {
             called: true,
@@ -212,7 +211,7 @@ describe('findIncludedCall()', () => {
     });
 
     it('WHEN some call for errorMessage is excluded by config.excludeMessages THEN return first call some is not excluded', () => {
-        const config: Config = createConfig({ excludeMessages: ['foo1'] });
+        const config = createConfig({ excludeMessages: ['foo1'] });
         const spy: sinon.SinonSpy = {
             args: [
                 ['foo', 'foo1'],
@@ -226,7 +225,7 @@ describe('findIncludedCall()', () => {
     });
 
     it('WHEN some call for all errorMessages are excluded by config.excludeMessages THEN return undefined', () => {
-        const config: Config = createConfig({
+        const config = createConfig({
             excludeMessages: ['foo', 'foo3'],
         });
         const spy: sinon.SinonSpy = {

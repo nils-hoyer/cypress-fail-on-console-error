@@ -13,7 +13,7 @@ describe('Cypress', () => {
 
         try {
             await exec(cypressRun + spec);
-        } catch (error) {
+        } catch (error: any) {
             testResult = error.stdout;
         } finally {
             // console.log(testResult);
@@ -32,7 +32,7 @@ describe('Cypress', () => {
 
         try {
             await exec(cypressRun + spec);
-        } catch (error) {
+        } catch (error: any) {
             testResult = error.stdout;
         } finally {
             // console.log(testResult);
@@ -74,7 +74,7 @@ describe('Cypress', () => {
 
         try {
             await exec(cypressRun + spec);
-        } catch (error) {
+        } catch (error: any) {
             testResult = error.stdout;
         } finally {
             // console.log(testResult);
@@ -94,7 +94,7 @@ describe('Cypress', () => {
 
         try {
             await exec(cypressRun + spec);
-        } catch (error) {
+        } catch (error: any) {
             testResult = error.stdout;
         } finally {
             // console.log(testResult);
