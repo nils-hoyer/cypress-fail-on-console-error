@@ -14,6 +14,20 @@
             "request": "launch",
             "skipFiles": ["<node_internals>/**"],
             "type": "node"
+        },
+        {
+            "args": [
+                "${workspaceFolder}/test/integrationTest.ts",
+                "--timeout",
+                "60000",
+                "--colors"
+            ],
+            "internalConsoleOptions": "openOnSessionStart",
+            "name": "mocha integration tests",
+            "program": "${workspaceFolder}/node_modules/ts-mocha/bin/ts-mocha",
+            "request": "launch",
+            "skipFiles": ["<node_internals>/**"],
+            "type": "node"
         }
     ]
 }

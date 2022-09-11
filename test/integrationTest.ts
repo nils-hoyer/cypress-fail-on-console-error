@@ -3,11 +3,12 @@ import * as process from 'child_process';
 import * as util from 'util';
 
 const exec = util.promisify(process.exec);
-const cypressRun = 'cypress run --browser chrome --headless';
+const cypressRun =
+    'cypress run --browser chrome --headless --config-file ./cypress/cypress.config.ts';
 
 describe('Cypress', () => {
     it('WHEN console.error is called THEN cypress fails', async () => {
-        const spec = ' --spec ./cypress/e2e/shouldFailOnConsoleError.cy.js';
+        const spec = ' --spec ./cypress/e2e/shouldFailOnConsoleError.cy.ts';
         let testResult = '';
 
         try {
@@ -26,7 +27,7 @@ describe('Cypress', () => {
 
     it('WHEN console.error from new Error() is called THEN cypress fails', async () => {
         const spec =
-            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromError.cy.js';
+            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromError.cy.ts';
         let testResult = '';
 
         try {
@@ -44,7 +45,7 @@ describe('Cypress', () => {
     });
 
     it('WHEN console.info is called THEN cypress passes', async () => {
-        const spec = ' --spec ./cypress/e2e/shouldPassOnConsoleInfo.cy.js';
+        const spec = ' --spec ./cypress/e2e/shouldPassOnConsoleInfo.cy.ts';
 
         const { stdout } = await exec(cypressRun + spec);
         const testResult = stdout;
@@ -56,7 +57,7 @@ describe('Cypress', () => {
 
     it('WHEN console.error with config excludeMessages matching console.error message THEN cypress passes', async () => {
         const spec =
-            ' --spec ./cypress/e2e/shouldPassOnConsoleErrorExcludeMessages.cy.js';
+            ' --spec ./cypress/e2e/shouldPassOnConsoleErrorExcludeMessages.cy.ts';
 
         const { stdout } = await exec(cypressRun + spec);
         const testResult = stdout;
@@ -68,7 +69,7 @@ describe('Cypress', () => {
 
     it('WHEN run multiple tests files and tests cases THEN cypress run all files and test cases', async () => {
         const spec =
-            ' --spec "cypress/e2e/shouldRunAllTestsAlthoughConsoleError.cy.js,cypress/e2e/shouldRunAllTestsAlthoughConsoleError2.cy.js"';
+            ' --spec "cypress/e2e/shouldRunAllTestsAlthoughConsoleError.cy.ts,cypress/e2e/shouldRunAllTestsAlthoughConsoleError2.cy.ts"';
         let testResult = '';
 
         try {
@@ -88,7 +89,7 @@ describe('Cypress', () => {
     });
 
     it('WHEN run multiple tests THEN spies will be resetted between tests', async () => {
-        const spec = ' --spec ./cypress/e2e/shouldResetSpiesBetweenTests.cy.js';
+        const spec = ' --spec ./cypress/e2e/shouldResetSpiesBetweenTests.cy.ts';
         let testResult = '';
 
         try {
