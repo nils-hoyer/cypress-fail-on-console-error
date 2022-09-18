@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -38,9 +49,16 @@ chai.should();
 chai.use(sinon_chai_1.default);
 function failOnConsoleError(_config) {
     if (_config === void 0) { _config = {}; }
+    var originConfig;
+    var config;
     var spies;
-    (0, exports.validateConfig)(_config);
-    var config = (0, exports.createConfig)(_config);
+    var getConfig = function () { return config; };
+    var setConfig = function (_config) {
+        (0, exports.validateConfig)(_config);
+        config = (0, exports.createConfig)(_config);
+        originConfig = originConfig !== null && originConfig !== void 0 ? originConfig : __assign({}, config);
+    };
+    setConfig(_config);
     Cypress.on('window:before:load', function (window) {
         spies = (0, exports.createSpies)(config, window.console);
     });
@@ -53,11 +71,17 @@ function failOnConsoleError(_config) {
             throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(errorMessage));
         }
     });
+    Cypress.on('test:after:run', function () {
+        setConfig(originConfig);
+    });
+    return {
+        getConfig: getConfig,
+        setConfig: setConfig,
+    };
 }
 exports.default = failOnConsoleError;
 var validateConfig = function (config) {
     if (config.excludeMessages) {
-        chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach(function (_excludeMessage) {
             chai.expect((0, type_detect_1.default)(_excludeMessage)).to.be.oneOf([
                 'string',

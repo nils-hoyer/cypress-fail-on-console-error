@@ -1,7 +1,10 @@
 import * as sinon from 'sinon';
 import { Config } from './types/Config';
 import { ConsoleType } from './types/ConsoleType';
-export default function failOnConsoleError(_config?: Config): void;
+export default function failOnConsoleError(_config?: Config): {
+    getConfig: () => Required<Config> | undefined;
+    setConfig: (_config: Config) => void;
+};
 export declare const validateConfig: (config: Config) => void;
 export declare const createConfig: (config: Config) => Required<Config>;
 export declare const createSpies: (config: Required<Config>, console: Console) => Map<ConsoleType, sinon.SinonSpy>;
