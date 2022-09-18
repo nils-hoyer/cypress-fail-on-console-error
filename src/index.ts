@@ -10,20 +10,32 @@ import { ConsoleType, someConsoleType } from './types/ConsoleType';
 chai.should();
 chai.use(sinonChai);
 
-export default function failOnConsoleError(_config: Config = {}): void {
+export default function failOnConsoleError(_config: Config = {}) {
+    let originConfig: Required<Config> | undefined;
+    let config: Required<Config> | undefined;
     let spies: Map<number, sinon.SinonSpy> | undefined;
 
-    validateConfig(_config);
-    const config = createConfig(_config);
+    const getConfig = () => config;
+
+    const setConfig = (_config: Config): void => {
+        validateConfig(_config);
+        config = createConfig(_config);
+        originConfig = originConfig ?? { ...config };
+    };
+
+    setConfig(_config);
 
     Cypress.on('window:before:load', (window) => {
-        spies = createSpies(config, window.console);
+        spies = createSpies(config as Required<Config>, window.console);
     });
 
     Cypress.on('command:end', () => {
         if (!spies) return;
 
-        const errorMessage: string | undefined = getIncludedCall(spies, config);
+        const errorMessage: string | undefined = getIncludedCall(
+            spies,
+            config as Required<Config>
+        );
 
         spies = resetSpies(spies);
 
@@ -33,11 +45,19 @@ export default function failOnConsoleError(_config: Config = {}): void {
             );
         }
     });
+
+    Cypress.on('test:after:run', () => {
+        setConfig(originConfig as Config);
+    });
+
+    return {
+        getConfig,
+        setConfig,
+    };
 }
 
 export const validateConfig = (config: Config): void => {
     if (config.excludeMessages) {
-        chai.expect(config.excludeMessages).not.to.be.empty;
         config.excludeMessages.forEach((_excludeMessage) => {
             chai.expect(typeDetect(_excludeMessage)).to.be.oneOf([
                 'string',

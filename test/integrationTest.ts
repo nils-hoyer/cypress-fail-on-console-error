@@ -67,6 +67,29 @@ describe('Cypress', () => {
         expect(testResult).contains(expectedTestResult);
     });
 
+    it('WHEN run tests with setConfig THEN config will applied to test', async () => {
+        const spec =
+            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error: any) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
+            const expectedTestResultFailing = /Failing:.*2/;
+            const expectedTestResultPassing = /Passing:.*1/;
+            const expectedTestResultTests = /Tests:.*3/;
+            expect(testResult).to.match(expectedTestResultFailing);
+            expect(testResult).to.match(expectedTestResultPassing);
+            expect(testResult).to.match(expectedTestResultTests);
+            expect(testResult.match(/firstErrorExcluded/g)?.length).to.be.equal(
+                2
+            );
+        }
+    });
+
     it('WHEN run multiple tests files and tests cases THEN cypress run all files and test cases', async () => {
         const spec =
             ' --spec "cypress/e2e/shouldRunAllTestsAlthoughConsoleError.cy.ts,cypress/e2e/shouldRunAllTestsAlthoughConsoleError2.cy.ts"';
@@ -99,6 +122,26 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             //TODO: on the pipeline it should be checked with 31m -> /Failing:.*31m1/
+            const expectedTestResultFailing = /Failing:.*1/;
+            const expectedTestResultPassing = /Passing:.*1/;
+            const expectedTestResultTests = /Tests:.*2/;
+            expect(testResult).to.match(expectedTestResultFailing);
+            expect(testResult).to.match(expectedTestResultPassing);
+            expect(testResult).to.match(expectedTestResultTests);
+        }
+    });
+
+    it('WHEN run multiple tests THEN config will be resetted between tests', async () => {
+        const spec =
+            ' --spec ./cypress/e2e/shouldResetConfigBetweenTests.cy.ts';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error: any) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
             const expectedTestResultFailing = /Failing:.*1/;
             const expectedTestResultPassing = /Passing:.*1/;
             const expectedTestResultTests = /Tests:.*2/;

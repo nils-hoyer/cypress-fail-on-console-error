@@ -30,10 +30,30 @@ describe('failOnConsoleError()', () => {
             includeConsoleTypes: [ConsoleType.WARN],
             cypressLog: true,
         };
-        failOnConsoleError();
+        failOnConsoleError(config);
     });
     it('WHEN failOnConsoleError is created with no Config THEN expect no error', () => {
         failOnConsoleError();
+    });
+});
+
+describe('setConfig()', () => {
+    it('WHEN setConfig is called with valid data THEN expect config to be set', () => {
+        const config: Config = {
+            excludeMessages: ['foo'],
+            includeConsoleTypes: [ConsoleType.WARN],
+            cypressLog: true,
+        };
+        const { getConfig, setConfig } = failOnConsoleError(config);
+
+        setConfig({ ...config, excludeMessages: ['bar'] });
+
+        const givenConfig = getConfig();
+        chai.expect(givenConfig?.excludeMessages).to.deep.equal(['bar']);
+        chai.expect(givenConfig?.includeConsoleTypes).to.deep.equal([
+            ConsoleType.WARN,
+        ]);
+        chai.expect(givenConfig?.cypressLog).to.deep.equal(true);
     });
 });
 
@@ -78,23 +98,13 @@ describe('validateConfig()', () => {
         const config: Config = {
             excludeMessages: ['foo', /bar/],
             includeConsoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
+            cypressLog: true,
         };
 
         chai.expect(() => validateConfig(config)).not.to.throw(AssertionError);
     });
 
-    const excludeMessages = [[], [''], [3]];
-    excludeMessages.forEach((_excludeMessage: any) => {
-        it('WHEN excludeMessages is not valid THEN throw AssertionError', () => {
-            const config: Config = {
-                excludeMessages: _excludeMessage,
-            };
-
-            chai.expect(() => validateConfig(config)).to.throw(AssertionError);
-        });
-    });
-
-    const includeConsoleTypes = [[], [''], [3]];
+    const includeConsoleTypes = [[], [''], [3], ['NotAValidConsoleType']];
     includeConsoleTypes.forEach((_includeConsoleType: any) => {
         it('WHEN includeConsoleTypes is not valid THEN throw AssertionError', () => {
             const config: Config = {
