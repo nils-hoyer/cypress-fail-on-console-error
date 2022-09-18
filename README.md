@@ -62,14 +62,15 @@ failOnConsoleError({
 ```
 
 ### Set config from cypress test 
-Use `failOnConsoleError` functions `getConfig()` and `setConfig()` with your own requirements. Example implementation [cypress comands](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/117-change-config-on-runtime/cypress/support/e2e.ts#L14-L64) & [cypress test](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/123e251510045f2eb30c9ec2f6f247b77427d464/cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts#L1-L25). Note that the config will be resetted to initial config between tests.
+Use `failOnConsoleError` functions `getConfig()` and `setConfig()` with your own requirements. Example implementation [cypress comands](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/7e1e50b1eb0c5e991daa41716a78298141028b48/cypress/support/e2e.ts#L14-L64) & [cypress test](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/123e251510045f2eb30c9ec2f6f247b77427d464/cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts#L1-L25). Note that the config will be resetted to initial config between tests.
 
 ```js
 const { getConfig, setConfig } = failOnConsoleError(config);
 
 Cypress.Commands.addAll({
     getExcludeMessages: () => cy.wrap(getConfig()),
-    setExcludeMessages: (excludeMessages: (string | RegExp)[]) => setConfig({ ...getConfig(), excludeMessages );
+    setExcludeMessages: (excludeMessages: (string | RegExp)[]) => 
+        setConfig({ ...getConfig(), excludeMessages );
 ```
 
 ```js
