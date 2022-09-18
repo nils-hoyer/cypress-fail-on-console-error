@@ -37,7 +37,7 @@ Cypress.Commands.addAll({
         const config = getConfig() as Required<Config>;
         const excludeMessages = config.excludeMessages.filter(
             (excludeMessage: string | RegExp) =>
-                _excludeMessages.includes(excludeMessage.toString())
+                !_excludeMessages.includes(excludeMessage.toString())
         );
         setConfig({
             ...config,
