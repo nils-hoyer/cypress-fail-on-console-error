@@ -8,7 +8,7 @@ describe('shouldResetConfigBetweenTests', () => {
     });
 
     it('should pass AssertionError on console.error', () => {
-        cy.setExcludeMessages([
+        cy.setConsoleMessages([
             'firstErrorExcluded',
             'secondErrorNotExcluded',
         ]).then(() => {

@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.consoleType = exports.cypressLogger = exports.callToString = exports.isErrorMessageExcluded = exports.findIncludedCall = exports.getIncludedCall = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.ConsoleType = exports.cypressLogger = exports.callToString = exports.isConsoleMessageExcluded = exports.findIncludedCall = exports.getIncludedCall = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var chai_1 = require("chai");
 var os_1 = require("os");
@@ -67,9 +67,9 @@ function failOnConsoleError(_config) {
             return;
         var errorMessage = (0, exports.getIncludedCall)(spies, config);
         spies = (0, exports.resetSpies)(spies);
-        if (errorMessage) {
-            throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(errorMessage));
-        }
+        if (!errorMessage)
+            return;
+        throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(errorMessage));
     });
     Cypress.on('test:after:run', function () {
         setConfig(originConfig);
@@ -81,19 +81,19 @@ function failOnConsoleError(_config) {
 }
 exports.default = failOnConsoleError;
 var validateConfig = function (config) {
-    if (config.excludeMessages) {
-        config.excludeMessages.forEach(function (_excludeMessage) {
-            chai.expect((0, type_detect_1.default)(_excludeMessage)).to.be.oneOf([
+    if (config.consoleMessages) {
+        config.consoleMessages.forEach(function (consoleMessage) {
+            chai.expect((0, type_detect_1.default)(consoleMessage)).to.be.oneOf([
                 'string',
                 'RegExp',
             ]);
-            chai.expect(_excludeMessage.toString()).to.have.length.above(0);
+            chai.expect(consoleMessage.toString()).to.have.length.above(0);
         });
     }
-    if (config.includeConsoleTypes) {
-        chai.expect(config.includeConsoleTypes).not.to.be.empty;
-        config.includeConsoleTypes.forEach(function (_includeConsoleType) {
-            chai.expect((0, ConsoleType_1.someConsoleType)(_includeConsoleType), "includeConsoleTypes '".concat(_includeConsoleType, "' is an unknown ConsoleType")).to.be.true;
+    if (config.consoleTypes) {
+        chai.expect(config.consoleTypes).not.to.be.empty;
+        config.consoleTypes.forEach(function (consoleType) {
+            chai.expect((0, ConsoleType_1.someConsoleType)(consoleType), "Unknown ConsoleType '".concat(consoleType, "'")).to.be.true;
         });
     }
 };
@@ -101,74 +101,74 @@ exports.validateConfig = validateConfig;
 var createConfig = function (config) {
     var _a, _b, _c;
     return ({
-        excludeMessages: (_a = config.excludeMessages) !== null && _a !== void 0 ? _a : [],
-        includeConsoleTypes: ((_b = config.includeConsoleTypes) === null || _b === void 0 ? void 0 : _b.length)
-            ? config.includeConsoleTypes
+        consoleMessages: (_a = config.consoleMessages) !== null && _a !== void 0 ? _a : [],
+        consoleTypes: ((_b = config.consoleTypes) === null || _b === void 0 ? void 0 : _b.length)
+            ? config.consoleTypes
             : [ConsoleType_1.ConsoleType.ERROR],
-        cypressLog: (_c = config.cypressLog) !== null && _c !== void 0 ? _c : false,
+        debug: (_c = config.debug) !== null && _c !== void 0 ? _c : false,
     });
 };
 exports.createConfig = createConfig;
 var createSpies = function (config, console) {
     var _a;
     var spies = new Map();
-    (_a = config.includeConsoleTypes) === null || _a === void 0 ? void 0 : _a.forEach(function (_consoleType) {
-        var functionName = ConsoleType_1.ConsoleType[_consoleType].toLowerCase();
-        spies.set(_consoleType, sinon.spy(console, functionName));
+    (_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.forEach(function (consoleType) {
+        var functionName = ConsoleType_1.ConsoleType[consoleType].toLowerCase();
+        spies.set(consoleType, sinon.spy(console, functionName));
     });
     return spies;
 };
 exports.createSpies = createSpies;
 var resetSpies = function (spies) {
-    spies.forEach(function (_spy) { return _spy.resetHistory(); });
+    spies.forEach(function (spy) { return spy.resetHistory(); });
     return spies;
 };
 exports.resetSpies = resetSpies;
 var getIncludedCall = function (spies, config) {
-    var errorMessage;
-    Array.from(spies.values()).forEach(function (spy) {
+    var includedConsoleMessage;
+    Array.from(spies.values()).find(function (spy) {
         if (!spy.called)
-            return;
-        var includedCall = (0, exports.findIncludedCall)(spy, config);
-        if (includedCall !== undefined) {
-            errorMessage = includedCall;
-        }
+            return false;
+        includedConsoleMessage = (0, exports.findIncludedCall)(spy, config);
+        return includedConsoleMessage !== undefined;
     });
-    return errorMessage;
+    return includedConsoleMessage;
 };
 exports.getIncludedCall = getIncludedCall;
 var findIncludedCall = function (spy, config) {
-    var errorMessages = spy.args.map(function (call) { return (0, exports.callToString)(call); });
-    if (config.excludeMessages === undefined) {
-        return errorMessages[0];
+    var consoleMessages = spy.args.map(function (call) { return (0, exports.callToString)(call); });
+    if (config.consoleMessages.length === 0) {
+        return consoleMessages[0];
     }
-    return errorMessages.find(function (_errorMessage) {
-        var _isErrorMessageExcluded = config.excludeMessages.some(function (_excludeMessage) {
-            return (0, exports.isErrorMessageExcluded)(_errorMessage, _excludeMessage, config.cypressLog);
+    return consoleMessages.find(function (consoleMessage) {
+        var someConsoleMessagesExcluded = config.consoleMessages.some(function (configConsoleMessage) {
+            return (0, exports.isConsoleMessageExcluded)(consoleMessage, configConsoleMessage, config.debug);
         });
-        if (config.cypressLog === true) {
-            (0, exports.cypressLogger)('errorMessage_excluded', {
-                _errorMessage: _errorMessage,
-                _isErrorMessageExcluded: _isErrorMessageExcluded,
+        if (config.debug) {
+            (0, exports.cypressLogger)('consoleMessage_excluded', {
+                consoleMessage: consoleMessage,
+                someConsoleMessagesExcluded: someConsoleMessagesExcluded,
             });
         }
-        return !_isErrorMessageExcluded;
+        return !someConsoleMessagesExcluded;
     });
 };
 exports.findIncludedCall = findIncludedCall;
-var isErrorMessageExcluded = function (errorMessage, excludeMessage, cypressLog) {
-    var _a;
-    var match = (((_a = errorMessage.match(excludeMessage)) === null || _a === void 0 ? void 0 : _a.length) || 0) > 0;
-    if (cypressLog) {
-        (0, exports.cypressLogger)('errorMessage_excludeMessage_match', {
-            errorMessage: errorMessage,
-            excludeMessage: excludeMessage,
-            match: match,
+var isConsoleMessageExcluded = function (consoleMessage, configConsoleMessage, debug) {
+    var configConsoleMessageRegExp = configConsoleMessage instanceof RegExp
+        ? configConsoleMessage
+        : new RegExp(configConsoleMessage);
+    var consoleMessageExcluded = configConsoleMessageRegExp.test(consoleMessage);
+    if (debug) {
+        (0, exports.cypressLogger)('consoleMessage_configConsoleMessage_match', {
+            consoleMessage: consoleMessage,
+            configConsoleMessage: configConsoleMessage,
+            consoleMessageExcluded: consoleMessageExcluded,
         });
     }
-    return match;
+    return consoleMessageExcluded;
 };
-exports.isErrorMessageExcluded = isErrorMessageExcluded;
+exports.isConsoleMessageExcluded = isConsoleMessageExcluded;
 var callToString = function (calls) {
     return calls
         .reduce(function (previousValue, currentValue) {
@@ -190,4 +190,4 @@ var cypressLogger = function (name, message) {
 };
 exports.cypressLogger = cypressLogger;
 var ConsoleType_2 = require("./types/ConsoleType");
-Object.defineProperty(exports, "consoleType", { enumerable: true, get: function () { return ConsoleType_2.ConsoleType; } });
+Object.defineProperty(exports, "ConsoleType", { enumerable: true, get: function () { return ConsoleType_2.ConsoleType; } });
