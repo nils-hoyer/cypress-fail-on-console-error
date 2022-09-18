@@ -84,9 +84,6 @@ describe('Cypress', () => {
             expect(testResult).to.match(expectedTestResultFailing);
             expect(testResult).to.match(expectedTestResultPassing);
             expect(testResult).to.match(expectedTestResultTests);
-            expect(testResult.match(/firstErrorExcluded/g)?.length).to.be.equal(
-                2
-            );
         }
     });
 
