@@ -46,7 +46,7 @@ failOnConsoleError(config);
 // excludeMessages[0] matches example console message 'this is a foo message'
 // excludeMessages[1] matches example console message 'some bar-regex message'
 // includeConsoleTypes observe console types ERROR, WARN and INFO
-//debug information will be printed to the cypress runner
+// cypressLog debug information will be printed to the cypress runner
 ```
 
 Using Javascript, consoleType Enum can be parsed as number values
@@ -60,6 +60,28 @@ failOnConsoleError({
 // 1 = WARN
 // 2 = ERROR
 ```
+
+### Set config from cypress test 
+Use `failOnConsoleError` functions `getConfig()` and `setConfig()` with your own requirements. Example implementation [cypress comands](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/117-change-config-on-runtime/cypress/support/e2e.ts#L14-L64) & [cypress test](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/123e251510045f2eb30c9ec2f6f247b77427d464/cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts#L1-L25). Note that the config will be resetted to initial config between tests.
+
+```js
+const { getConfig, setConfig } = failOnConsoleError(config);
+
+Cypress.Commands.addAll({
+    getExcludeMessages: () => cy.wrap(getConfig()),
+    setExcludeMessages: (excludeMessages: (string | RegExp)[]) => setConfig({ ...getConfig(), excludeMessages );
+```
+
+```js
+describe('example test', () => {
+    it('should set excluded messages', () => {
+        cy.setExcludeMessages(['foo', 'bar']).then(() => {
+            cy.visit('./cypress/fixtures/consoleError.html');
+        });
+    });
+});
+```
+
 
 ### Debugging 
 When Cypress log is activated, debug information about the matching and exclude process are available from the cypress runner. As a plus, the generated error message string can be verified.
