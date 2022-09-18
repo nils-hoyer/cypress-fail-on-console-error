@@ -1,47 +1,47 @@
-import failOnConsoleError, { Config, consoleType } from '../../dist/index';
+import failOnConsoleError, { Config, ConsoleType } from '../../dist/index';
 import './commands';
 
 const config = {
-    excludeMessages: [
+    consoleMessages: [
         /firstErrorExcluded.*/,
         'secondErrorExcluded',
         'thirdErrorExcluded.*consoleError.*',
     ],
-    includeConsoleTypes: [consoleType.ERROR, consoleType.WARN],
-    cypressLog: true,
+    consoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
+    debug: true,
 };
 
 const { getConfig, setConfig } = failOnConsoleError(config);
 
 Cypress.Commands.addAll({
-    getExcludeMessages: () => {
+    getConsoleMessages: () => {
         const config = getConfig();
         return cy.wrap(config);
     },
-    setExcludeMessages: (excludeMessages: (string | RegExp)[]) => {
+    setConsoleMessages: (consoleMessages: (string | RegExp)[]) => {
         const config = getConfig();
-        setConfig({ ...config, excludeMessages });
+        setConfig({ ...config, consoleMessages });
     },
-    addExcludeMessages: (_excludeMessages: (string | RegExp)[]) => {
+    addConsoleMessages: (_consoleMessages: (string | RegExp)[]) => {
         const config = getConfig() as Required<Config>;
-        const excludeMessages = [
-            ...config.excludeMessages,
-            ..._excludeMessages,
+        const consoleMessages = [
+            ...config.consoleMessages,
+            ..._consoleMessages,
         ];
         setConfig({
             ...config,
-            excludeMessages,
+            consoleMessages,
         });
     },
-    deleteExcludeMessages: (_excludeMessages: (string | RegExp)[]) => {
+    deleteConsoleMessages: (_consoleMessages: (string | RegExp)[]) => {
         const config = getConfig() as Required<Config>;
-        const excludeMessages = config.excludeMessages.filter(
-            (excludeMessage: string | RegExp) =>
-                !_excludeMessages.includes(excludeMessage.toString())
+        const consoleMessages = config.consoleMessages.filter(
+            (consoleMessage: string | RegExp) =>
+                !_consoleMessages.includes(consoleMessage.toString())
         );
         setConfig({
             ...config,
-            excludeMessages,
+            consoleMessages,
         });
     },
 });
@@ -49,15 +49,15 @@ Cypress.Commands.addAll({
 declare global {
     namespace Cypress {
         interface Chainable {
-            getExcludeMessages(): Chainable<any>;
-            setExcludeMessages(
-                excludeMessages: (string | RegExp)[]
+            getConsoleMessages(): Chainable<any>;
+            setConsoleMessages(
+                consoleMessages: (string | RegExp)[]
             ): Chainable<void>;
-            addExcludeMessages(
-                excludeMessages: (string | RegExp)[]
+            addConsoleMessages(
+                consoleMessages: (string | RegExp)[]
             ): Chainable<void>;
-            deleteExcludeMessages(
-                excludeMessages: (string | RegExp)[]
+            deleteConsoleMessages(
+                consoleMessages: (string | RegExp)[]
             ): Chainable<void>;
         }
     }

@@ -8,7 +8,7 @@ import failOnConsoleError, {
     createSpies,
     findIncludedCall,
     getIncludedCall,
-    isErrorMessageExcluded,
+    isConsoleMessageExcluded,
     resetSpies,
     validateConfig,
 } from '../dist/index';
@@ -26,9 +26,9 @@ global['Cypress'] = { on: (f, s) => true };
 describe('failOnConsoleError()', () => {
     it('WHEN failOnConsoleError is created with Config THEN expect no error', () => {
         const config: Config = {
-            excludeMessages: ['foo'],
-            includeConsoleTypes: [ConsoleType.WARN],
-            cypressLog: true,
+            consoleMessages: ['foo'],
+            consoleTypes: [ConsoleType.WARN],
+            debug: true,
         };
         failOnConsoleError(config);
     });
@@ -40,20 +40,20 @@ describe('failOnConsoleError()', () => {
 describe('setConfig()', () => {
     it('WHEN setConfig is called with valid data THEN expect config to be set', () => {
         const config: Config = {
-            excludeMessages: ['foo'],
-            includeConsoleTypes: [ConsoleType.WARN],
-            cypressLog: true,
+            consoleMessages: ['foo'],
+            consoleTypes: [ConsoleType.WARN],
+            debug: true,
         };
         const { getConfig, setConfig } = failOnConsoleError(config);
 
-        setConfig({ ...config, excludeMessages: ['bar'] });
+        setConfig({ ...config, consoleMessages: ['bar'] });
 
         const givenConfig = getConfig();
-        chai.expect(givenConfig?.excludeMessages).to.deep.equal(['bar']);
-        chai.expect(givenConfig?.includeConsoleTypes).to.deep.equal([
+        chai.expect(givenConfig?.consoleMessages).to.deep.equal(['bar']);
+        chai.expect(givenConfig?.consoleTypes).to.deep.equal([
             ConsoleType.WARN,
         ]);
-        chai.expect(givenConfig?.cypressLog).to.deep.equal(true);
+        chai.expect(givenConfig?.debug).to.deep.equal(true);
     });
 });
 
@@ -63,52 +63,50 @@ describe('createConfig()', () => {
 
         const given = createConfig(config);
 
-        chai.expect(given.includeConsoleTypes).to.deep.equal([
-            ConsoleType.ERROR,
-        ]);
-        chai.expect(given.excludeMessages).to.deep.equal([]);
-        chai.expect(given.cypressLog).to.equal(false);
+        chai.expect(given.consoleTypes).to.deep.equal([ConsoleType.ERROR]);
+        chai.expect(given.consoleMessages).to.deep.equal([]);
+        chai.expect(given.debug).to.equal(false);
     });
 
     it('WHEN config properties are set THEN overwrite default', () => {
         const config: Config = {
-            includeConsoleTypes: [
+            consoleTypes: [
                 ConsoleType.WARN,
                 ConsoleType.INFO,
                 ConsoleType.ERROR,
             ],
-            excludeMessages: ['foo', 'bar'],
-            cypressLog: true,
+            consoleMessages: ['foo', 'bar'],
+            debug: true,
         };
 
         const given = createConfig(config);
 
-        chai.expect(given.includeConsoleTypes).to.deep.equal([
+        chai.expect(given.consoleTypes).to.deep.equal([
             ConsoleType.WARN,
             ConsoleType.INFO,
             ConsoleType.ERROR,
         ]);
-        chai.expect(given.excludeMessages).to.deep.equal(['foo', 'bar']);
-        chai.expect(given.cypressLog).to.deep.equal(true);
+        chai.expect(given.consoleMessages).to.deep.equal(['foo', 'bar']);
+        chai.expect(given.debug).to.deep.equal(true);
     });
 });
 
 describe('validateConfig()', () => {
-    it('WHEN excludeMessages and includeConsoleTypes is valid no assertion error is throwed', () => {
+    it('WHEN consoleMessages, consoleTypes and debug is valid THEN no assertion error is thrown', () => {
         const config: Config = {
-            excludeMessages: ['foo', /bar/],
-            includeConsoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
-            cypressLog: true,
+            consoleMessages: ['foo', /bar/],
+            consoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
+            debug: true,
         };
 
         chai.expect(() => validateConfig(config)).not.to.throw(AssertionError);
     });
 
-    const includeConsoleTypes = [[], [''], [3], ['NotAValidConsoleType']];
-    includeConsoleTypes.forEach((_includeConsoleType: any) => {
-        it('WHEN includeConsoleTypes is not valid THEN throw AssertionError', () => {
+    const consoleTypes = [[], [''], [3], ['NotAValidConsoleType']];
+    consoleTypes.forEach((consoleType: any) => {
+        it('WHEN consoleTypes is not valid THEN throw AssertionError', () => {
             const config: Config = {
-                includeConsoleTypes: _includeConsoleType,
+                consoleTypes: consoleType,
             };
 
             chai.expect(() => validateConfig(config)).to.throw(AssertionError);
@@ -117,9 +115,9 @@ describe('validateConfig()', () => {
 });
 
 describe('createSpies()', () => {
-    it('WHEN includeConsoleTypes THEN create createSpies map', () => {
+    it('WHEN consoleTypes THEN create createSpies map', () => {
         const config: Required<Config> = createConfig({
-            includeConsoleTypes: [
+            consoleTypes: [
                 ConsoleType.INFO,
                 ConsoleType.WARN,
                 ConsoleType.ERROR,
@@ -139,13 +137,13 @@ describe('createSpies()', () => {
         const spiesIterator = spies.keys();
         chai.expect(spies.size).to.equals(3);
         chai.expect(spiesIterator.next().value).to.equals(
-            config.includeConsoleTypes[0]
+            config.consoleTypes[0]
         );
         chai.expect(spiesIterator.next().value).to.equals(
-            config.includeConsoleTypes[1]
+            config.consoleTypes[1]
         );
         chai.expect(spiesIterator.next().value).to.equals(
-            config.includeConsoleTypes[2]
+            config.consoleTypes[2]
         );
     });
 });
@@ -180,7 +178,7 @@ describe('getIncludedCall()', () => {
     });
 
     it('WHEN call is excluded THEN return undefined', () => {
-        const config = createConfig({ excludeMessages: ['foo'] });
+        const config = createConfig({ consoleMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, {
             called: true,
@@ -193,7 +191,7 @@ describe('getIncludedCall()', () => {
     });
 
     it('WHEN call is included THEN return call', () => {
-        const config = createConfig({ excludeMessages: ['foo'] });
+        const config = createConfig({ consoleMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, {
             called: true,
@@ -207,7 +205,7 @@ describe('getIncludedCall()', () => {
 });
 
 describe('findIncludedCall()', () => {
-    it('WHEN config.excludeMessages is undefined THEN return first call', () => {
+    it('WHEN config.consoleMessages is undefined THEN return first call', () => {
         const spy: sinon.SinonSpy = {
             args: [
                 ['foo', 'foo1'],
@@ -220,8 +218,8 @@ describe('findIncludedCall()', () => {
         chai.expect(includedCall).to.equal('foo foo1');
     });
 
-    it('WHEN some call for errorMessage is excluded by config.excludeMessages THEN return first call some is not excluded', () => {
-        const config = createConfig({ excludeMessages: ['foo1'] });
+    it('WHEN some call for consoleMessage is excluded by config.consoleMessages THEN return first call some is not excluded', () => {
+        const config = createConfig({ consoleMessages: ['foo1'] });
         const spy: sinon.SinonSpy = {
             args: [
                 ['foo', 'foo1'],
@@ -234,9 +232,9 @@ describe('findIncludedCall()', () => {
         chai.expect(includedCall).to.equal('foo3 foo4');
     });
 
-    it('WHEN some call for all errorMessages are excluded by config.excludeMessages THEN return undefined', () => {
+    it('WHEN some call for all errorMessages are excluded by config.consoleMessages THEN return undefined', () => {
         const config = createConfig({
-            excludeMessages: ['foo', 'foo3'],
+            consoleMessages: ['foo', 'foo3'],
         });
         const spy: sinon.SinonSpy = {
             args: [
@@ -251,45 +249,45 @@ describe('findIncludedCall()', () => {
     });
 });
 
-describe('isErrorMessageExcluded()', () => {
-    it('WHEN excludeMessage matching errorMessage THEN return false', () => {
-        const errorMessage: string = 'foo';
-        const excludeMessage: string = 'foo';
+describe('isConsoleMessageExcluded()', () => {
+    it('WHEN configConsoleMessage matching consoleMessage THEN return false', () => {
+        const consoleMessage: string = 'foo';
+        const configConsoleMessage: string = 'foo';
 
-        const _isErrorMessageExcluded = isErrorMessageExcluded(
-            errorMessage,
-            excludeMessage,
+        const consoleMessageExcluded = isConsoleMessageExcluded(
+            consoleMessage,
+            configConsoleMessage,
             false
         );
 
-        chai.expect(_isErrorMessageExcluded).to.be.true;
+        chai.expect(consoleMessageExcluded).to.be.true;
     });
 
-    it('WHEN excludeMessage not matching errorMessage THEN return true', () => {
-        const errorMessage: string = 'foo';
-        const excludeMessage: string = 'bar';
+    it('WHEN configConsoleMessage not matching consoleMessage THEN return true', () => {
+        const consoleMessage: string = 'foo';
+        const configConsoleMessage: string = 'bar';
 
-        const _isErrorMessageExcluded = isErrorMessageExcluded(
-            errorMessage,
-            excludeMessage,
+        const consoleMessageExcluded = isConsoleMessageExcluded(
+            consoleMessage,
+            configConsoleMessage,
             false
         );
 
-        chai.expect(_isErrorMessageExcluded).to.be.false;
+        chai.expect(consoleMessageExcluded).to.be.false;
     });
 
-    it('WHEN excludeMessage not matching errorMessage THEN return true', () => {
-        const errorMessage: string =
+    it('WHEN configConsoleMessage not matching consoleMessage THEN return true', () => {
+        const consoleMessage: string =
             "TypeError: Cannot read properties of undefined (reading 'map')";
-        const excludeMessage: string = '.*properties.*map.*';
+        const configConsoleMessage: string = '.*properties.*map.*';
 
-        const _isErrorMessageExcluded = isErrorMessageExcluded(
-            errorMessage,
-            excludeMessage,
+        const consoleMessageExcluded = isConsoleMessageExcluded(
+            consoleMessage,
+            configConsoleMessage,
             false
         );
 
-        chai.expect(_isErrorMessageExcluded).to.be.true;
+        chai.expect(consoleMessageExcluded).to.be.true;
     });
 });
 
