@@ -79,8 +79,8 @@ describe('Cypress', () => {
         } finally {
             // console.log(testResult);
             const expectedTestResultFailing = /Failing:.*2/;
-            const expectedTestResultPassing = /Passing:.*1/;
-            const expectedTestResultTests = /Tests:.*3/;
+            const expectedTestResultPassing = /Passing:.*2/;
+            const expectedTestResultTests = /Tests:.*4/;
             expect(testResult).to.match(expectedTestResultFailing);
             expect(testResult).to.match(expectedTestResultPassing);
             expect(testResult).to.match(expectedTestResultTests);
