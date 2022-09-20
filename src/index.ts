@@ -31,17 +31,17 @@ export default function failOnConsoleError(_config: Config = {}) {
     Cypress.on('command:end', () => {
         if (!spies) return;
 
-        const errorMessage: string | undefined = getIncludedCall(
+        const consoleMessage: string | undefined = getConsoleMessageIncluded(
             spies,
             config as Required<Config>
         );
 
         spies = resetSpies(spies);
 
-        if (!errorMessage) return;
+        if (!consoleMessage) return;
 
         throw new AssertionError(
-            `cypress-fail-on-console-error: ${EOL} ${errorMessage}`
+            `cypress-fail-on-console-error: ${EOL} ${consoleMessage}`
         );
     });
 
@@ -104,20 +104,20 @@ export const resetSpies = (
     return spies;
 };
 
-export const getIncludedCall = (
+export const getConsoleMessageIncluded = (
     spies: Map<ConsoleType, sinon.SinonSpy>,
     config: Required<Config>
 ): string | undefined => {
     let includedConsoleMessage: string | undefined;
     Array.from(spies.values()).find((spy) => {
         if (!spy.called) return false;
-        includedConsoleMessage = findIncludedCall(spy, config);
+        includedConsoleMessage = findConsoleMessageIncluded(spy, config);
         return includedConsoleMessage !== undefined;
     });
     return includedConsoleMessage;
 };
 
-export const findIncludedCall = (
+export const findConsoleMessageIncluded = (
     spy: sinon.SinonSpy,
     config: Required<Config>
 ): string | undefined => {
