@@ -70,7 +70,8 @@ const { getConfig, setConfig } = failOnConsoleError(config);
 Cypress.Commands.addAll({
     getExcludeMessages: () => cy.wrap(getConfig()),
     setExcludeMessages: (excludeMessages: (string | RegExp)[]) => 
-        setConfig({ ...getConfig(), excludeMessages );
+        setConfig({ ...getConfig(), excludeMessages})
+});
 ```
 
 ```js
