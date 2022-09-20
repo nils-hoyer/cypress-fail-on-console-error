@@ -68,7 +68,7 @@ Use `failOnConsoleError` functions `getConfig()` and `setConfig()` with your own
 const { getConfig, setConfig } = failOnConsoleError(config);
 
 Cypress.Commands.addAll({
-    getExcludeMessages: () => cy.wrap(getConfig()),
+    getExcludeMessages: () => cy.wrap(getConfig().excludeMessages),
     setExcludeMessages: (excludeMessages: (string | RegExp)[]) => 
         setConfig({ ...getConfig(), excludeMessages})
 });
@@ -76,10 +76,9 @@ Cypress.Commands.addAll({
 
 ```js
 describe('example test', () => {
-    it('should set excluded messages', () => {
-        cy.setExcludeMessages(['foo', 'bar']).then(() => {
-            cy.visit('./cypress/fixtures/consoleError.html');
-        });
+    it('should set exclude messages', () => {
+        cy.setExcludeMessages(['foo', 'bar']);
+        cy.visit('...');
     });
 });
 ```
