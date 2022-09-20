@@ -16,7 +16,7 @@ const { getConfig, setConfig } = failOnConsoleError(config);
 Cypress.Commands.addAll({
     getConsoleMessages: () => {
         const config = getConfig();
-        return cy.wrap(config);
+        return cy.wrap(config?.consoleMessages);
     },
     setConsoleMessages: (consoleMessages: (string | RegExp)[]) => {
         const config = getConfig();
