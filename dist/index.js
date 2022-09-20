@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConsoleType = exports.cypressLogger = exports.callToString = exports.isConsoleMessageExcluded = exports.findIncludedCall = exports.getIncludedCall = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.ConsoleType = exports.cypressLogger = exports.callToString = exports.isConsoleMessageExcluded = exports.findConsoleMessageIncluded = exports.getConsoleMessageIncluded = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var chai_1 = require("chai");
 var os_1 = require("os");
@@ -65,11 +65,11 @@ function failOnConsoleError(_config) {
     Cypress.on('command:end', function () {
         if (!spies)
             return;
-        var errorMessage = (0, exports.getIncludedCall)(spies, config);
+        var consoleMessage = (0, exports.getConsoleMessageIncluded)(spies, config);
         spies = (0, exports.resetSpies)(spies);
-        if (!errorMessage)
+        if (!consoleMessage)
             return;
-        throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(errorMessage));
+        throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(consoleMessage));
     });
     Cypress.on('test:after:run', function () {
         setConfig(originConfig);
@@ -124,18 +124,18 @@ var resetSpies = function (spies) {
     return spies;
 };
 exports.resetSpies = resetSpies;
-var getIncludedCall = function (spies, config) {
+var getConsoleMessageIncluded = function (spies, config) {
     var includedConsoleMessage;
     Array.from(spies.values()).find(function (spy) {
         if (!spy.called)
             return false;
-        includedConsoleMessage = (0, exports.findIncludedCall)(spy, config);
+        includedConsoleMessage = (0, exports.findConsoleMessageIncluded)(spy, config);
         return includedConsoleMessage !== undefined;
     });
     return includedConsoleMessage;
 };
-exports.getIncludedCall = getIncludedCall;
-var findIncludedCall = function (spy, config) {
+exports.getConsoleMessageIncluded = getConsoleMessageIncluded;
+var findConsoleMessageIncluded = function (spy, config) {
     var consoleMessages = spy.args.map(function (call) { return (0, exports.callToString)(call); });
     if (config.consoleMessages.length === 0) {
         return consoleMessages[0];
@@ -153,7 +153,7 @@ var findIncludedCall = function (spy, config) {
         return !someConsoleMessagesExcluded;
     });
 };
-exports.findIncludedCall = findIncludedCall;
+exports.findConsoleMessageIncluded = findConsoleMessageIncluded;
 var isConsoleMessageExcluded = function (consoleMessage, configConsoleMessage, debug) {
     var configConsoleMessageRegExp = configConsoleMessage instanceof RegExp
         ? configConsoleMessage

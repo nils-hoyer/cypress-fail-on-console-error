@@ -6,8 +6,8 @@ import failOnConsoleError, {
     callToString,
     createConfig,
     createSpies,
-    findIncludedCall,
-    getIncludedCall,
+    findConsoleMessageIncluded,
+    getConsoleMessageIncluded,
     isConsoleMessageExcluded,
     resetSpies,
     validateConfig,
@@ -166,18 +166,21 @@ describe('resetSpies()', () => {
     });
 });
 
-describe('getIncludedCall()', () => {
+describe('getConsoleMessageIncluded()', () => {
     it('WHEN no spy is called THEN return undefined', () => {
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, { called: false } as sinon.SinonSpy);
         spies.set(ConsoleType.WARN, { called: false } as sinon.SinonSpy);
 
-        const includedCall = getIncludedCall(spies, createConfig({}));
+        const consoleMessage = getConsoleMessageIncluded(
+            spies,
+            createConfig({})
+        );
 
-        chai.expect(includedCall).to.be.undefined;
+        chai.expect(consoleMessage).to.be.undefined;
     });
 
-    it('WHEN call is excluded THEN return undefined', () => {
+    it('WHEN console message is excluded THEN return undefined', () => {
         const config = createConfig({ consoleMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, {
@@ -185,12 +188,12 @@ describe('getIncludedCall()', () => {
             args: [['foo']],
         } as sinon.SinonSpy);
 
-        const includedCall = getIncludedCall(spies, config);
+        const consoleMessage = getConsoleMessageIncluded(spies, config);
 
-        chai.expect(includedCall).to.be.undefined;
+        chai.expect(consoleMessage).to.be.undefined;
     });
 
-    it('WHEN call is included THEN return call', () => {
+    it('WHEN console message is included THEN return call', () => {
         const config = createConfig({ consoleMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
         spies.set(ConsoleType.ERROR, {
@@ -198,13 +201,13 @@ describe('getIncludedCall()', () => {
             args: [['bar']],
         } as sinon.SinonSpy);
 
-        const includedCall = getIncludedCall(spies, config);
+        const consoleMessage = getConsoleMessageIncluded(spies, config);
 
-        chai.expect(includedCall).to.equal('bar');
+        chai.expect(consoleMessage).to.equal('bar');
     });
 });
 
-describe('findIncludedCall()', () => {
+describe('findConsoleMessageIncluded()', () => {
     it('WHEN config.consoleMessages is undefined THEN return first call', () => {
         const spy: sinon.SinonSpy = {
             args: [
@@ -213,12 +216,15 @@ describe('findIncludedCall()', () => {
             ],
         } as sinon.SinonSpy;
 
-        const includedCall = findIncludedCall(spy, createConfig({}));
+        const consoleMessage = findConsoleMessageIncluded(
+            spy,
+            createConfig({})
+        );
 
-        chai.expect(includedCall).to.equal('foo foo1');
+        chai.expect(consoleMessage).to.equal('foo foo1');
     });
 
-    it('WHEN some call for consoleMessage is excluded by config.consoleMessages THEN return first call some is not excluded', () => {
+    it('WHEN console message is excluded by config.consoleMessages THEN return first call some is not excluded', () => {
         const config = createConfig({ consoleMessages: ['foo1'] });
         const spy: sinon.SinonSpy = {
             args: [
@@ -227,12 +233,12 @@ describe('findIncludedCall()', () => {
             ],
         } as sinon.SinonSpy;
 
-        const includedCall = findIncludedCall(spy, config);
+        const consoleMessage = findConsoleMessageIncluded(spy, config);
 
-        chai.expect(includedCall).to.equal('foo3 foo4');
+        chai.expect(consoleMessage).to.equal('foo3 foo4');
     });
 
-    it('WHEN some call for all errorMessages are excluded by config.consoleMessages THEN return undefined', () => {
+    it('WHEN all console messages are excluded by config.consoleMessages THEN return undefined', () => {
         const config = createConfig({
             consoleMessages: ['foo', 'foo3'],
         });
@@ -243,9 +249,9 @@ describe('findIncludedCall()', () => {
             ],
         } as sinon.SinonSpy;
 
-        const includedCall = findIncludedCall(spy, config);
+        const consoleMessage = findConsoleMessageIncluded(spy, config);
 
-        chai.expect(includedCall).to.be.undefined;
+        chai.expect(consoleMessage).to.be.undefined;
     });
 });
 
