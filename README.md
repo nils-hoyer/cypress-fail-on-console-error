@@ -22,9 +22,9 @@ failOnConsoleError();
 
 | Parameter             | Default               | <div style="width:300px">Description</div>    |
 |---                    |---                    |---                                            |
-| `consoleMessages`     | `[]` | Exclude console messages from throwing `AssertionError`. Types RegExp and string are accepted. Strings will be converted to regular expression. [RegExp.test()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test?retiredLocale=de) will be used for console message matching. Make sure to [escape string / regular expression](https://javascript.info/regexp-escaping) for special characters. When console message property `stacktrace` exists, then the whole stacktrace can be matched. |
+| `consoleMessages`     | `[]` | Exclude console messages from throwing `AssertionError`. Types `RegExp` and `string` are accepted. Strings will be converted to regular expression. [RegExp.test()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test?retiredLocale=de) will be used for console message matching. Make sure to [escape special characters](https://javascript.info/regexp-escaping). When console message property `stacktrace` exists, then the whole stacktrace can be matched. |
 | `consoleTypes` | `['error']` | Define console types for observation. `error`, `warn` and `info` are accepted values.
-| `debug`          | `false`               | Enable debug logs for consoleMessage_configConsoleMessage_match and consoleMessage_excluded to cypress runner                                     
+| `debug`          | `false`               | Enable debug logs for `consoleMessage_configConsoleMessage_match` and `consoleMessage_excluded` to cypress runner                                     
 
 <br/>
 
