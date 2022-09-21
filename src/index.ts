@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import typeDetect from 'type-detect';
 import { Config } from './types/Config';
-import { ConsoleType, someConsoleType } from './types/ConsoleType';
+import { ConsoleType } from './types/ConsoleType';
 
 chai.should();
 chai.use(sinonChai);
@@ -13,7 +13,7 @@ chai.use(sinonChai);
 export default function failOnConsoleError(_config: Config = {}) {
     let originConfig: Required<Config> | undefined;
     let config: Required<Config> | undefined;
-    let spies: Map<number, sinon.SinonSpy> | undefined;
+    let spies: Map<ConsoleType, sinon.SinonSpy> | undefined;
 
     const getConfig = () => config;
     const setConfig = (_config: Config): void => {
@@ -69,19 +69,16 @@ export const validateConfig = (config: Config): void => {
     if (config.consoleTypes) {
         chai.expect(config.consoleTypes).not.to.be.empty;
         config.consoleTypes.forEach((consoleType) => {
-            chai.expect(
-                someConsoleType(consoleType),
-                `Unknown ConsoleType '${consoleType}'`
-            ).to.be.true;
+            chai.expect(['error', 'warn', 'info'] as ConsoleType[]).contains(
+                consoleType
+            );
         });
     }
 };
 
 export const createConfig = (config: Config): Required<Config> => ({
     consoleMessages: config.consoleMessages ?? [],
-    consoleTypes: config.consoleTypes?.length
-        ? config.consoleTypes
-        : [ConsoleType.ERROR],
+    consoleTypes: config.consoleTypes?.length ? config.consoleTypes : ['error'],
     debug: config.debug ?? false,
 });
 
@@ -91,8 +88,7 @@ export const createSpies = (
 ): Map<ConsoleType, sinon.SinonSpy> => {
     let spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
     config.consoleTypes?.forEach((consoleType) => {
-        const functionName: any = ConsoleType[consoleType].toLowerCase();
-        spies.set(consoleType, sinon.spy(console, functionName));
+        spies.set(consoleType, sinon.spy(console, consoleType));
     });
     return spies;
 };

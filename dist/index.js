@@ -37,14 +37,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConsoleType = exports.cypressLogger = exports.callToString = exports.isConsoleMessageExcluded = exports.findConsoleMessageIncluded = exports.getConsoleMessageIncluded = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
+exports.cypressLogger = exports.callToString = exports.isConsoleMessageExcluded = exports.findConsoleMessageIncluded = exports.getConsoleMessageIncluded = exports.resetSpies = exports.createSpies = exports.createConfig = exports.validateConfig = void 0;
 var chai = __importStar(require("chai"));
 var chai_1 = require("chai");
 var os_1 = require("os");
 var sinon = __importStar(require("sinon"));
 var sinon_chai_1 = __importDefault(require("sinon-chai"));
 var type_detect_1 = __importDefault(require("type-detect"));
-var ConsoleType_1 = require("./types/ConsoleType");
 chai.should();
 chai.use(sinon_chai_1.default);
 function failOnConsoleError(_config) {
@@ -93,7 +92,7 @@ var validateConfig = function (config) {
     if (config.consoleTypes) {
         chai.expect(config.consoleTypes).not.to.be.empty;
         config.consoleTypes.forEach(function (consoleType) {
-            chai.expect((0, ConsoleType_1.someConsoleType)(consoleType), "Unknown ConsoleType '".concat(consoleType, "'")).to.be.true;
+            chai.expect(['error', 'warn', 'info']).contains(consoleType);
         });
     }
 };
@@ -102,9 +101,7 @@ var createConfig = function (config) {
     var _a, _b, _c;
     return ({
         consoleMessages: (_a = config.consoleMessages) !== null && _a !== void 0 ? _a : [],
-        consoleTypes: ((_b = config.consoleTypes) === null || _b === void 0 ? void 0 : _b.length)
-            ? config.consoleTypes
-            : [ConsoleType_1.ConsoleType.ERROR],
+        consoleTypes: ((_b = config.consoleTypes) === null || _b === void 0 ? void 0 : _b.length) ? config.consoleTypes : ['error'],
         debug: (_c = config.debug) !== null && _c !== void 0 ? _c : false,
     });
 };
@@ -113,8 +110,7 @@ var createSpies = function (config, console) {
     var _a;
     var spies = new Map();
     (_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.forEach(function (consoleType) {
-        var functionName = ConsoleType_1.ConsoleType[consoleType].toLowerCase();
-        spies.set(consoleType, sinon.spy(console, functionName));
+        spies.set(consoleType, sinon.spy(console, consoleType));
     });
     return spies;
 };
@@ -189,5 +185,3 @@ var cypressLogger = function (name, message) {
     });
 };
 exports.cypressLogger = cypressLogger;
-var ConsoleType_2 = require("./types/ConsoleType");
-Object.defineProperty(exports, "ConsoleType", { enumerable: true, get: function () { return ConsoleType_2.ConsoleType; } });
