@@ -29,7 +29,7 @@ failOnConsoleError();
 <br/>
 
 ```js
-import failOnConsoleError, { ConsoleType, Config } from 'cypress-fail-on-console-error';
+import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 
 const config: Config = {
     consoleMessages: ['foo', /^some bar-regex.*/],
