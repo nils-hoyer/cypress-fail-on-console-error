@@ -1,13 +1,13 @@
-import failOnConsoleError, { Config, ConsoleType } from '../../dist/index';
+import failOnConsoleError, { Config } from '../../dist/index';
 import './commands';
 
-const config = {
+const config: Config = {
     consoleMessages: [
         /firstErrorExcluded.*/,
         'secondErrorExcluded',
         'thirdErrorExcluded.*consoleError.*',
     ],
-    consoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
+    consoleTypes: ['error', 'warn'],
     debug: true,
 };
 

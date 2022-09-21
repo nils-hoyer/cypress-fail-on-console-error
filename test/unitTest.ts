@@ -27,7 +27,7 @@ describe('failOnConsoleError()', () => {
     it('WHEN failOnConsoleError is created with Config THEN expect no error', () => {
         const config: Config = {
             consoleMessages: ['foo'],
-            consoleTypes: [ConsoleType.WARN],
+            consoleTypes: ['warn'],
             debug: true,
         };
         failOnConsoleError(config);
@@ -41,7 +41,7 @@ describe('setConfig()', () => {
     it('WHEN setConfig is called with valid data THEN expect config to be set', () => {
         const config: Config = {
             consoleMessages: ['foo'],
-            consoleTypes: [ConsoleType.WARN],
+            consoleTypes: ['warn'],
             debug: true,
         };
         const { getConfig, setConfig } = failOnConsoleError(config);
@@ -50,9 +50,7 @@ describe('setConfig()', () => {
 
         const givenConfig = getConfig();
         chai.expect(givenConfig?.consoleMessages).to.deep.equal(['bar']);
-        chai.expect(givenConfig?.consoleTypes).to.deep.equal([
-            ConsoleType.WARN,
-        ]);
+        chai.expect(givenConfig?.consoleTypes).to.deep.equal(['warn']);
         chai.expect(givenConfig?.debug).to.deep.equal(true);
     });
 });
@@ -63,18 +61,14 @@ describe('createConfig()', () => {
 
         const given = createConfig(config);
 
-        chai.expect(given.consoleTypes).to.deep.equal([ConsoleType.ERROR]);
+        chai.expect(given.consoleTypes).to.deep.equal(['error']);
         chai.expect(given.consoleMessages).to.deep.equal([]);
         chai.expect(given.debug).to.equal(false);
     });
 
     it('WHEN config properties are set THEN overwrite default', () => {
         const config: Config = {
-            consoleTypes: [
-                ConsoleType.WARN,
-                ConsoleType.INFO,
-                ConsoleType.ERROR,
-            ],
+            consoleTypes: ['warn', 'info', 'error'],
             consoleMessages: ['foo', 'bar'],
             debug: true,
         };
@@ -82,9 +76,9 @@ describe('createConfig()', () => {
         const given = createConfig(config);
 
         chai.expect(given.consoleTypes).to.deep.equal([
-            ConsoleType.WARN,
-            ConsoleType.INFO,
-            ConsoleType.ERROR,
+            'warn',
+            'info',
+            'error',
         ]);
         chai.expect(given.consoleMessages).to.deep.equal(['foo', 'bar']);
         chai.expect(given.debug).to.deep.equal(true);
@@ -95,7 +89,7 @@ describe('validateConfig()', () => {
     it('WHEN consoleMessages, consoleTypes and debug is valid THEN no assertion error is thrown', () => {
         const config: Config = {
             consoleMessages: ['foo', /bar/],
-            consoleTypes: [ConsoleType.ERROR, ConsoleType.WARN],
+            consoleTypes: ['error', 'warn'],
             debug: true,
         };
 
@@ -117,11 +111,7 @@ describe('validateConfig()', () => {
 describe('createSpies()', () => {
     it('WHEN consoleTypes THEN create createSpies map', () => {
         const config: Required<Config> = createConfig({
-            consoleTypes: [
-                ConsoleType.INFO,
-                ConsoleType.WARN,
-                ConsoleType.ERROR,
-            ],
+            consoleTypes: ['info', 'warn', 'error'],
         });
         const console: any = {
             info: () => true,
@@ -152,25 +142,25 @@ describe('resetSpies()', () => {
     it('when resetHistory is called then spies should be resetted', () => {
         const objectToSpy: any = { error: () => true, warn: () => true };
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set(ConsoleType.ERROR, sinon.spy(objectToSpy, 'error'));
-        spies.set(ConsoleType.WARN, sinon.spy(objectToSpy, 'warn'));
+        spies.set('error', sinon.spy(objectToSpy, 'error'));
+        spies.set('warn', sinon.spy(objectToSpy, 'warn'));
         objectToSpy.error();
-        chai.expect(spies.get(ConsoleType.ERROR)).be.called;
-        chai.expect(spies.get(ConsoleType.WARN)).not.be.called;
+        chai.expect(spies.get('error')).be.called;
+        chai.expect(spies.get('warn')).not.be.called;
 
         const expectedSpies: Map<ConsoleType, sinon.SinonSpy> =
             resetSpies(spies);
 
-        chai.expect(expectedSpies.get(ConsoleType.ERROR)).not.be.called;
-        chai.expect(expectedSpies.get(ConsoleType.WARN)).not.be.called;
+        chai.expect(expectedSpies.get('error')).not.be.called;
+        chai.expect(expectedSpies.get('warn')).not.be.called;
     });
 });
 
 describe('getConsoleMessageIncluded()', () => {
     it('WHEN no spy is called THEN return undefined', () => {
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set(ConsoleType.ERROR, { called: false } as sinon.SinonSpy);
-        spies.set(ConsoleType.WARN, { called: false } as sinon.SinonSpy);
+        spies.set('error', { called: false } as sinon.SinonSpy);
+        spies.set('warn', { called: false } as sinon.SinonSpy);
 
         const consoleMessage = getConsoleMessageIncluded(
             spies,
@@ -183,7 +173,7 @@ describe('getConsoleMessageIncluded()', () => {
     it('WHEN console message is excluded THEN return undefined', () => {
         const config = createConfig({ consoleMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set(ConsoleType.ERROR, {
+        spies.set('error', {
             called: true,
             args: [['foo']],
         } as sinon.SinonSpy);
@@ -196,7 +186,7 @@ describe('getConsoleMessageIncluded()', () => {
     it('WHEN console message is included THEN return call', () => {
         const config = createConfig({ consoleMessages: ['foo'] });
         const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set(ConsoleType.ERROR, {
+        spies.set('error', {
             called: true,
             args: [['bar']],
         } as sinon.SinonSpy);
