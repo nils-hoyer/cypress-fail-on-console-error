@@ -65,7 +65,7 @@ describe('example test', () => {
 
 ### Debugging 
 When Cypress log is activated, debug information about the console messages / config console messages matching and excluding process are available from the cypress runner. As a plus, the generated error message string can be verified.
-![image info](./docs/cypressLogTrue.png)
+![debugTrue.png](./docs/debugTrue.png)
 
 ### Contributing
 1. Create an project issue with proper description and expected behaviour
