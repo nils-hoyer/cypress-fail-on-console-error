@@ -46,6 +46,10 @@ export default function failOnConsoleError(_config: Config = {}) {
     });
 
     Cypress.on('test:after:run', () => {
+        if (spies) {
+            spies = resetSpies(spies);
+        }
+
         setConfig(originConfig as Config);
     });
 

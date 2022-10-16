@@ -128,6 +128,27 @@ describe('Cypress', () => {
         }
     });
 
+    it('WHEN run multiple tests with cypress eror THEN spies will be resetted between tests', async () => {
+        const spec =
+            ' --spec ./cypress/e2e/shouldResetSpiesBetweenTestsOnCypressFailure.cy.ts';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error: any) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
+            //TODO: on the pipeline it should be checked with 31m -> /Failing:.*31m1/
+            const expectedTestResultFailing = /Failing:.*1/;
+            const expectedTestResultPassing = /Passing:.*1/;
+            const expectedTestResultTests = /Tests:.*2/;
+            expect(testResult).to.match(expectedTestResultFailing);
+            expect(testResult).to.match(expectedTestResultPassing);
+            expect(testResult).to.match(expectedTestResultTests);
+        }
+    });
+
     it('WHEN run multiple tests THEN config will be resetted between tests', async () => {
         const spec =
             ' --spec ./cypress/e2e/shouldResetConfigBetweenTests.cy.ts';
