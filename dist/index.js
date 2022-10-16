@@ -71,6 +71,9 @@ function failOnConsoleError(_config) {
         throw new chai_1.AssertionError("cypress-fail-on-console-error: ".concat(os_1.EOL, " ").concat(consoleMessage));
     });
     Cypress.on('test:after:run', function () {
+        if (spies) {
+            spies = (0, exports.resetSpies)(spies);
+        }
         setConfig(originConfig);
     });
     return {
