@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-This Plugin observes `console.error()` function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). Cypress test will fail when the error function gets executed.
+This Plugin observes `console.error()` function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). Cypress test will fail when the error function gets executed. For observing network errors please check out [cypress-fail-on-network-requests](https://www.npmjs.com/package/cypress-fail-on-network-request).
 
 ### Installation
 
