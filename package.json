@@ -51,6 +51,6 @@
     "prettier-plugin-organize-imports": "3.2.2",
     "rimraf": "5.0.1",
     "ts-mocha": "10.0.0",
-    "typescript": "5.1.5"
+    "typescript": "5.1.6"
   }
 }
