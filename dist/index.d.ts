@@ -1,6 +1,12 @@
 import * as sinon from 'sinon';
-import { Config } from './types/Config';
-import { ConsoleType } from './types/ConsoleType';
+type ConsoleType = 'error' | 'warn' | 'info';
+interface Config {
+    consoleMessages?: (string | RegExp)[];
+    consoleTypes?: ConsoleType[];
+    debug?: boolean;
+}
+export { Config };
+export { ConsoleType };
 export default function failOnConsoleError(_config?: Config): {
     getConfig: () => Required<Config> | undefined;
     setConfig: (_config: Config) => void;
@@ -14,5 +20,3 @@ export declare const findConsoleMessageIncluded: (spy: sinon.SinonSpy, config: R
 export declare const isConsoleMessageExcluded: (consoleMessage: string, configConsoleMessage: string | RegExp, debug: boolean) => boolean;
 export declare const callToString: (calls: any[]) => string;
 export declare const cypressLogger: (name: string, message: any) => void;
-export { Config } from './types/Config';
-export { ConsoleType } from './types/ConsoleType';

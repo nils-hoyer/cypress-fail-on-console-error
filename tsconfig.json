@@ -1,8 +1,7 @@
 {
     "compilerOptions": {
         "baseUrl": ".",
-        "target": "es5",
-        "module": "commonjs",
+        "target": "es6",
         "outDir": "dist",
         "strict": true,
         "noImplicitAny": true,
@@ -10,7 +9,14 @@
         "declaration": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "sourceMap": false
+        "sourceMap": false,
+        "types": ["cypress", "node"],
+        "moduleResolution": "NodeNext"
     },
-    "include": ["src", "types"]
+    "include": ["src"],
+    "ts-node": {
+        "compilerOptions": {
+            "module": "es6"
+        }
+    }
 }

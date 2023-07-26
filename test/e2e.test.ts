@@ -1,12 +1,12 @@
-import { expect } from 'chai';
 import * as process from 'child_process';
 import * as util from 'util';
+import { describe, expect, it } from 'vitest';
 
 const exec = util.promisify(process.exec);
 const cypressRun =
     'cypress run --browser chrome --headless --config-file ./cypress/cypress.config.ts';
 
-describe('Cypress', () => {
+describe('Cypress e2e', () => {
     it('WHEN console.error is called THEN cypress fails', async () => {
         const spec = ' --spec ./cypress/e2e/shouldFailOnConsoleError.cy.ts';
         let testResult = '';
