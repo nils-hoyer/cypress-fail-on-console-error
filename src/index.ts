@@ -1,11 +1,18 @@
 import * as chai from 'chai';
 import { AssertionError } from 'chai';
-import { EOL } from 'os';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import typeDetect from 'type-detect';
-import { Config } from './types/Config';
-import { ConsoleType } from './types/ConsoleType';
+
+type ConsoleType = 'error' | 'warn' | 'info';
+interface Config {
+    consoleMessages?: (string | RegExp)[];
+    consoleTypes?: ConsoleType[];
+    debug?: boolean;
+}
+
+export { Config };
+export { ConsoleType };
 
 chai.should();
 chai.use(sinonChai);
@@ -24,9 +31,14 @@ export default function failOnConsoleError(_config: Config = {}) {
 
     setConfig(_config);
 
-    Cypress.on('window:before:load', (window) => {
-        spies = createSpies(config as Required<Config>, window.console);
-    });
+    const setSpies = (window: Cypress.AUTWindow) =>
+        (spies = createSpies(config as Required<Config>, window.console));
+
+    if (Cypress.testingType === 'component') {
+        before(() => cy.window().then(setSpies));
+    } else {
+        Cypress.on('window:before:load', setSpies);
+    }
 
     Cypress.on('command:end', () => {
         if (!spies) return;
@@ -41,7 +53,7 @@ export default function failOnConsoleError(_config: Config = {}) {
         if (!consoleMessage) return;
 
         throw new AssertionError(
-            `cypress-fail-on-console-error: ${EOL} ${consoleMessage}`
+            `cypress-fail-on-console-error:\n${consoleMessage}`
         );
     });
 
@@ -185,6 +197,3 @@ export const cypressLogger = (name: string, message: any) => {
         consoleProps: () => message,
     });
 };
-
-export { Config } from './types/Config';
-export { ConsoleType } from './types/ConsoleType';

@@ -1,1 +1,0 @@
-export type ConsoleType = 'error' | 'warn' | 'info'
