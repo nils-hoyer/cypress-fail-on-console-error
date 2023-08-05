@@ -20,4 +20,5 @@ jobs:
             - run: npm run build
             - run: npm run ci:prettier
             - run: npm run test:ut
-            - run: npm run test:it
+            - run: npm run test:e2e
+            - run: npm run test:cmp
