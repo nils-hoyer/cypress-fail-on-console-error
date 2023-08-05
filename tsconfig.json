@@ -11,12 +11,8 @@
         "forceConsistentCasingInFileNames": true,
         "sourceMap": false,
         "types": ["cypress", "node"],
-        "moduleResolution": "bundler"
+        "moduleResolution": "bundler",
+        "module": "es6"
     },
-    "include": ["src"],
-    "ts-node": {
-        "compilerOptions": {
-            "module": "es6"
-        }
-    }
+    "include": ["src"]
 }
