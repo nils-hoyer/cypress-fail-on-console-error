@@ -1,6 +1,6 @@
 {
   "name": "cypress-fail-on-console-error",
-  "version": "4.0.3",
+  "version": "5.0.0",
   "description": "fail cypress test on console error",
   "type": "module",
   "main": "dist/index.js",
@@ -26,7 +26,9 @@
   "keywords": [
     "cypress",
     "testing",
-    "console"
+    "console",
+    "e2e",
+    "component"
   ],
   "author": "nils-hoyer",
   "license": "MIT",
