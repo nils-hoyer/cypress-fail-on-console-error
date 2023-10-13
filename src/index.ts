@@ -5,7 +5,7 @@ import sinonChai from 'sinon-chai';
 import typeDetect from 'type-detect';
 
 type ConsoleType = 'error' | 'warn' | 'info';
-type ConsoleMessage = (string | RegExp);
+type ConsoleMessage = string | RegExp;
 interface Config {
     consoleMessages?: ConsoleMessage[];
     consoleTypes?: ConsoleType[];
