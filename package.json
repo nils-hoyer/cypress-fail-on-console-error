@@ -1,6 +1,6 @@
 {
   "name": "cypress-fail-on-console-error",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "fail cypress test on console error",
   "type": "module",
   "main": "dist/index.js",
@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/nils-hoyer/cypress-fail-on-console-error#readme",
   "dependencies": {
-    "chai": "^4.3.4",
+    "chai": "^4.3.10",
     "sinon": "^16.0.0",
     "sinon-chai": "^3.7.0",
     "type-detect": "^4.0.8"
