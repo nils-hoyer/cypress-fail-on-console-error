@@ -5,14 +5,16 @@ import sinonChai from 'sinon-chai';
 import typeDetect from 'type-detect';
 
 type ConsoleType = 'error' | 'warn' | 'info';
+type ConsoleMessage = (string | RegExp);
 interface Config {
-    consoleMessages?: (string | RegExp)[];
+    consoleMessages?: ConsoleMessage[];
     consoleTypes?: ConsoleType[];
     debug?: boolean;
 }
 
 export { Config };
 export { ConsoleType };
+export { ConsoleMessage };
 
 chai.should();
 chai.use(sinonChai);
@@ -141,7 +143,7 @@ export const findConsoleMessageIncluded = (
 
     return consoleMessages.find((consoleMessage: string) => {
         const someConsoleMessagesExcluded = config.consoleMessages.some(
-            (configConsoleMessage: string | RegExp) =>
+            (configConsoleMessage: ConsoleMessage) =>
                 isConsoleMessageExcluded(
                     consoleMessage,
                     configConsoleMessage,
@@ -160,7 +162,7 @@ export const findConsoleMessageIncluded = (
 
 export const isConsoleMessageExcluded = (
     consoleMessage: string,
-    configConsoleMessage: string | RegExp,
+    configConsoleMessage: ConsoleMessage,
     debug: boolean
 ) => {
     const configConsoleMessageRegExp =
