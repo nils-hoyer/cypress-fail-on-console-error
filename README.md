@@ -45,11 +45,11 @@ Use `failOnConsoleError` functions `getConfig()` and `setConfig()` with your own
 
 ```js
 // Simple example implementation
-const { getConfig, setConfig, ConsoleMessages } = failOnConsoleError(config);
+const { getConfig, setConfig, ConsoleMessage } = failOnConsoleError(config);
 
 Cypress.Commands.addAll({
     getConsoleMessages: () => cy.wrap(getConfig().consoleMessages),
-    setConsoleMessages: (consoleMessages: ConsoleMessages[]) => 
+    setConsoleMessages: (consoleMessages: ConsoleMessage[]) => 
         setConfig({ ...getConfig(), consoleMessages });
 ```
 
