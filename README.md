@@ -32,7 +32,7 @@ failOnConsoleError();
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 
 const config: Config = {
-    consoleMessages: ['foo', /^bar-regex.*/, /^((?!include-all-except-regex).)*$/],
+    consoleMessages: ['foo', /^bar-regex.*/, /^((?!include-console-message).)*$/],
     consoleTypes: ['error', 'warn', 'info'],
     debug: false,
 };
