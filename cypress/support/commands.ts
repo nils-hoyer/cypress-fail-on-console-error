@@ -1,4 +1,4 @@
-import failOnConsoleError, { Config, ConsoleMessages } from '../../dist/index';
+import failOnConsoleError, { Config, ConsoleMessage } from '../../dist/index';
 
 const { getConfig, setConfig } = failOnConsoleError({
     consoleMessages: [
@@ -15,11 +15,11 @@ Cypress.Commands.addAll({
         const config = getConfig();
         return cy.wrap(config?.consoleMessages);
     },
-    setConsoleMessages: (consoleMessages: ConsoleMessages[]) => {
+    setConsoleMessages: (consoleMessages: ConsoleMessage[]) => {
         const config = getConfig();
         setConfig({ ...config, consoleMessages });
     },
-    addConsoleMessages: (_consoleMessages: ConsoleMessages[]) => {
+    addConsoleMessages: (_consoleMessages: ConsoleMessage[]) => {
         const config = getConfig() as Required<Config>;
         const consoleMessages = [
             ...config.consoleMessages,
@@ -30,7 +30,7 @@ Cypress.Commands.addAll({
             consoleMessages,
         });
     },
-    deleteConsoleMessages: (_consoleMessages: ConsoleMessages[]) => {
+    deleteConsoleMessages: (_consoleMessages: ConsoleMessage[]) => {
         const config = getConfig() as Required<Config>;
         const consoleMessages = config.consoleMessages.filter(
             (consoleMessage: string | RegExp) =>
@@ -48,13 +48,13 @@ declare global {
         interface Chainable {
             getConsoleMessages(): Chainable<any>;
             setConsoleMessages(
-                consoleMessages: ConsoleMessages[]
+                consoleMessages: ConsoleMessage[]
             ): Chainable<void>;
             addConsoleMessages(
-                consoleMessages: ConsoleMessages[]
+                consoleMessages: ConsoleMessage[]
             ): Chainable<void>;
             deleteConsoleMessages(
-                consoleMessages: ConsoleMessages[]
+                consoleMessages: ConsoleMessage[]
             ): Chainable<void>;
         }
     }
