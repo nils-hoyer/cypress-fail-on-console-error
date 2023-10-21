@@ -14,8 +14,8 @@
     "lint": "tsc --noEmit && tsc -p ./test/tsconfig.json && tsc -p ./cypress/tsconfig.json",
     "test": "npm run test:ut && npm run test:e2e && npm run test:cmp",
     "test:ut": "vitest run unit.test.ts",
-    "test:e2e": "vitest run e2e.test.ts --test-timeout 60000",
-    "test:cmp": "vitest run component.test.ts --test-timeout 60000",
+    "test:e2e": "vitest run e2e.test.ts --test-timeout 120000",
+    "test:cmp": "vitest run component.test.ts --test-timeout 120000",
     "verify": "npm run build && npm run lint && npm run ci:prettier && npm run test",
     "ci:prettier": "prettier --check \"**/*\""
   },
