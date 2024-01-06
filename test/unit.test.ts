@@ -88,14 +88,21 @@ describe('createConfig()', () => {
 
     it('WHEN config properties are set THEN overwrite default', () => {
         const config: Config = {
-            consoleTypes: ['warn', 'info', 'error'],
+            consoleTypes: ['warn', 'info', 'error', 'debug', 'trace', 'table'],
             consoleMessages: ['foo', 'bar'],
             debug: true,
         };
 
         const given = createConfig(config);
 
-        expect(given.consoleTypes).to.deep.equal(['warn', 'info', 'error']);
+        expect(given.consoleTypes).to.deep.equal([
+            'warn',
+            'info',
+            'error',
+            'debug',
+            'trace',
+            'table',
+        ]);
         expect(given.consoleMessages).to.deep.equal(['foo', 'bar']);
         expect(given.debug).to.deep.equal(true);
     });
@@ -129,12 +136,15 @@ describe('validateConfig()', () => {
 describe('createSpies()', () => {
     it('WHEN consoleTypes THEN create createSpies map', () => {
         const config: Required<Config> = createConfig({
-            consoleTypes: ['info', 'warn', 'error'],
+            consoleTypes: ['info', 'warn', 'error', 'debug', 'trace', 'table'],
         });
         const console: any = {
             info: () => true,
             warn: () => true,
             error: () => true,
+            debug: () => true,
+            trace: () => true,
+            table: () => true,
         };
 
         const spies: Map<ConsoleType, sinon.SinonSpy> = createSpies(
@@ -143,10 +153,13 @@ describe('createSpies()', () => {
         );
 
         const spiesIterator = spies.keys();
-        expect(spies.size).to.equals(3);
+        expect(spies.size).to.equals(6);
         expect(spiesIterator.next().value).to.equals(config.consoleTypes[0]);
         expect(spiesIterator.next().value).to.equals(config.consoleTypes[1]);
         expect(spiesIterator.next().value).to.equals(config.consoleTypes[2]);
+        expect(spiesIterator.next().value).to.equals(config.consoleTypes[3]);
+        expect(spiesIterator.next().value).to.equals(config.consoleTypes[4]);
+        expect(spiesIterator.next().value).to.equals(config.consoleTypes[5]);
     });
 });
 

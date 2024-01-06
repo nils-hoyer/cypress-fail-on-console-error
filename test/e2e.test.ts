@@ -7,8 +7,31 @@ const cypressRun =
     'cypress run --browser chrome --headless --config-file ./cypress/cypress.config.ts';
 
 describe('Cypress e2e', () => {
+    it('WHEN console type is matched THEN cypress fails', async () => {
+        const spec = ' --spec ./cypress/e2e/shouldFailOnConsoleMatch.cy.ts';
+        let testResult = '';
+
+        try {
+            await exec(cypressRun + spec);
+        } catch (error: any) {
+            testResult = error.stdout;
+        } finally {
+            // console.log(testResult);
+            expect(testResult).to.match(/Failing:.*6/);
+            expect(testResult).to.match(/Passing:.*0/);
+            expect(testResult).to.match(/Tests:.*6/);
+            expect(testResult).contains('consoleInfoMessage');
+            expect(testResult).contains('consoleWarnMessage');
+            expect(testResult).contains('consoleErrorMessage');
+            expect(testResult).contains('consoleDebugMessage');
+            expect(testResult).contains('consoleTraceMessage');
+            expect(testResult).contains('consoleTableMessage');
+        }
+    });
+
     it('WHEN console.error is called THEN cypress fails', async () => {
-        const spec = ' --spec ./cypress/e2e/shouldFailOnConsoleError.cy.ts';
+        const spec =
+            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromConfigFile.cy.ts';
         let testResult = '';
 
         try {

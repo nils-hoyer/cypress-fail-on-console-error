@@ -1,5 +1,5 @@
 import * as sinon from 'sinon';
-type ConsoleType = 'error' | 'warn' | 'info';
+type ConsoleType = 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'table';
 type ConsoleMessage = string | RegExp;
 interface Config {
     consoleMessages?: ConsoleMessage[];

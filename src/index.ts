@@ -4,7 +4,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import typeDetect from 'type-detect';
 
-type ConsoleType = 'error' | 'warn' | 'info';
+type ConsoleType = 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'table';
 type ConsoleMessage = string | RegExp;
 interface Config {
     consoleMessages?: ConsoleMessage[];
@@ -87,9 +87,14 @@ export const validateConfig = (config: Config): void => {
     if (config.consoleTypes) {
         chai.expect(config.consoleTypes).not.to.be.empty;
         config.consoleTypes.forEach((consoleType) => {
-            chai.expect(['error', 'warn', 'info'] as ConsoleType[]).contains(
-                consoleType
-            );
+            chai.expect([
+                'error',
+                'warn',
+                'info',
+                'debug',
+                'trace',
+                'table',
+            ] as ConsoleType[]).contains(consoleType);
         });
     }
 };
@@ -106,7 +111,8 @@ export const createSpies = (
 ): Map<ConsoleType, sinon.SinonSpy> => {
     let spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
     config.consoleTypes?.forEach((consoleType) => {
-        spies.set(consoleType, sinon.spy(console, consoleType));
+        //TODO: function table does not exists on node.Console
+        spies.set(consoleType, sinon.spy(console, consoleType as any));
     });
     return spies;
 };

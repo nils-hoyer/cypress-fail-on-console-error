@@ -56,7 +56,14 @@ export const validateConfig = (config) => {
     if (config.consoleTypes) {
         chai.expect(config.consoleTypes).not.to.be.empty;
         config.consoleTypes.forEach((consoleType) => {
-            chai.expect(['error', 'warn', 'info']).contains(consoleType);
+            chai.expect([
+                'error',
+                'warn',
+                'info',
+                'debug',
+                'trace',
+                'table',
+            ]).contains(consoleType);
         });
     }
 };
@@ -72,6 +79,7 @@ export const createSpies = (config, console) => {
     var _a;
     let spies = new Map();
     (_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.forEach((consoleType) => {
+        //TODO: function table does not exists on node.Console
         spies.set(consoleType, sinon.spy(console, consoleType));
     });
     return spies;

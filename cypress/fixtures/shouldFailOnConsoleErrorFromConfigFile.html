@@ -1,0 +1,14 @@
+<html>
+    <script>
+        console.error('firstErrorExcluded');
+
+        console.error(
+            'secondErrorNotExcluded',
+            1,
+            { foo: 'bar' },
+            ['a', 1],
+            undefined,
+            null
+        );
+    </script>
+</html>
