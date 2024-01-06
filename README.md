@@ -1,6 +1,6 @@
 # cypress-fail-on-console-error
 
-This Plugin observes `console.error()` function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). Cypress test will fail when the error function gets executed. For observing network errors please check out [cypress-fail-on-network-requests](https://www.npmjs.com/package/cypress-fail-on-network-request).
+This Plugin observes `console.error()` function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). Cypress test will fail when the error conditions are met. For observing network errors please check out [cypress-fail-on-network-errors](https://www.npmjs.com/package/cypress-fail-on-network-errors).
 
 ### Installation
 
@@ -23,7 +23,7 @@ failOnConsoleError();
 | Parameter             | Default               | <div style="width:300px">Description</div>    |
 |---                    |---                    |---                                            |
 | `consoleMessages`     | `[]` | Exclude console messages from throwing `AssertionError`. Types `RegExp` and `string` are accepted. Strings will be converted to regular expression. [RegExp.test()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test?retiredLocale=de) will be used for console message matching. Make sure to [escape special characters](https://javascript.info/regexp-escaping). When console message property `stacktrace` exists, then the whole stacktrace can be matched. |
-| `consoleTypes` | `['error']` | Define console types for observation. `error`, `warn` and `info` are accepted values.
+| `consoleTypes` | `['error']` | Define console types for observation. `error`, `warn`, `info`, `debug`, `trace , `table` are accepted values.
 | `debug`          | `false`               | Enable debug logs for `consoleMessage_configConsoleMessage_match` and `consoleMessage_excluded` to cypress runner                                     
 
 <br/>
@@ -32,9 +32,12 @@ failOnConsoleError();
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 
 const config: Config = {
-    consoleMessages: ['foo', /^bar-regex.*/, /^((?!include-console-message).)*$/],
-    consoleTypes: ['error', 'warn', 'info'],
-    debug: false,
+    consoleMessages: [
+        'foo', 
+        /^bar-regex.*/,
+        /^((?!include-console-messages).)*$/ 
+    ],
+    consoleTypes: ['error', 'warn'],
 };
 
 failOnConsoleError(config);

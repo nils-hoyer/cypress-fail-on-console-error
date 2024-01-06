@@ -10,4 +10,16 @@ describe('shouldFailOnConsoleErrorAndConsoleWarn', () => {
     it('should pass on console.info', () => {
         cy.visit('./cypress/fixtures/consoleInfo.html');
     });
+
+    it('should pass on console.debug', () => {
+        cy.visit('./cypress/fixtures/consoleInfo.html');
+    });
+
+    it('should pass on console.trace', () => {
+        cy.visit('./cypress/fixtures/consoleInfo.html');
+    });
+
+    it('should pass on console.trace', () => {
+        cy.visit('./cypress/fixtures/consoleInfo.html');
+    });
 });
