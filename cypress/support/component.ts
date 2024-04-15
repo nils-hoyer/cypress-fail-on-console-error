@@ -41,9 +41,8 @@ export function mount(
     kebabCaseName: Lowercase<string>
 ): Cypress.Chainable<Element | null> {
     maybeRegisterComponent(kebabCaseName, webComponent);
-    document.querySelector(
-        ROOT_SELECTOR
-    )!.innerHTML = `<${kebabCaseName} id="root"></${kebabCaseName}>`;
+    document.querySelector(ROOT_SELECTOR)!.innerHTML =
+        `<${kebabCaseName} id="root"></${kebabCaseName}>`;
 
     return cy.wrap(document.querySelector('#root'), { log: false });
 }
