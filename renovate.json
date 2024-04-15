@@ -1,6 +1,6 @@
 {
     "extends": ["config:base", ":disableDependencyDashboard"],
-    "schedule": ["before 2am"],
+    "schedule": ["on the first day of the month"],
     "rebaseWhen": "behind-base-branch",
     "automerge": true
 }
