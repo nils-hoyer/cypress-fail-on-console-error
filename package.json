@@ -52,7 +52,7 @@
     "@types/type-detect": "4.0.3",
     "cypress": "13.10.0",
     "mocha": "10.4.0",
-    "prettier": "3.2.5",
+    "prettier": "3.3.0",
     "prettier-plugin-organize-imports": "3.2.4",
     "rimraf": "5.0.7",
     "typescript": "5.4.5",
