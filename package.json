@@ -51,7 +51,7 @@
     "@types/sinon-chai": "3.2.12",
     "@types/type-detect": "4.0.3",
     "cypress": "14.5.0",
-    "mocha": "11.2.2",
+    "mocha": "11.7.1",
     "prettier": "3.5.3",
     "prettier-plugin-organize-imports": "4.1.0",
     "rimraf": "6.0.1",
