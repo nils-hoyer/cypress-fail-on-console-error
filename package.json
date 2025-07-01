@@ -38,7 +38,7 @@
   "homepage": "https://github.com/nils-hoyer/cypress-fail-on-console-error#readme",
   "dependencies": {
     "chai": "^4.3.10",
-    "sinon": "^20.0.0",
+    "sinon": "^21.0.0",
     "sinon-chai": "^3.7.0",
     "type-detect": "^4.0.8"
   },
