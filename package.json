@@ -50,7 +50,7 @@
     "@types/sinon": "17.0.4",
     "@types/sinon-chai": "3.2.12",
     "@types/type-detect": "4.0.3",
-    "cypress": "14.5.3",
+    "cypress": "14.5.4",
     "mocha": "11.7.1",
     "prettier": "3.6.2",
     "prettier-plugin-organize-imports": "4.2.0",
