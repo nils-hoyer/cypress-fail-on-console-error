@@ -54,7 +54,7 @@
     "mocha": "11.7.5",
     "prettier": "3.6.2",
     "prettier-plugin-organize-imports": "4.3.0",
-    "rimraf": "6.1.0",
+    "rimraf": "6.1.2",
     "typescript": "5.9.3",
     "vite": "^7.0.0",
     "vitest": "^1.0.0"
