@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "build": "npx rimraf dist/ && tsc",
+    "prepack": "npm run build",
     "prettier": "prettier --write \"**/*\"",
     "lint": "tsc --noEmit && tsc -p ./test/tsconfig.json && tsc -p ./cypress/tsconfig.json",
     "test": "npm run test:ut && npm run test:e2e && npm run test:cmp",

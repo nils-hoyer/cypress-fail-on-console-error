@@ -38,7 +38,7 @@ When you add or change a config option or public function, update `README.md` to
 ## Commands
 
 - `npm ci`: install dependencies
-- `npm run build`: delete `dist/` and compile with `tsc`
+- `npm run build`: delete `dist/` and compile with `tsc`. `npm pack` and `npm publish` run it first through the `prepack` script.
 - `npm run lint`: type-check `src`, `test` and `cypress`
 - `npm run test:ut`: unit tests (fast, no browser)
 - `npm run test:e2e`, `npm run test:cmp`: Cypress e2e and component runs (slow, need Chrome)
@@ -47,7 +47,7 @@ When you add or change a config option or public function, update `README.md` to
 
 **All tests import from `dist/`, not `src/`.** Run `npm run build` before running tests, or they run stale code.
 
-CI (`.github/workflows/ci.yml`) runs the build, the Prettier check and all three test suites on Node LTS. It does not run `npm run lint`, so run it locally.
+CI (`.github/workflows/ci.yml`) runs the build, the type check, the Prettier check and all three test suites on Node LTS.
 
 ## Adding or changing behaviour
 
