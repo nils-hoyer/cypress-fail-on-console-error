@@ -131,6 +131,19 @@ describe('validateConfig()', () => {
             expect(() => validateConfig(config)).to.throw(chai.AssertionError);
         });
     });
+
+    const consoleMessages = [[42], [''], [{}], [null]];
+    consoleMessages.forEach((consoleMessage: any) => {
+        it(`WHEN consoleMessages is not valid (${JSON.stringify(
+            consoleMessage
+        )}) THEN throw AssertionError`, () => {
+            const config: Config = {
+                consoleMessages: consoleMessage,
+            };
+
+            expect(() => validateConfig(config)).to.throw(chai.AssertionError);
+        });
+    });
 });
 
 describe('createSpies()', () => {
@@ -271,7 +284,7 @@ describe('findConsoleMessageIncluded()', () => {
 });
 
 describe('isConsoleMessageExcluded()', () => {
-    it('WHEN configConsoleMessage matching consoleMessage THEN return false', () => {
+    it('WHEN configConsoleMessage matches consoleMessage THEN return true', () => {
         const consoleMessage: string = 'foo';
         const configConsoleMessage: string = 'foo';
 
@@ -284,7 +297,7 @@ describe('isConsoleMessageExcluded()', () => {
         expect(consoleMessageExcluded).to.be.true;
     });
 
-    it('WHEN configConsoleMessage not matching consoleMessage THEN return true', () => {
+    it('WHEN configConsoleMessage does not match consoleMessage THEN return false', () => {
         const consoleMessage: string = 'foo';
         const configConsoleMessage: string = 'bar';
 
@@ -297,7 +310,7 @@ describe('isConsoleMessageExcluded()', () => {
         expect(consoleMessageExcluded).to.be.false;
     });
 
-    it('WHEN configConsoleMessage not matching consoleMessage THEN return true', () => {
+    it('WHEN configConsoleMessage is a pattern that matches consoleMessage THEN return true', () => {
         const consoleMessage: string =
             "TypeError: Cannot read properties of undefined (reading 'map')";
         const configConsoleMessage: string = '.*properties.*map.*';
