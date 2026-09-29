@@ -51,8 +51,8 @@ failOnConsoleError(config);
 
 ### How messages are matched
 
-- All arguments of a console call are joined with spaces into one message. Non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`.
-- If an argument is an `Error`, its stack trace is used, so your patterns can match the error name, the message or the file it came from.
+- All arguments of a console call are joined with spaces into one message. Non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`. Circular references become `"[Circular]"` and BigInts become `"10n"`.
+- If an argument is an `Error`, its name, message and stack trace are used, so your patterns can match the error name, the message or the file it came from.
 - The plugin checks after each Cypress command. The test fails with `cypress-fail-on-console-error:` followed by the first message that none of the `consoleMessages` patterns matched.
 
 ## Set config from a Cypress test
