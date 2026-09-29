@@ -22,12 +22,14 @@ chai.use(sinonChai);
 export default function failOnConsoleError(_config: Config = {}) {
     let originConfig: Required<Config> | undefined;
     let config: Required<Config> | undefined;
+    let consoleMessagePatterns: RegExp[] = [];
     let spies: Map<ConsoleType, sinon.SinonSpy> | undefined;
 
     const getConfig = () => config;
     const setConfig = (_config: Config): void => {
         validateConfig(_config);
         config = createConfig(_config);
+        consoleMessagePatterns = config.consoleMessages.map(toRegExp);
         originConfig = originConfig ?? { ...config };
     };
 
@@ -45,9 +47,13 @@ export default function failOnConsoleError(_config: Config = {}) {
     Cypress.on('command:end', () => {
         if (!spies) return;
 
+        // match against the patterns compiled in setConfig
         const consoleMessage: string | undefined = getConsoleMessageIncluded(
             spies,
-            config as Required<Config>
+            {
+                ...(config as Required<Config>),
+                consoleMessages: consoleMessagePatterns,
+            }
         );
 
         spies = resetSpies(spies);
@@ -75,12 +81,19 @@ export default function failOnConsoleError(_config: Config = {}) {
 
 export const validateConfig = (config: Config): void => {
     if (config.consoleMessages) {
-        config.consoleMessages.forEach((consoleMessage) => {
+        config.consoleMessages.forEach((consoleMessage, index) => {
             chai.expect(typeDetect(consoleMessage)).to.be.oneOf([
                 'string',
                 'RegExp',
             ]);
             chai.expect(consoleMessage.toString()).to.have.length.above(0);
+            try {
+                toRegExp(consoleMessage);
+            } catch (error) {
+                throw new AssertionError(
+                    `cypress-fail-on-console-error: consoleMessages[${index}] is not a valid regular expression. ${(error as Error).message}. Escape special characters to match them literally.`
+                );
+            }
         });
     }
 
@@ -166,15 +179,19 @@ export const findConsoleMessageIncluded = (
     });
 };
 
+const toRegExp = (consoleMessage: ConsoleMessage): RegExp =>
+    consoleMessage instanceof RegExp
+        ? consoleMessage
+        : new RegExp(consoleMessage);
+
 export const isConsoleMessageExcluded = (
     consoleMessage: string,
     configConsoleMessage: ConsoleMessage,
     debug: boolean
 ) => {
-    const configConsoleMessageRegExp =
-        configConsoleMessage instanceof RegExp
-            ? configConsoleMessage
-            : new RegExp(configConsoleMessage);
+    const configConsoleMessageRegExp = toRegExp(configConsoleMessage);
+    // test() starts at lastIndex for /g and /y patterns and moves it on a match
+    configConsoleMessageRegExp.lastIndex = 0;
     const consoleMessageExcluded =
         configConsoleMessageRegExp.test(consoleMessage);
     if (debug) {

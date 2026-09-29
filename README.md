@@ -29,7 +29,7 @@ failOnConsoleError();
 
 | Parameter         | Default     | Description |
 | ----------------- | ----------- | ----------- |
-| `consoleMessages` | `[]`        | Console messages to ignore, as `string` or `RegExp`. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). Messages are matched with [`RegExp.test()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test). |
+| `consoleMessages` | `[]`        | Console messages to ignore, as `string` or `RegExp`. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). A string that isn't a valid regular expression throws an error when the config is set. Messages are matched with [`RegExp.test()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test). |
 | `consoleTypes`    | `['error']` | Console methods to watch: `error`, `warn`, `info`, `debug`, `trace` or `table`. |
 | `debug`           | `false`     | Log how each console message was matched to the Cypress command log. See [Debugging](#debugging). |
 

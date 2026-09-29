@@ -144,6 +144,23 @@ describe('validateConfig()', () => {
             expect(() => validateConfig(config)).to.throw(chai.AssertionError);
         });
     });
+
+    it('WHEN a consoleMessages string is not a valid RegExp THEN throw AssertionError naming it', () => {
+        const config: Config = {
+            consoleMessages: ['foo', 'Failed (404'],
+        };
+
+        expect(() => validateConfig(config)).to.throw(
+            chai.AssertionError,
+            /consoleMessages\[1\] is not a valid regular expression.*Failed \(404/
+        );
+    });
+
+    it('WHEN failOnConsoleError is created with an invalid RegExp string THEN throw AssertionError', () => {
+        expect(() =>
+            failOnConsoleError({ consoleMessages: ['Failed (404'] })
+        ).to.throw(chai.AssertionError);
+    });
 });
 
 describe('createSpies()', () => {
@@ -322,6 +339,21 @@ describe('isConsoleMessageExcluded()', () => {
         );
 
         expect(consoleMessageExcluded).to.be.true;
+    });
+
+    [/foo/g, /foo/y].forEach((configConsoleMessage) => {
+        it(`WHEN configConsoleMessage ${configConsoleMessage} is checked repeatedly THEN return true every time`, () => {
+            const consoleMessagesExcluded = [1, 2, 3, 4].map(() =>
+                isConsoleMessageExcluded('foo', configConsoleMessage, false)
+            );
+
+            expect(consoleMessagesExcluded).to.deep.equal([
+                true,
+                true,
+                true,
+                true,
+            ]);
+        });
     });
 });
 

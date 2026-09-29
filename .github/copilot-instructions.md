@@ -14,7 +14,7 @@ The whole plugin lives in `src/index.ts`. Keep it a single file, and keep runtim
     - component: once per spec, in a root `before` hook via `cy.window()`
 - On every `command:end`, `getConsoleMessageIncluded` checks the spies. `callToString` joins the arguments of each call with spaces. An argument with a `stack` (an `Error`) contributes its stack, and other non-strings go through `JSON.stringify`. The first message that no `consoleMessages` pattern matches is thrown as `AssertionError('cypress-fail-on-console-error:\n<message>')`. Spy history is reset after every check.
 - On `test:after:run`, spies are reset and the config is restored to the one passed at setup, so `setConfig()` changes last for one test only.
-- `consoleMessages` is an exclude list. Strings become `new RegExp(string)` without escaping, and matching uses `RegExp.test()`.
+- `consoleMessages` is an exclude list. `setConfig` compiles it once: strings become `new RegExp(string)` without escaping, and `validateConfig` rejects strings that are not valid regular expressions. Matching uses `RegExp.test()` with `lastIndex` reset to 0, so `/g` and `/y` patterns match consistently.
 - With `debug: true`, `cypressLogger` writes each matching decision to the Cypress command log.
 - A `consoleTypes` change made through `setConfig()` only takes effect when spies are next created. In e2e that happens on the next page load. In component mode it doesn't happen again within the current spec.
 
