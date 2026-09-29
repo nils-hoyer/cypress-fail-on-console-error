@@ -15,7 +15,8 @@ export default function failOnConsoleError(_config = {}) {
         validateConfig(_config);
         config = createConfig(_config);
         consoleMessagePatterns = config.consoleMessages.map(toRegExp);
-        originConfig = originConfig !== null && originConfig !== void 0 ? originConfig : Object.assign({}, config);
+        // a separate copy, so changes to getConfig() don't outlive the test
+        originConfig = originConfig !== null && originConfig !== void 0 ? originConfig : createConfig(config);
     };
     setConfig(_config);
     const setSpies = (window) => (spies = createSpies(config, window.console));
@@ -76,9 +77,12 @@ export const validateConfig = (config) => {
         });
     }
 };
+// copies the arrays, so the config doesn't share them with the caller
 export const createConfig = (config) => { var _a; var _b, _c; return ({
-    consoleMessages: (_b = config.consoleMessages) !== null && _b !== void 0 ? _b : [],
-    consoleTypes: ((_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.length) ? config.consoleTypes : ['error'],
+    consoleMessages: [...((_b = config.consoleMessages) !== null && _b !== void 0 ? _b : [])],
+    consoleTypes: ((_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.length)
+        ? [...new Set(config.consoleTypes)]
+        : ['error'],
     debug: (_c = config.debug) !== null && _c !== void 0 ? _c : false,
 }); };
 export const createSpies = (config, console) => {
