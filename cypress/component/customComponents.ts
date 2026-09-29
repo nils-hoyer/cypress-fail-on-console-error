@@ -59,7 +59,7 @@ export class WithInfo extends HTMLElement {
 
 export class WithWarn extends HTMLElement {
     connectedCallback() {
-        console.info('consoleWarnMessage');
+        console.warn('consoleWarnMessage');
     }
 }
 

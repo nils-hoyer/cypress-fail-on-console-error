@@ -1,194 +1,96 @@
-import * as process from 'child_process';
-import * as util from 'util';
 import { describe, expect, it } from 'vitest';
+import { runCypress } from './runCypress';
 
-const exec = util.promisify(process.exec);
-const cypressRun =
-    'cypress run --browser chrome --headless --config-file ./cypress/cypress.config.ts';
+const runSpec = (specName: string) =>
+    runCypress('e2e', `./cypress/e2e/${specName}.cy.ts`);
 
 describe('Cypress e2e', () => {
     it('WHEN console type is matched THEN cypress fails', async () => {
-        const spec = ' --spec ./cypress/e2e/shouldFailOnConsoleMatch.cy.ts';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            expect(testResult).to.match(/Failing:.*6/);
-            expect(testResult).to.match(/Passing:.*0/);
-            expect(testResult).to.match(/Tests:.*6/);
-            expect(testResult).contains('consoleInfoMessage');
-            expect(testResult).contains('consoleWarnMessage');
-            expect(testResult).contains('consoleErrorMessage');
-            expect(testResult).contains('consoleDebugMessage');
-            expect(testResult).contains('consoleTraceMessage');
-            expect(testResult).contains('consoleTableMessage');
-        }
+        expect(await runSpec('shouldFailOnConsoleMatch'))
+            .to.match(/Failing:.*6/)
+            .and.match(/Passing:.*0/)
+            .and.match(/Tests:.*6/)
+            .and.contains('consoleInfoMessage')
+            .and.contains('consoleWarnMessage')
+            .and.contains('consoleErrorMessage')
+            .and.contains('consoleDebugMessage')
+            .and.contains('consoleTraceMessage')
+            .and.contains('consoleTableMessage');
     });
 
     it('WHEN console.error is called THEN cypress fails', async () => {
-        const spec =
-            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromConfigFile.cy.ts';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            const expectedTestResult = '1 of 1 failed';
-            const expectedErrorMessage =
-                'secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null';
-            expect(testResult).contains(expectedTestResult);
-            expect(testResult).contains(expectedErrorMessage);
-        }
+        expect(await runSpec('shouldFailOnConsoleErrorFromConfigFile'))
+            .contains('1 of 1 failed')
+            .and.contains(
+                'secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null'
+            );
     });
 
     it('WHEN console.error from new Error() is called THEN cypress fails', async () => {
-        const spec =
-            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromError.cy.ts';
-        let testResult = '';
+        expect(await runSpec('shouldFailOnConsoleErrorFromError'))
+            .contains('1 of 1 failed')
+            .and.contains(
+                "TypeError: Cannot read properties of undefined (reading 'map')"
+            );
+    });
 
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            const expectedTestResult = '1 of 1 failed';
-            const expectedErrorMessage =
-                "TypeError: Cannot read properties of undefined (reading 'map')";
-            expect(testResult).contains(expectedTestResult);
-            expect(testResult).contains(expectedErrorMessage);
-        }
+    it('WHEN console.error and console.warn are watched THEN cypress fails on both', async () => {
+        expect(await runSpec('shouldFailOnConsoleErrorAndConsoleWarn'))
+            .to.match(/Failing:.*2/)
+            .and.match(/Passing:.*1/)
+            .and.match(/Tests:.*3/)
+            .and.contains('secondErrorNotExcluded')
+            .and.contains('consoleWarnMessage');
     });
 
     it('WHEN console.info is called THEN cypress passes', async () => {
-        const spec = ' --spec ./cypress/e2e/shouldPassOnConsoleInfo.cy.ts';
-
-        const { stdout } = await exec(cypressRun + spec);
-        const testResult = stdout;
-
-        // console.log(testResult);
-        const expectedTestResult = 'All specs passed';
-        expect(testResult).contains(expectedTestResult);
+        expect(await runSpec('shouldPassOnConsoleInfo')).contains(
+            'All specs passed'
+        );
     });
 
     it('WHEN console.error with config excludeMessages matching console.error message THEN cypress passes', async () => {
-        const spec =
-            ' --spec ./cypress/e2e/shouldPassOnConsoleErrorExcludeMessages.cy.ts';
-
-        const { stdout } = await exec(cypressRun + spec);
-        const testResult = stdout;
-
-        // console.log(testResult);
-        const expectedTestResult = 'All specs passed';
-        expect(testResult).contains(expectedTestResult);
+        expect(
+            await runSpec('shouldPassOnConsoleErrorExcludeMessages')
+        ).contains('All specs passed');
     });
 
     it('WHEN run tests with setConfig THEN config will applied to test', async () => {
-        const spec =
-            ' --spec ./cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            const expectedTestResultFailing = /Failing:.*2/;
-            const expectedTestResultPassing = /Passing:.*2/;
-            const expectedTestResultTests = /Tests:.*4/;
-            expect(testResult).to.match(expectedTestResultFailing);
-            expect(testResult).to.match(expectedTestResultPassing);
-            expect(testResult).to.match(expectedTestResultTests);
-        }
+        expect(await runSpec('shouldFailOnConsoleErrorFromSetConfig'))
+            .to.match(/Failing:.*2/)
+            .and.match(/Passing:.*2/)
+            .and.match(/Tests:.*4/);
     });
 
     it('WHEN run multiple tests files and tests cases THEN cypress run all files and test cases', async () => {
-        const spec =
-            ' --spec "cypress/e2e/shouldRunAllTestsAlthoughConsoleError.cy.ts,cypress/e2e/shouldRunAllTestsAlthoughConsoleError2.cy.ts"';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            const expectedTestResult = /2 of 2 failed.*6.*3.*3/;
-            const expectedAssertionMessage =
-                /AssertionError: cypress-fail-on-console-error:/g;
-            expect(testResult).to.match(expectedTestResult);
-            expect(
-                testResult.match(expectedAssertionMessage)?.length
-            ).to.be.equal(3);
-        }
+        expect(await runSpec('shouldRunAllTestsAlthoughConsoleError*'))
+            .to.match(/2 of 2 failed.*6.*3.*3/)
+            .and.satisfies(
+                (result: string) =>
+                    result.match(
+                        /AssertionError: cypress-fail-on-console-error:/g
+                    )?.length === 3
+            );
     });
 
     it('WHEN run multiple tests THEN spies will be resetted between tests', async () => {
-        const spec = ' --spec ./cypress/e2e/shouldResetSpiesBetweenTests.cy.ts';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            //TODO: on the pipeline it should be checked with 31m -> /Failing:.*31m1/
-            const expectedTestResultFailing = /Failing:.*1/;
-            const expectedTestResultPassing = /Passing:.*1/;
-            const expectedTestResultTests = /Tests:.*2/;
-            expect(testResult).to.match(expectedTestResultFailing);
-            expect(testResult).to.match(expectedTestResultPassing);
-            expect(testResult).to.match(expectedTestResultTests);
-        }
+        expect(await runSpec('shouldResetSpiesBetweenTests'))
+            .to.match(/Failing:.*1/)
+            .and.match(/Passing:.*1/)
+            .and.match(/Tests:.*2/);
     });
 
     it('WHEN run multiple tests with cypress eror THEN spies will be resetted between tests', async () => {
-        const spec =
-            ' --spec ./cypress/e2e/shouldResetSpiesBetweenTestsOnCypressFailure.cy.ts';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            //TODO: on the pipeline it should be checked with 31m -> /Failing:.*31m1/
-            const expectedTestResultFailing = /Failing:.*1/;
-            const expectedTestResultPassing = /Passing:.*1/;
-            const expectedTestResultTests = /Tests:.*2/;
-            expect(testResult).to.match(expectedTestResultFailing);
-            expect(testResult).to.match(expectedTestResultPassing);
-            expect(testResult).to.match(expectedTestResultTests);
-        }
+        expect(await runSpec('shouldResetSpiesBetweenTestsOnCypressFailure'))
+            .to.match(/Failing:.*1/)
+            .and.match(/Passing:.*1/)
+            .and.match(/Tests:.*2/);
     });
 
     it('WHEN run multiple tests THEN config will be resetted between tests', async () => {
-        const spec =
-            ' --spec ./cypress/e2e/shouldResetConfigBetweenTests.cy.ts';
-        let testResult = '';
-
-        try {
-            await exec(cypressRun + spec);
-        } catch (error: any) {
-            testResult = error.stdout;
-        } finally {
-            // console.log(testResult);
-            const expectedTestResultFailing = /Failing:.*1/;
-            const expectedTestResultPassing = /Passing:.*1/;
-            const expectedTestResultTests = /Tests:.*2/;
-            expect(testResult).to.match(expectedTestResultFailing);
-            expect(testResult).to.match(expectedTestResultPassing);
-            expect(testResult).to.match(expectedTestResultTests);
-        }
+        expect(await runSpec('shouldResetConfigBetweenTests'))
+            .to.match(/Failing:.*1/)
+            .and.match(/Passing:.*1/)
+            .and.match(/Tests:.*2/);
     });
 });
