@@ -377,4 +377,74 @@ describe('callToString()', () => {
         );
         expect(expected).to.contains('unit.test.ts');
     });
+
+    it('WHEN an Error stack starts with name and message THEN do not repeat them', () => {
+        const expected = callToString([new Error('boom')]);
+
+        expect(expected.match(/Error: boom/g)).to.have.length(1);
+    });
+
+    it('WHEN an Error stack has no name and message (Firefox, WebKit) THEN prepend them', () => {
+        const error = new Error('boom');
+        error.stack = 'render@http://localhost/app.js:1:1';
+        const errorWithoutMessage = new TypeError();
+        errorWithoutMessage.stack = 'render@http://localhost/app.js:2:1';
+
+        expect(callToString([error])).to.equal(
+            'Error: boom\nrender@http://localhost/app.js:1:1'
+        );
+        expect(callToString([errorWithoutMessage])).to.equal(
+            'TypeError\nrender@http://localhost/app.js:2:1'
+        );
+    });
+
+    it('WHEN an argument has circular references THEN replace them with [Circular]', () => {
+        const state: any = { a: 1 };
+        state.self = state;
+        const shared = { x: 1 };
+
+        expect(callToString(['state', state])).to.equal(
+            'state {"a":1,"self":"[Circular]"}'
+        );
+        expect(callToString([{ a: shared, b: shared }])).to.equal(
+            '{"a":{"x":1},"b":{"x":1}}'
+        );
+    });
+
+    it('WHEN an argument contains a BigInt THEN print it with the n suffix', () => {
+        expect(callToString(['count', { count: BigInt(10) }])).to.equal(
+            'count {"count":"10n"}'
+        );
+    });
+
+    it('WHEN an argument cannot be stringified THEN fall back to its type', () => {
+        const throwingGetter = {
+            get boom() {
+                throw new Error('getter');
+            },
+        };
+
+        expect(callToString(['state', throwingGetter])).to.equal(
+            'state [object Object]'
+        );
+    });
+});
+
+describe('cypressLogger()', () => {
+    afterEach(() => {
+        delete (Cypress as any).log;
+    });
+
+    it('WHEN the logged message contains a RegExp THEN log it as a string', () => {
+        const log = vi.fn();
+        (Cypress as any).log = log;
+
+        isConsoleMessageExcluded('foo', /fo+/, true);
+
+        const { message, consoleProps } = log.mock.calls[0][0];
+        expect(message).to.equal(
+            '{"consoleMessage":"foo","configConsoleMessage":"/fo+/","consoleMessageExcluded":true}'
+        );
+        expect(consoleProps().configConsoleMessage).to.deep.equal(/fo+/);
+    });
 });

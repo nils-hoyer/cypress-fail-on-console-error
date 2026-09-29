@@ -204,21 +204,63 @@ export const isConsoleMessageExcluded = (
     return consoleMessageExcluded;
 };
 
+// JSON.stringify throws on circular references and BigInts, which apps can pass to console methods
+const stringify = (value: unknown): string => {
+    const ancestors: unknown[] = [];
+    try {
+        return String(
+            JSON.stringify(
+                value,
+                function (this: unknown, _key: string, _value: unknown) {
+                    if (typeof _value === 'bigint') return `${_value}n`;
+                    if (typeof _value !== 'object' || _value === null) {
+                        return _value;
+                    }
+                    // `this` is the object holding _value: drop ancestors that aren't on its path
+                    while (
+                        ancestors.length > 0 &&
+                        ancestors[ancestors.length - 1] !== this
+                    ) {
+                        ancestors.pop();
+                    }
+                    if (ancestors.indexOf(_value) !== -1) return '[Circular]';
+                    ancestors.push(_value);
+                    return _value;
+                }
+            )
+        );
+    } catch {
+        return Object.prototype.toString.call(value);
+    }
+};
+
+// Firefox and WebKit stacks only list the frames, without the "Name: message" line V8 puts first
+const errorToString = (error: Error & { stack: string }): string => {
+    const header = error.message
+        ? `${error.name}: ${error.message}`
+        : error.name;
+    return !error.name || error.stack.startsWith(header)
+        ? error.stack
+        : `${header}\n${error.stack}`;
+};
+
+const argumentToString = (argument: any): string => {
+    if (typeof argument === 'string') return argument;
+    if (typeof argument?.stack === 'string') return errorToString(argument);
+    return stringify(argument?.stack ?? argument);
+};
+
 export const callToString = (calls: any[]): string =>
-    calls
-        .reduce((previousValue, currentValue) => {
-            const _value = currentValue?.stack ?? currentValue;
-            const _currentValue =
-                typeof _value !== 'string' ? JSON.stringify(_value) : _value;
-            return `${previousValue} ${_currentValue}`;
-        }, '')
-        .trim();
+    calls.map(argumentToString).join(' ').trim();
 
 export const cypressLogger = (name: string, message: any) => {
     Cypress.log({
         name: name,
         displayName: name,
-        message: JSON.stringify(message),
+        // JSON.stringify turns a RegExp into {}
+        message: JSON.stringify(message, (_key, value) =>
+            value instanceof RegExp ? String(value) : value
+        ),
         consoleProps: () => message,
     });
 };
