@@ -34,7 +34,6 @@ When you add or change a config option or public function, update `README.md` to
 - `cypress/fixtures/*.html`: pages that write to the console, visited by e2e specs
 - `cypress/component/customComponents.ts`: web components that write to the console, mounted by component specs
 - `cypress/support/commands.ts`: registers the plugin with the shared test config and adds the custom commands that specs use (`getConfig`, `setConfig`, `getConsoleMessages`, `setConsoleMessages`, `addConsoleMessages`, `deleteConsoleMessages`)
-- `types/`: vendored third-party type definitions; do not edit
 
 ## Commands
 
