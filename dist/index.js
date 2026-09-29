@@ -67,14 +67,11 @@ export const validateConfig = (config) => {
         });
     }
 };
-export const createConfig = (config) => {
-    var _a, _b, _c;
-    return ({
-        consoleMessages: (_a = config.consoleMessages) !== null && _a !== void 0 ? _a : [],
-        consoleTypes: ((_b = config.consoleTypes) === null || _b === void 0 ? void 0 : _b.length) ? config.consoleTypes : ['error'],
-        debug: (_c = config.debug) !== null && _c !== void 0 ? _c : false,
-    });
-};
+export const createConfig = (config) => { var _a; var _b, _c; return ({
+    consoleMessages: (_b = config.consoleMessages) !== null && _b !== void 0 ? _b : [],
+    consoleTypes: ((_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.length) ? config.consoleTypes : ['error'],
+    debug: (_c = config.debug) !== null && _c !== void 0 ? _c : false,
+}); };
 export const createSpies = (config, console) => {
     var _a;
     let spies = new Map();
