@@ -67,7 +67,7 @@ import failOnConsoleError, {
 const { getConfig, setConfig } = failOnConsoleError(config);
 
 Cypress.Commands.addAll({
-    getConsoleMessages: () => cy.wrap(getConfig()?.consoleMessages),
+    getConsoleMessages: () => cy.wrap(getConfig().consoleMessages),
     setConsoleMessages: (consoleMessages: ConsoleMessage[]) =>
         setConfig({ ...getConfig(), consoleMessages }),
 });

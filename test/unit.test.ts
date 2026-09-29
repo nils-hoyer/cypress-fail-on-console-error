@@ -73,6 +73,23 @@ describe('setConfig()', () => {
         expect(givenConfig?.consoleTypes).to.deep.equal(['warn']);
         expect(givenConfig?.debug).to.deep.equal(true);
     });
+
+    it('WHEN getConfig().consoleMessages is changed in a test THEN restore the config after the test', () => {
+        const on = sinon.spy(Cypress, 'on');
+        const config: Config = { consoleMessages: ['foo'] };
+        const { getConfig } = failOnConsoleError(config);
+        const testAfterRun = on
+            .getCalls()
+            .find((call) => call.args[0] === 'test:after:run')
+            ?.args[1] as () => void;
+        on.restore();
+
+        getConfig().consoleMessages.push('bar');
+        testAfterRun();
+
+        expect(getConfig().consoleMessages).to.deep.equal(['foo']);
+        expect(config.consoleMessages).to.deep.equal(['foo']);
+    });
 });
 
 describe('createConfig()', () => {
@@ -105,6 +122,26 @@ describe('createConfig()', () => {
         ]);
         expect(given.consoleMessages).to.deep.equal(['foo', 'bar']);
         expect(given.debug).to.deep.equal(true);
+    });
+
+    it('WHEN consoleTypes contains duplicates THEN keep each type once', () => {
+        const given = createConfig({
+            consoleTypes: ['error', 'warn', 'error'],
+        });
+
+        expect(given.consoleTypes).to.deep.equal(['error', 'warn']);
+    });
+
+    it('WHEN config is created THEN do not share arrays with the given config', () => {
+        const config: Config = {
+            consoleMessages: ['foo'],
+            consoleTypes: ['error'],
+        };
+
+        const given = createConfig(config);
+
+        expect(given.consoleMessages).not.to.equal(config.consoleMessages);
+        expect(given.consoleTypes).not.to.equal(config.consoleTypes);
     });
 });
 
@@ -190,6 +227,17 @@ describe('createSpies()', () => {
         expect(spiesIterator.next().value).to.equals(config.consoleTypes[3]);
         expect(spiesIterator.next().value).to.equals(config.consoleTypes[4]);
         expect(spiesIterator.next().value).to.equals(config.consoleTypes[5]);
+    });
+
+    it('WHEN consoleTypes contains duplicates THEN create one spy per type', () => {
+        const console: any = { error: () => true };
+
+        const spies = createSpies(
+            createConfig({ consoleTypes: ['error', 'error'] }),
+            console
+        );
+
+        expect(spies.size).to.equal(1);
     });
 });
 

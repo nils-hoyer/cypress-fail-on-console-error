@@ -21,7 +21,7 @@ chai.use(sinonChai);
 
 export default function failOnConsoleError(_config: Config = {}) {
     let originConfig: Required<Config> | undefined;
-    let config: Required<Config> | undefined;
+    let config: Required<Config>;
     let consoleMessagePatterns: RegExp[] = [];
     let spies: Map<ConsoleType, sinon.SinonSpy> | undefined;
 
@@ -30,13 +30,14 @@ export default function failOnConsoleError(_config: Config = {}) {
         validateConfig(_config);
         config = createConfig(_config);
         consoleMessagePatterns = config.consoleMessages.map(toRegExp);
-        originConfig = originConfig ?? { ...config };
+        // a separate copy, so changes to getConfig() don't outlive the test
+        originConfig = originConfig ?? createConfig(config);
     };
 
     setConfig(_config);
 
     const setSpies = (window: Cypress.AUTWindow) =>
-        (spies = createSpies(config as Required<Config>, window.console));
+        (spies = createSpies(config, window.console));
 
     if (Cypress.testingType === 'component') {
         before(() => cy.window().then(setSpies));
@@ -50,10 +51,7 @@ export default function failOnConsoleError(_config: Config = {}) {
         // match against the patterns compiled in setConfig
         const consoleMessage: string | undefined = getConsoleMessageIncluded(
             spies,
-            {
-                ...(config as Required<Config>),
-                consoleMessages: consoleMessagePatterns,
-            }
+            { ...config, consoleMessages: consoleMessagePatterns }
         );
 
         spies = resetSpies(spies);
@@ -112,9 +110,12 @@ export const validateConfig = (config: Config): void => {
     }
 };
 
+// copies the arrays, so the config doesn't share them with the caller
 export const createConfig = (config: Config): Required<Config> => ({
-    consoleMessages: config.consoleMessages ?? [],
-    consoleTypes: config.consoleTypes?.length ? config.consoleTypes : ['error'],
+    consoleMessages: [...(config.consoleMessages ?? [])],
+    consoleTypes: config.consoleTypes?.length
+        ? [...new Set(config.consoleTypes)]
+        : ['error'],
     debug: config.debug ?? false,
 });
 

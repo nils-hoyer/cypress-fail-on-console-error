@@ -10,7 +10,7 @@ export { Config };
 export { ConsoleType };
 export { ConsoleMessage };
 export default function failOnConsoleError(_config?: Config): {
-    getConfig: () => Required<Config> | undefined;
+    getConfig: () => Required<Config>;
     setConfig: (_config: Config) => void;
 };
 export declare const validateConfig: (config: Config) => void;
