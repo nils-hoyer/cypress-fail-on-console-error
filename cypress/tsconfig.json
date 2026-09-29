@@ -3,6 +3,7 @@
     "compilerOptions": {
         "lib": ["es5", "dom"],
         "types": ["cypress", "node"],
+        "rootDir": "..",
         "noEmit": true
     },
     "include": ["**/*.ts"]

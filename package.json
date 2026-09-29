@@ -37,25 +37,26 @@
   },
   "homepage": "https://github.com/nils-hoyer/cypress-fail-on-console-error#readme",
   "dependencies": {
-    "chai": "^4.3.10",
-    "sinon": "^22.0.0",
-    "sinon-chai": "^3.7.0",
-    "type-detect": "^4.0.8"
+    "chai": "^6.2.2",
+    "sinon": "^22.1.0",
+    "sinon-chai": "^4.0.1",
+    "type-detect": "^4.1.0"
   },
   "devDependencies": {
     "@cypress/mount-utils": "^5.0.0",
     "@types/chai": "5.2.3",
     "@types/mocha": "10.0.10",
+    "@types/node": "22.20.4",
     "@types/sinon": "22.0.0",
-    "@types/sinon-chai": "3.2.12",
+    "@types/sinon-chai": "4.0.0",
     "@types/type-detect": "4.0.3",
-    "cypress": "15.14.2",
-    "mocha": "12.0.0",
-    "prettier": "3.9.6",
+    "cypress": "16.1.0",
+    "mocha": "12.0.2",
+    "prettier": "3.9.9",
     "prettier-plugin-organize-imports": "4.3.0",
     "rimraf": "6.1.3",
-    "typescript": "5.9.3",
-    "vite": "^8.0.0",
-    "vitest": "^1.0.0"
+    "typescript": "7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   }
 }
