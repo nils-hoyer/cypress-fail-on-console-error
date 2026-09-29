@@ -1,16 +1,23 @@
 # cypress-fail-on-console-error
 
-This Plugin observes `console.error()` function from [window object](https://developer.mozilla.org/de/docs/Web/API/Window). Cypress test will fail when the error conditions are met. For observing network errors please check out [cypress-fail-on-network-error](https://www.npmjs.com/package/cypress-fail-on-network-error).
+[![npm](https://img.shields.io/npm/v/cypress-fail-on-console-error)](https://www.npmjs.com/package/cypress-fail-on-console-error)
+[![CI](https://github.com/nils-hoyer/cypress-fail-on-console-error/actions/workflows/ci.yml/badge.svg)](https://github.com/nils-hoyer/cypress-fail-on-console-error/actions/workflows/ci.yml)
 
-### Installation
+Fail Cypress tests when the application under test calls `console.error()`.
 
-```
+The plugin spies on the `console` of the application's [window object](https://developer.mozilla.org/en-US/docs/Web/API/Window). It watches `console.error` by default, and you can configure other console methods too. When a watched method is called with a message that you haven't excluded, the test fails with an `AssertionError`. It works for e2e and component tests.
+
+To fail tests on network errors, see [cypress-fail-on-network-error](https://www.npmjs.com/package/cypress-fail-on-network-error).
+
+## Installation
+
+```sh
 npm install cypress-fail-on-console-error --save-dev
 ```
 
-### Usage
+## Usage
 
-`cypress/support/e2e.js`
+Call `failOnConsoleError()` in your support file: `cypress/support/e2e.js` for e2e tests, `cypress/support/component.js` for component tests, or the `.ts` versions of these files.
 
 ```js
 import failOnConsoleError from 'cypress-fail-on-console-error';
@@ -18,24 +25,23 @@ import failOnConsoleError from 'cypress-fail-on-console-error';
 failOnConsoleError();
 ```
 
-### Config (optional)
+## Config (optional)
 
-| Parameter             | Default               | <div style="width:300px">Description</div>    |
-|---                    |---                    |---                                            |
-| `consoleMessages`     | `[]` | Exclude console messages from throwing `AssertionError`. Types `RegExp` and `string` are accepted. Strings will be converted to regular expression. [RegExp.test()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test?retiredLocale=de) will be used for console message matching. Make sure to [escape special characters](https://javascript.info/regexp-escaping). When console message property `stacktrace` exists, then the whole stacktrace can be matched. |
-| `consoleTypes` | `['error']` | Define console types for observation. `error`, `warn`, `info`, `debug`, `trace` , `table` are accepted values.
-| `debug`          | `false`               | Enable debug logs for `consoleMessage_configConsoleMessage_match` and `consoleMessage_excluded` to cypress runner                                     
+| Parameter         | Default     | Description |
+| ----------------- | ----------- | ----------- |
+| `consoleMessages` | `[]`        | Console messages to ignore, as `string` or `RegExp`. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). Messages are matched with [`RegExp.test()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test). |
+| `consoleTypes`    | `['error']` | Console methods to watch: `error`, `warn`, `info`, `debug`, `trace` or `table`. |
+| `debug`           | `false`     | Log how each console message was matched to the Cypress command log. See [Debugging](#debugging). |
 
-<br/>
-
-```js
+```ts
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 
 const config: Config = {
     consoleMessages: [
-        'foo', 
+        'foo',
         /^bar-regex.*/,
-        /^((?!include-console-messages).)*$/ 
+        // ignore every message that does not contain 'include-console-messages'
+        /^((?!include-console-messages).)*$/,
     ],
     consoleTypes: ['error', 'warn'],
 };
@@ -43,20 +49,31 @@ const config: Config = {
 failOnConsoleError(config);
 ```
 
-### Set config from cypress test 
-Use `failOnConsoleError` functions `getConfig()` and `setConfig()` with your own requirements. Detailed example implementation [cypress comands](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/main/cypress/support/e2e.ts#L14-L64) & [cypress test](https://github.com/nils-hoyer/cypress-fail-on-console-error/blob/main/cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts#L1-L25). Note that the config will be resetted to initial config between tests.
+### How messages are matched
 
-```js
-// Simple example implementation
-const { getConfig, setConfig, ConsoleMessage } = failOnConsoleError(config);
+- All arguments of a console call are joined with spaces into one message. Non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`.
+- If an argument is an `Error`, its stack trace is used, so your patterns can match the error name, the message or the file it came from.
+- The plugin checks after each Cypress command. The test fails with `cypress-fail-on-console-error:` followed by the first message that none of the `consoleMessages` patterns matched.
+
+## Set config from a Cypress test
+
+`failOnConsoleError()` returns `getConfig()` and `setConfig()`, which let you change the config inside a test. After each test, the config goes back to the one passed to `failOnConsoleError()`.
+
+```ts
+import failOnConsoleError, {
+    ConsoleMessage,
+} from 'cypress-fail-on-console-error';
+
+const { getConfig, setConfig } = failOnConsoleError(config);
 
 Cypress.Commands.addAll({
-    getConsoleMessages: () => cy.wrap(getConfig().consoleMessages),
-    setConsoleMessages: (consoleMessages: ConsoleMessage[]) => 
-        setConfig({ ...getConfig(), consoleMessages });
+    getConsoleMessages: () => cy.wrap(getConfig()?.consoleMessages),
+    setConsoleMessages: (consoleMessages: ConsoleMessage[]) =>
+        setConfig({ ...getConfig(), consoleMessages }),
+});
 ```
 
-```js
+```ts
 describe('example test', () => {
     it('should set console messages', () => {
         cy.setConsoleMessages(['foo', 'bar']);
@@ -65,12 +82,21 @@ describe('example test', () => {
 });
 ```
 
+This repository's own tests show a complete example, with TypeScript declarations and commands to add and remove messages: see the [commands](./cypress/support/commands.ts) and the [spec that uses them](./cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts).
 
-### Debugging 
-When Cypress log is activated, debug information about the console messages / config console messages matching and excluding process are available from the cypress runner. As a plus, the generated error message string can be verified.
-![debugTrue.png](./docs/debugTrue.png)
+> [!NOTE]
+> Spies for `consoleTypes` are attached when a page loads in e2e tests and once per spec file in component tests. In e2e tests, call `setConfig()` with new `consoleTypes` before `cy.visit()`. In component tests, `setConfig()` can't change which console methods a running spec watches.
 
-### Contributing
-1. Create an project issue with proper description and expected behaviour
-2. NPM command `npm run verify` have to pass locally
-3. Provide a PR with implementation and tests 
+## Debugging
+
+Set `debug: true` to log each match between a console message and your `consoleMessages` to the Cypress command log. Click an entry to print its details to the browser console. You can use this to check your patterns and to see the error message a test would fail with.
+
+![Debug output in the Cypress command log](./docs/debugTrue.png)
+
+## Contributing
+
+1. Open an issue that describes the problem and the expected behaviour.
+2. Install dependencies with `npm ci`. The e2e and component tests run Cypress in Chrome, so Chrome must be installed.
+3. Make your change in `src/index.ts` and run `npm run build`. The tests run against `dist/`, which is committed.
+4. Run `npm run verify` (build, type check, format check, unit, e2e and component tests). It must pass.
+5. Open a PR with the implementation and tests.
