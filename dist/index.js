@@ -8,11 +8,13 @@ chai.use(sinonChai);
 export default function failOnConsoleError(_config = {}) {
     let originConfig;
     let config;
+    let consoleMessagePatterns = [];
     let spies;
     const getConfig = () => config;
     const setConfig = (_config) => {
         validateConfig(_config);
         config = createConfig(_config);
+        consoleMessagePatterns = config.consoleMessages.map(toRegExp);
         originConfig = originConfig !== null && originConfig !== void 0 ? originConfig : Object.assign({}, config);
     };
     setConfig(_config);
@@ -26,7 +28,8 @@ export default function failOnConsoleError(_config = {}) {
     Cypress.on('command:end', () => {
         if (!spies)
             return;
-        const consoleMessage = getConsoleMessageIncluded(spies, config);
+        // match against the patterns compiled in setConfig
+        const consoleMessage = getConsoleMessageIncluded(spies, Object.assign(Object.assign({}, config), { consoleMessages: consoleMessagePatterns }));
         spies = resetSpies(spies);
         if (!consoleMessage)
             return;
@@ -45,12 +48,18 @@ export default function failOnConsoleError(_config = {}) {
 }
 export const validateConfig = (config) => {
     if (config.consoleMessages) {
-        config.consoleMessages.forEach((consoleMessage) => {
+        config.consoleMessages.forEach((consoleMessage, index) => {
             chai.expect(typeDetect(consoleMessage)).to.be.oneOf([
                 'string',
                 'RegExp',
             ]);
             chai.expect(consoleMessage.toString()).to.have.length.above(0);
+            try {
+                toRegExp(consoleMessage);
+            }
+            catch (error) {
+                throw new AssertionError(`cypress-fail-on-console-error: consoleMessages[${index}] is not a valid regular expression. ${error.message}. Escape special characters to match them literally.`);
+            }
         });
     }
     if (config.consoleTypes) {
@@ -111,10 +120,13 @@ export const findConsoleMessageIncluded = (spy, config) => {
         return !someConsoleMessagesExcluded;
     });
 };
+const toRegExp = (consoleMessage) => consoleMessage instanceof RegExp
+    ? consoleMessage
+    : new RegExp(consoleMessage);
 export const isConsoleMessageExcluded = (consoleMessage, configConsoleMessage, debug) => {
-    const configConsoleMessageRegExp = configConsoleMessage instanceof RegExp
-        ? configConsoleMessage
-        : new RegExp(configConsoleMessage);
+    const configConsoleMessageRegExp = toRegExp(configConsoleMessage);
+    // test() starts at lastIndex for /g and /y patterns and moves it on a match
+    configConsoleMessageRegExp.lastIndex = 0;
     const consoleMessageExcluded = configConsoleMessageRegExp.test(consoleMessage);
     if (debug) {
         cypressLogger('consoleMessage_configConsoleMessage_match', {
