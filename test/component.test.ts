@@ -1,26 +1,8 @@
-import * as process from 'child_process';
-import * as util from 'util';
 import { describe, expect, it } from 'vitest';
+import { runCypress } from './runCypress';
 
-const exec = util.promisify(process.exec);
-
-async function runSpec(specPath: string): Promise<string> {
-    try {
-        return (
-            await exec(
-                `cypress run \
-                --browser chrome \
-                --component \
-                --headless \
-                --config-file ./cypress/cypress.config.ts \
-                --spec ./cypress/component/${specPath}.cy.ts`
-            )
-        ).stdout;
-    } catch (error: any) {
-        // console.debug(error.stdout);
-        return error.stdout;
-    }
-}
+const runSpec = (specName: string) =>
+    runCypress('component', `./cypress/component/${specName}.cy.ts`);
 
 describe('Cypress components', () => {
     it('WHEN console.error is called THEN cypress fails', async () => {
@@ -37,6 +19,15 @@ describe('Cypress components', () => {
             .and.contains(
                 "TypeError: Cannot read properties of undefined (reading 'map')"
             );
+    });
+
+    it('WHEN console.error and console.warn are watched THEN cypress fails on both', async () => {
+        expect(await runSpec('shouldFailOnConsoleErrorAndConsoleWarn'))
+            .to.match(/Failing:.*2/)
+            .and.match(/Passing:.*1/)
+            .and.match(/Tests:.*3/)
+            .and.contains('secondErrorNotExcluded')
+            .and.contains('consoleWarnMessage');
     });
 
     it('WHEN console.info is called THEN cypress passes', async () => {
