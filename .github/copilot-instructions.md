@@ -47,7 +47,18 @@ When you add or change a config option or public function, update `README.md` to
 
 **All tests import from `dist/`, not `src/`.** Run `npm run build` before running tests, or they run stale code.
 
-CI (`.github/workflows/ci.yml`) runs the build, the type check, the Prettier check and all three test suites on Node LTS.
+CI (`.github/workflows/ci.yml`) runs the build, checks that the committed `dist/` matches it, then runs the type check, the Prettier check and all three test suites on Node LTS.
+
+## Releasing
+
+Releases are made by the Release workflow (`.github/workflows/release.yml`), which the maintainer starts from the Actions tab on `main` with `patch`, `minor` or `major`. It:
+
+1. runs CI
+2. runs `npm version`, which commits `Release <version>` and tags `<version>` (no `v` prefix), then pushes both to `main`
+3. publishes to npm with trusted publishing (OIDC), so no npm token is stored in the repository
+4. creates the GitHub release with notes generated from the pull requests since the previous release, grouped by `.github/release.yml`
+
+Never change `version` in `package.json` or create tags in a pull request. If the publish job fails, use "Re-run failed jobs": it publishes the tag that was already pushed instead of increasing the version again.
 
 ## Adding or changing behaviour
 

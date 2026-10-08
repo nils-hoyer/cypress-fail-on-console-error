@@ -1,0 +1,9 @@
+# Groups the changelog that the Release workflow generates for each GitHub release
+changelog:
+    categories:
+        - title: Changes
+          labels: ['*']
+          exclude:
+              authors: ['renovate', 'renovate[bot]']
+        - title: Dependency updates
+          labels: ['*']
