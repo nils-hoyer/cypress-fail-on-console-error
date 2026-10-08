@@ -5,6 +5,8 @@ on:
         branches: [main]
     pull_request:
         branches: [main]
+    # the Release workflow runs CI before it releases
+    workflow_call:
 
 jobs:
     build:
@@ -18,6 +20,10 @@ jobs:
                   cache: 'npm'
             - run: npm ci
             - run: npm run build
+            - name: Check that the committed dist/ matches the build
+              run: |
+                  git status --short -- dist/
+                  test -z "$(git status --porcelain -- dist/)"
             - run: npm run lint
             - run: npm run ci:prettier
             - run: npm run test:ut

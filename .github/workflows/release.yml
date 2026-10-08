@@ -1,0 +1,93 @@
+name: Release
+
+# Run from the Actions tab on main. Increases the version, pushes the commit and tag,
+# publishes to npm with trusted publishing (OIDC) and creates the GitHub release.
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: Version increase
+                type: choice
+                options: [patch, minor, major]
+                default: patch
+
+concurrency: release
+
+permissions: {}
+
+jobs:
+    test:
+        if: github.ref == 'refs/heads/main'
+        uses: ./.github/workflows/ci.yml
+        permissions:
+            contents: read
+
+    version:
+        needs: test
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        outputs:
+            tag: ${{ steps.version.outputs.tag }}
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: lts/*
+            - name: Increase version, commit and tag
+              id: version
+              env:
+                  VERSION: ${{ inputs.version }}
+              run: |
+                  git config user.name 'github-actions[bot]'
+                  git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+                  # no "v" prefix, like the earlier tags
+                  tag=$(npm version "$VERSION" --tag-version-prefix='' --message 'Release %s')
+                  echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            # --atomic pushes both or neither. This fails before anything is published
+            # if main moved on since the run started or doesn't accept pushes from Actions.
+            - name: Push commit and tag
+              env:
+                  TAG: ${{ steps.version.outputs.tag }}
+              run: git push --atomic origin HEAD:main "refs/tags/$TAG"
+
+    publish:
+        needs: version
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            id-token: write # npm trusted publishing
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  ref: ${{ needs.version.outputs.tag }}
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: lts/*
+                  registry-url: https://registry.npmjs.org
+            - name: Use npm 11.5.1 or later, which trusted publishing needs
+              run: npm install -g npm@latest
+            - run: npm ci
+              env:
+                  # the build only needs Cypress's types, not the app
+                  CYPRESS_INSTALL_BINARY: 0
+            # prepack builds dist/. Trusted publishing adds the provenance attestation.
+            - run: npm publish
+
+    github-release:
+        needs: [version, publish]
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            # the changelog lists the pull requests since the previous release, grouped by .github/release.yml
+            - name: Create GitHub release with changelog
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  TAG: ${{ needs.version.outputs.tag }}
+              run: >
+                  gh release create "$TAG"
+                  --repo "$GITHUB_REPOSITORY"
+                  --title "$TAG"
+                  --generate-notes
+                  --verify-tag
