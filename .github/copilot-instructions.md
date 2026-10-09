@@ -12,7 +12,7 @@ The whole plugin lives in `src/index.ts`. Keep it a single file, and keep runtim
 - `createSpies` attaches a sinon spy for each entry in `consoleTypes`:
     - e2e: on every `window:before:load`
     - component: once per spec, in a root `before` hook via `cy.window()`
-- On every `command:end`, `getConsoleMessageIncluded` checks the spies. `callToString` joins the arguments of each call with spaces. An argument with a string `stack` (an `Error`) contributes its stack, with `Name: message` put in front when the stack lacks it (Firefox, WebKit). Other non-strings go through `JSON.stringify`, with circular references as `"[Circular]"` and BigInts as `"10n"`. The first message that no `consoleMessages` pattern matches is thrown as `AssertionError('cypress-fail-on-console-error:\n<message>')`. Spy history is reset after every check.
+- On every `command:end`, `getConsoleCallsIncluded` collects the calls of all spies in call order (`getConsoleCalls`) and keeps those that no pattern excludes. `callToString` joins the arguments of each call with spaces. An argument with a string `stack` (an `Error`) contributes its stack, with `Name: message` put in front when the stack lacks it (Firefox, WebKit). Other non-strings go through `JSON.stringify`, with circular references as `"[Circular]"` and BigInts as `"10n"`. If any calls are left, `consoleCallsToString` lists them one per line as `console.<type>: <message>`, and they are thrown as `AssertionError('cypress-fail-on-console-error:\n<lines>')`. Spy history is reset after every check.
 - On `test:after:run`, spies are reset and the config is restored to the one passed at setup, so `setConfig()` changes last for one test only.
 - `consoleMessages` is an exclude list. `setConfig` compiles it once: strings become `new RegExp(string)` without escaping, and `validateConfig` rejects strings that are not valid regular expressions. Matching uses `RegExp.test()` with `lastIndex` reset to 0, so `/g` and `/y` patterns match consistently.
 - With `debug: true`, `cypressLogger` writes each matching decision to the Cypress command log.
@@ -20,7 +20,7 @@ The whole plugin lives in `src/index.ts`. Keep it a single file, and keep runtim
 
 ## Public API
 
-The default export `failOnConsoleError`, the types `Config`, `ConsoleType` and `ConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `resetSpies`, `getConsoleMessageIncluded`, `findConsoleMessageIncluded`, `isConsoleMessageExcluded`, `callToString`, `cypressLogger`) are exported so the unit tests can import them.
+The default export `failOnConsoleError`, the types `Config`, `ConsoleType` and `ConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `resetSpies`, `getConsoleCalls`, `getConsoleCallsIncluded`, `isConsoleCallIncluded`, `consoleCallsToString`, `isConsoleMessageExcluded`, `callToString`, `cypressLogger`) are exported so the unit tests can import them.
 
 When you add or change a config option or public function, update `README.md` too.
 

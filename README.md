@@ -55,7 +55,13 @@ failOnConsoleError(config);
 
 - All arguments of a console call are joined with spaces into one message. Non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`. Circular references become `"[Circular]"` and BigInts become `"10n"`.
 - If an argument is an `Error`, its name, message and stack trace are used, so your patterns can match the error name, the message or the file it came from.
-- The plugin checks after each Cypress command. The test fails with `cypress-fail-on-console-error:` followed by the first message that none of the `consoleMessages` patterns matched.
+- The plugin checks after each Cypress command. If any message since the last check isn't ignored, the test fails with every such message, in the order the application logged them, each after the name of its console method:
+
+    ```
+    AssertionError: cypress-fail-on-console-error:
+    console.error: Failed to load resource
+    console.warn: Each child in a list should have a unique "key" prop.
+    ```
 
 ## Set config from a Cypress test
 

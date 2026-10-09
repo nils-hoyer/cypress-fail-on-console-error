@@ -29,11 +29,11 @@ export default function failOnConsoleError(_config = {}) {
         if (!spies)
             return;
         // match against the patterns compiled in setConfig
-        const consoleMessage = getConsoleMessageIncluded(spies, Object.assign(Object.assign({}, config), { consoleMessages: consoleMessagePatterns }));
+        const consoleCalls = getConsoleCallsIncluded(spies, Object.assign(Object.assign({}, config), { consoleMessages: consoleMessagePatterns }));
         spies = resetSpies(spies);
-        if (!consoleMessage)
+        if (consoleCalls.length === 0)
             return;
-        throw new AssertionError(`cypress-fail-on-console-error:\n${consoleMessage}`);
+        throw new AssertionError(`cypress-fail-on-console-error:\n${consoleCallsToString(consoleCalls)}`);
     });
     Cypress.on('test:after:run', () => {
         if (spies) {
@@ -122,32 +122,32 @@ export const resetSpies = (spies) => {
     spies.forEach((spy) => spy.resetHistory());
     return spies;
 };
-export const getConsoleMessageIncluded = (spies, config) => {
-    let includedConsoleMessage;
-    Array.from(spies.values()).find((spy) => {
-        if (!spy.called)
-            return false;
-        includedConsoleMessage = findConsoleMessageIncluded(spy, config);
-        return includedConsoleMessage !== undefined;
-    });
-    return includedConsoleMessage;
-};
-export const findConsoleMessageIncluded = (spy, config) => {
-    const consoleMessages = spy.args.map((call) => callToString(call));
-    if (config.consoleMessages.length === 0) {
-        return consoleMessages[0];
+// every call since the spies were last reset, in the order the app made them
+export const getConsoleCalls = (spies) => Array.from(spies.entries())
+    .flatMap(([type, spy]) => spy.getCalls().map((spyCall) => ({ type, spyCall })))
+    .sort((a, b) => (a.spyCall.calledBefore(b.spyCall) ? -1 : 1))
+    .map(({ type, spyCall }) => ({
+    type,
+    args: spyCall.args,
+    message: callToString(spyCall.args),
+}));
+export const getConsoleCallsIncluded = (spies, config) => getConsoleCalls(spies).filter((consoleCall) => isConsoleCallIncluded(consoleCall, config));
+export const isConsoleCallIncluded = (consoleCall, config) => {
+    if (config.consoleMessages.length === 0)
+        return true;
+    const consoleMessage = consoleCall.message;
+    const someConsoleMessagesExcluded = config.consoleMessages.some((configConsoleMessage) => isConsoleMessageExcluded(consoleMessage, configConsoleMessage, config.debug));
+    if (config.debug) {
+        cypressLogger('consoleMessage_excluded', {
+            consoleMessage,
+            someConsoleMessagesExcluded,
+        });
     }
-    return consoleMessages.find((consoleMessage) => {
-        const someConsoleMessagesExcluded = config.consoleMessages.some((configConsoleMessage) => isConsoleMessageExcluded(consoleMessage, configConsoleMessage, config.debug));
-        if (config.debug) {
-            cypressLogger('consoleMessage_excluded', {
-                consoleMessage,
-                someConsoleMessagesExcluded,
-            });
-        }
-        return !someConsoleMessagesExcluded;
-    });
+    return !someConsoleMessagesExcluded;
 };
+export const consoleCallsToString = (consoleCalls) => consoleCalls
+    .map((consoleCall) => `console.${consoleCall.type}: ${consoleCall.message}`)
+    .join('\n');
 const toRegExp = (consoleMessage) => consoleMessage instanceof RegExp
     ? consoleMessage
     : new RegExp(consoleMessage);
