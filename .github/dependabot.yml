@@ -1,0 +1,18 @@
+# Monthly dependency updates. .github/workflows/dependabot-automerge.yml merges the non-major ones once CI passes.
+version: 2
+updates:
+    - package-ecosystem: npm
+      directory: /
+      schedule:
+          interval: monthly
+      groups:
+          # one pull request for all minor and patch updates, a separate one for each major update
+          npm:
+              update-types: [minor, patch]
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: monthly
+      groups:
+          github-actions:
+              update-types: [minor, patch]

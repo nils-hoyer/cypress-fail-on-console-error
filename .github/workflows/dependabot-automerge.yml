@@ -1,0 +1,26 @@
+name: Dependabot auto-merge
+
+# Turns on auto-merge for Dependabot's minor and patch updates. GitHub merges them
+# once the required CI check passes. Major updates wait for a review.
+on: pull_request
+
+permissions: {}
+
+jobs:
+    automerge:
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+        steps:
+            - name: Read the update type
+              id: metadata
+              uses: dependabot/fetch-metadata@v3
+            - name: Turn on auto-merge
+              if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  PR_URL: ${{ github.event.pull_request.html_url }}
+              # the repository only allows rebase merges
+              run: gh pr merge --auto --rebase "$PR_URL"
