@@ -54,6 +54,9 @@ jobs:
     publish:
         needs: version
         runs-on: ubuntu-latest
+        # must match the environment in the trusted publisher settings on npmjs.com.
+        # Only main may deploy to it.
+        environment: npm
         permissions:
             contents: read
             id-token: write # npm trusted publishing

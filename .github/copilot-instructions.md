@@ -55,7 +55,7 @@ Releases are made by the Release workflow (`.github/workflows/release.yml`), whi
 
 1. runs CI
 2. runs `npm version`, which commits `Release <version>` and tags `<version>` (no `v` prefix), then pushes both to `main`
-3. publishes to npm with trusted publishing (OIDC), so no npm token is stored in the repository
+3. publishes to npm with trusted publishing (OIDC) from the `npm` environment, which only `main` may deploy to, so no npm token is stored in the repository
 4. creates the GitHub release with notes generated from the pull requests since the previous release, grouped by `.github/release.yml`
 
 Never change `version` in `package.json` or create tags in a pull request. If the publish job fails, use "Re-run failed jobs": it publishes the tag that was already pushed instead of increasing the version again.
