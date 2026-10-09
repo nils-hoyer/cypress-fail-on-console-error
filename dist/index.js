@@ -2,7 +2,6 @@ import * as chai from 'chai';
 import { AssertionError } from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import typeDetect from 'type-detect';
 chai.should();
 chai.use(sinonChai);
 export default function failOnConsoleError(_config = {}) {
@@ -47,33 +46,58 @@ export default function failOnConsoleError(_config = {}) {
         setConfig,
     };
 }
+const consoleTypes = [
+    'error',
+    'warn',
+    'info',
+    'debug',
+    'trace',
+    'table',
+];
+const typeName = (value) => {
+    if (value === null)
+        return 'null';
+    if (Array.isArray(value))
+        return 'array';
+    if (value instanceof RegExp)
+        return 'RegExp';
+    return typeof value;
+};
+const invalidConfig = (message) => {
+    throw new AssertionError(`cypress-fail-on-console-error: ${message}`);
+};
 export const validateConfig = (config) => {
-    if (config.consoleMessages) {
+    if (config.consoleMessages != null) {
+        if (!Array.isArray(config.consoleMessages)) {
+            invalidConfig(`consoleMessages must be an array, got ${typeName(config.consoleMessages)}`);
+        }
         config.consoleMessages.forEach((consoleMessage, index) => {
-            chai.expect(typeDetect(consoleMessage)).to.be.oneOf([
-                'string',
-                'RegExp',
-            ]);
-            chai.expect(consoleMessage.toString()).to.have.length.above(0);
+            if (typeof consoleMessage !== 'string' &&
+                !(consoleMessage instanceof RegExp)) {
+                invalidConfig(`consoleMessages[${index}] must be a string or RegExp, got ${typeName(consoleMessage)}`);
+            }
+            if (consoleMessage === '') {
+                invalidConfig(`consoleMessages[${index}] must not be an empty string`);
+            }
             try {
                 toRegExp(consoleMessage);
             }
             catch (error) {
-                throw new AssertionError(`cypress-fail-on-console-error: consoleMessages[${index}] is not a valid regular expression. ${error.message}. Escape special characters to match them literally.`);
+                invalidConfig(`consoleMessages[${index}] is not a valid regular expression. ${error.message}. Escape special characters to match them literally.`);
             }
         });
     }
-    if (config.consoleTypes) {
-        chai.expect(config.consoleTypes).not.to.be.empty;
-        config.consoleTypes.forEach((consoleType) => {
-            chai.expect([
-                'error',
-                'warn',
-                'info',
-                'debug',
-                'trace',
-                'table',
-            ]).contains(consoleType);
+    if (config.consoleTypes != null) {
+        if (!Array.isArray(config.consoleTypes)) {
+            invalidConfig(`consoleTypes must be an array, got ${typeName(config.consoleTypes)}`);
+        }
+        if (config.consoleTypes.length === 0) {
+            invalidConfig('consoleTypes must not be empty');
+        }
+        config.consoleTypes.forEach((consoleType, index) => {
+            if (!consoleTypes.includes(consoleType)) {
+                invalidConfig(`consoleTypes[${index}] must be one of ${consoleTypes.join(', ')}, got ${JSON.stringify(consoleType)}`);
+            }
         });
     }
 };

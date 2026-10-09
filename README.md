@@ -33,6 +33,8 @@ failOnConsoleError();
 | `consoleTypes`    | `['error']` | Console methods to watch: `error`, `warn`, `info`, `debug`, `trace` or `table`. |
 | `debug`           | `false`     | Log how each console message was matched to the Cypress command log. See [Debugging](#debugging). |
 
+`failOnConsoleError()` and `setConfig()` check the config and throw an error that names the invalid option, for example `cypress-fail-on-console-error: consoleMessages[0] must be a string or RegExp, got number`.
+
 ```ts
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 
