@@ -16,11 +16,11 @@ The whole plugin lives in `src/index.ts`. Keep it a single file, and keep runtim
 - On `test:after:run`, spies are reset and the config is restored to the one passed at setup, so `setConfig()` changes last for one test only.
 - `consoleMessages` is an exclude list. `setConfig` compiles it once: strings become `new RegExp(string)` without escaping, and `validateConfig` rejects strings that are not valid regular expressions. Matching uses `RegExp.test()` with `lastIndex` reset to 0, so `/g` and `/y` patterns match consistently.
 - With `debug: true`, `cypressLogger` writes each matching decision to the Cypress command log.
-- A `consoleTypes` change made through `setConfig()` only takes effect when spies are next created. In e2e that happens on the next page load. In component mode it doesn't happen again within the current spec.
+- `setConfig()` applies a `consoleTypes` change at once with `updateSpies`, on the console the spies were last created on: spies for types that stay watched are kept with their calls, spies for removed types are restored, and new types get new spies.
 
 ## Public API
 
-The default export `failOnConsoleError`, the types `Config`, `ConsoleType` and `ConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `resetSpies`, `getConsoleCalls`, `getConsoleCallsIncluded`, `isConsoleCallIncluded`, `consoleCallsToString`, `logConsoleCall`, `isConsoleMessageExcluded`, `callToString`, `cypressLogger`) are exported so the unit tests can import them.
+The default export `failOnConsoleError`, the types `Config`, `ConsoleType` and `ConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `updateSpies`, `resetSpies`, `getConsoleCalls`, `getConsoleCallsIncluded`, `isConsoleCallIncluded`, `consoleCallsToString`, `logConsoleCall`, `isConsoleMessageExcluded`, `callToString`, `cypressLogger`) are exported so the unit tests can import them.
 
 When you add or change a config option or public function, update `README.md` too.
 

@@ -33,6 +33,8 @@ export default function failOnConsoleError(_config: Config = {}) {
     let config: Required<Config>;
     let consoleMessagePatterns: RegExp[] = [];
     let spies: Map<ConsoleType, sinon.SinonSpy> | undefined;
+    // the console that the spies were last created on
+    let autConsole: Console | undefined;
 
     const getConfig = () => config;
     const setConfig = (_config: Config): void => {
@@ -41,12 +43,17 @@ export default function failOnConsoleError(_config: Config = {}) {
         consoleMessagePatterns = config.consoleMessages.map(toRegExp);
         // a separate copy, so changes to getConfig() don't outlive the test
         originConfig = originConfig ?? createConfig(config);
+        if (spies && autConsole) {
+            spies = updateSpies(spies, config, autConsole);
+        }
     };
 
     setConfig(_config);
 
-    const setSpies = (window: Cypress.AUTWindow) =>
-        (spies = createSpies(config, window.console));
+    const setSpies = (window: Cypress.AUTWindow) => {
+        autConsole = window.console;
+        spies = createSpies(config, window.console);
+    };
 
     if (Cypress.testingType === 'component') {
         before(() => cy.window().then(setSpies));
@@ -167,6 +174,23 @@ export const createSpies = (
         spies.set(consoleType, sinon.spy(console, consoleType as any));
     });
     return spies;
+};
+
+// keeps the spies, and their calls, of the console types that are still watched
+export const updateSpies = (
+    spies: Map<ConsoleType, sinon.SinonSpy>,
+    config: Required<Config>,
+    console: Console
+): Map<ConsoleType, sinon.SinonSpy> => {
+    spies.forEach((spy, consoleType) => {
+        if (!config.consoleTypes.includes(consoleType)) spy.restore();
+    });
+    return new Map(
+        config.consoleTypes.map((consoleType) => [
+            consoleType,
+            spies.get(consoleType) ?? sinon.spy(console, consoleType),
+        ])
+    );
 };
 
 export const resetSpies = (

@@ -92,9 +92,6 @@ describe('example test', () => {
 
 This repository's own tests show a complete example, with TypeScript declarations and commands to add and remove messages: see the [commands](./cypress/support/commands.ts) and the [spec that uses them](./cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts).
 
-> [!NOTE]
-> Spies for `consoleTypes` are attached when a page loads in e2e tests and once per spec file in component tests. In e2e tests, call `setConfig()` with new `consoleTypes` before `cy.visit()`. In component tests, `setConfig()` can't change which console methods a running spec watches.
-
 ## Debugging
 
 Each console message that fails a test appears in the Cypress command log under the name of its console method, for example `console.error`. Click the entry to print the original arguments to the browser console, where you can inspect logged objects.

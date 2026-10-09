@@ -7,6 +7,43 @@ const secondErrorNotExcluded =
 describe('Cypress components', () => {
     const { spec, unchecked } = useCypressRun('component');
 
+    it('WHEN console type is changed with setConfig THEN cypress fails on that type only', () => {
+        expect(spec('shouldFailOnConsoleMatch')).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError on console.error',
+                'console.error: consoleErrorMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.warn',
+                'console.warn: consoleWarnMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.info',
+                'console.info: consoleInfoMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.debug',
+                'console.debug: consoleDebugMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.trace',
+                'console.trace: consoleTraceMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.table',
+                'console.table: consoleTableMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.log',
+                'console.log: consoleLogMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on a failed console.assert',
+                'console.assert: Assertion failed: consoleAssertMessage'
+            ),
+        ]);
+    });
+
     it('WHEN console.error is called THEN cypress fails', () => {
         expect(spec('shouldFailOnConsoleError')).to.deep.equal([
             failedOnConsole(

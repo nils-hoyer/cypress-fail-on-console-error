@@ -17,6 +17,7 @@ export default function failOnConsoleError(_config?: Config): {
 export declare const validateConfig: (config: Config) => void;
 export declare const createConfig: (config: Config) => Required<Config>;
 export declare const createSpies: (config: Required<Config>, console: Console) => Map<ConsoleType, sinon.SinonSpy>;
+export declare const updateSpies: (spies: Map<ConsoleType, sinon.SinonSpy>, config: Required<Config>, console: Console) => Map<ConsoleType, sinon.SinonSpy>;
 export declare const resetSpies: (spies: Map<ConsoleType, sinon.SinonSpy>) => Map<ConsoleType, sinon.SinonSpy>;
 export interface ConsoleCall {
     type: ConsoleType;
