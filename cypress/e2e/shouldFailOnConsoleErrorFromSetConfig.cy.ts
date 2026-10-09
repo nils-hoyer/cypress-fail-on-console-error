@@ -32,4 +32,14 @@ describe('shouldFailOnConsoleErrorFromSetConfig', () => {
         });
         cy.visit('./cypress/fixtures/consoleErrorExcludeMessage.html');
     });
+
+    it('should pass with deleteConsoleMessages for a RegExp', () => {
+        cy.deleteConsoleMessages([/firstErrorExcluded.*/]);
+        cy.getConsoleMessages().then((consoleMessages) => {
+            expect(consoleMessages).deep.equal([
+                'secondErrorExcluded',
+                'thirdErrorExcluded.*consoleError.*',
+            ]);
+        });
+    });
 });

@@ -81,30 +81,43 @@ failOnConsoleError({
 
 `failOnConsoleError()` returns `getConfig()` and `setConfig()`, which let you change the config inside a test. After each test, the config goes back to the one passed to `failOnConsoleError()`.
 
+To change the ignored messages from a test, pass the result to `addConsoleMessagesCommands()`. It adds these Cypress commands:
+
+| Command                                    | Description |
+| ------------------------------------------ | ----------- |
+| `cy.getConsoleMessages()`                  | Yields the current `consoleMessages`. |
+| `cy.setConsoleMessages(consoleMessages)`   | Replaces `consoleMessages`. |
+| `cy.addConsoleMessages(consoleMessages)`   | Adds patterns to `consoleMessages`. |
+| `cy.deleteConsoleMessages(consoleMessages)` | Removes patterns from `consoleMessages`. A pattern is removed if it is the same kind (`string`, `RegExp` or `{ type, message }`) with the same text, flags and console method. |
+
 ```ts
 import failOnConsoleError, {
-    ConsoleMessage,
+    addConsoleMessagesCommands,
 } from 'cypress-fail-on-console-error';
 
-const { getConfig, setConfig } = failOnConsoleError(config);
-
-Cypress.Commands.addAll({
-    getConsoleMessages: () => cy.wrap(getConfig().consoleMessages),
-    setConsoleMessages: (consoleMessages: ConsoleMessage[]) =>
-        setConfig({ ...getConfig(), consoleMessages }),
-});
+addConsoleMessagesCommands(failOnConsoleError(config));
 ```
 
 ```ts
 describe('example test', () => {
-    it('should set console messages', () => {
-        cy.setConsoleMessages(['foo', 'bar']);
+    it('should ignore console messages that contain foo or bar', () => {
+        cy.addConsoleMessages(['foo', /bar/]);
         cy.visit('...');
     });
 });
 ```
 
-This repository's own tests show a complete example, with TypeScript declarations and commands to add and remove messages: see the [commands](./cypress/support/commands.ts) and the [spec that uses them](./cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts).
+The commands are opt-in, so they can't replace commands with the same names that you added yourself. Their TypeScript declarations come with the package. To change other options from a test, write your own commands with `getConfig()` and `setConfig()`:
+
+```ts
+const { getConfig, setConfig } = failOnConsoleError(config);
+
+Cypress.Commands.add('setConsoleTypes', (consoleTypes) =>
+    setConfig({ ...getConfig(), consoleTypes })
+);
+```
+
+In TypeScript, [declare your commands](https://docs.cypress.io/app/tooling/typescript-support#Types-for-Custom-Commands) on `Cypress.Chainable`.
 
 ## Debugging
 
