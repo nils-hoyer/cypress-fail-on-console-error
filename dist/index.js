@@ -17,7 +17,8 @@ chai.use(sinonChai);
 export default function failOnConsoleError(_config = {}) {
     let originConfig;
     let config;
-    let consoleMessagePatterns = [];
+    // config with the patterns compiled to RegExps
+    let compiledConfig;
     let spies;
     // the console that the spies were last created on
     let autConsole;
@@ -25,7 +26,7 @@ export default function failOnConsoleError(_config = {}) {
     const setConfig = (_config) => {
         validateConfig(_config);
         config = createConfig(_config);
-        consoleMessagePatterns = config.consoleMessages.map(toRegExp);
+        compiledConfig = compileConfig(config);
         // a separate copy, so changes to getConfig() don't outlive the test
         originConfig = originConfig !== null && originConfig !== void 0 ? originConfig : createConfig(config);
         if (spies && autConsole) {
@@ -46,8 +47,7 @@ export default function failOnConsoleError(_config = {}) {
     Cypress.on('command:end', () => {
         if (!spies)
             return;
-        // match against the patterns compiled in setConfig
-        const consoleCalls = getConsoleCallsIncluded(spies, Object.assign(Object.assign({}, config), { consoleMessages: consoleMessagePatterns }));
+        const consoleCalls = getConsoleCallsIncluded(spies, compiledConfig);
         spies = resetSpies(spies);
         if (consoleCalls.length === 0)
             return;
@@ -77,27 +77,53 @@ const typeName = (value) => {
 const invalidConfig = (message) => {
     throw new AssertionError(`cypress-fail-on-console-error: ${message}`);
 };
-export const validateConfig = (config) => {
-    if (config.consoleMessages != null) {
-        if (!Array.isArray(config.consoleMessages)) {
-            invalidConfig(`consoleMessages must be an array, got ${typeName(config.consoleMessages)}`);
-        }
-        config.consoleMessages.forEach((consoleMessage, index) => {
-            if (typeof consoleMessage !== 'string' &&
-                !(consoleMessage instanceof RegExp)) {
-                invalidConfig(`consoleMessages[${index}] must be a string or RegExp, got ${typeName(consoleMessage)}`);
-            }
-            if (consoleMessage === '') {
-                invalidConfig(`consoleMessages[${index}] must not be an empty string`);
-            }
-            try {
-                toRegExp(consoleMessage);
-            }
-            catch (error) {
-                invalidConfig(`consoleMessages[${index}] is not a valid regular expression. ${error.message}. Escape special characters to match them literally.`);
-            }
-        });
+const isPattern = (value) => typeof value === 'string' || value instanceof RegExp;
+const isTypedConsoleMessage = (consoleMessage) => typeof consoleMessage === 'object' &&
+    consoleMessage !== null &&
+    !Array.isArray(consoleMessage) &&
+    !(consoleMessage instanceof RegExp);
+const validateConsoleType = (name, consoleType) => {
+    if (!consoleTypes.includes(consoleType)) {
+        invalidConfig(`${name} must be one of ${consoleTypes.join(', ')}, got ${JSON.stringify(consoleType)}`);
     }
+};
+const validatePattern = (name, pattern) => {
+    if (!isPattern(pattern)) {
+        invalidConfig(`${name} must be a string or RegExp, got ${typeName(pattern)}`);
+    }
+    if (pattern === '') {
+        invalidConfig(`${name} must not be an empty string`);
+    }
+    try {
+        toRegExp(pattern);
+    }
+    catch (error) {
+        invalidConfig(`${name} is not a valid regular expression. ${error.message}. Escape special characters to match them literally.`);
+    }
+};
+const validateConsoleMessages = (option, consoleMessages) => {
+    if (consoleMessages == null)
+        return;
+    if (!Array.isArray(consoleMessages)) {
+        invalidConfig(`${option} must be an array, got ${typeName(consoleMessages)}`);
+    }
+    consoleMessages.forEach((consoleMessage, index) => {
+        const name = `${option}[${index}]`;
+        if (isTypedConsoleMessage(consoleMessage)) {
+            validateConsoleType(`${name}.type`, consoleMessage.type);
+            validatePattern(`${name}.message`, consoleMessage.message);
+        }
+        else if (isPattern(consoleMessage)) {
+            validatePattern(name, consoleMessage);
+        }
+        else {
+            invalidConfig(`${name} must be a string, RegExp or { type, message } object, got ${typeName(consoleMessage)}`);
+        }
+    });
+};
+export const validateConfig = (config) => {
+    validateConsoleMessages('consoleMessages', config.consoleMessages);
+    validateConsoleMessages('includeConsoleMessages', config.includeConsoleMessages);
     if (config.consoleTypes != null) {
         if (!Array.isArray(config.consoleTypes)) {
             invalidConfig(`consoleTypes must be an array, got ${typeName(config.consoleTypes)}`);
@@ -105,21 +131,28 @@ export const validateConfig = (config) => {
         if (config.consoleTypes.length === 0) {
             invalidConfig('consoleTypes must not be empty');
         }
-        config.consoleTypes.forEach((consoleType, index) => {
-            if (!consoleTypes.includes(consoleType)) {
-                invalidConfig(`consoleTypes[${index}] must be one of ${consoleTypes.join(', ')}, got ${JSON.stringify(consoleType)}`);
-            }
-        });
+        config.consoleTypes.forEach((consoleType, index) => validateConsoleType(`consoleTypes[${index}]`, consoleType));
     }
 };
-// copies the arrays, so the config doesn't share them with the caller
-export const createConfig = (config) => { var _a; var _b, _c; return ({
-    consoleMessages: [...((_b = config.consoleMessages) !== null && _b !== void 0 ? _b : [])],
+const copyConsoleMessage = (consoleMessage) => isTypedConsoleMessage(consoleMessage)
+    ? Object.assign({}, consoleMessage) : consoleMessage;
+// copies the arrays and objects, so the config doesn't share them with the caller
+export const createConfig = (config) => { var _a; var _b, _c, _d; return ({
+    consoleMessages: ((_b = config.consoleMessages) !== null && _b !== void 0 ? _b : []).map(copyConsoleMessage),
+    includeConsoleMessages: ((_c = config.includeConsoleMessages) !== null && _c !== void 0 ? _c : []).map(copyConsoleMessage),
     consoleTypes: ((_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.length)
         ? [...new Set(config.consoleTypes)]
         : ['error'],
-    debug: (_c = config.debug) !== null && _c !== void 0 ? _c : false,
+    debug: (_d = config.debug) !== null && _d !== void 0 ? _d : false,
 }); };
+const compileConsoleMessage = (consoleMessage) => isTypedConsoleMessage(consoleMessage)
+    ? {
+        type: consoleMessage.type,
+        message: toRegExp(consoleMessage.message),
+    }
+    : toRegExp(consoleMessage);
+// compiles string patterns once, instead of on every check
+export const compileConfig = (config) => (Object.assign(Object.assign({}, config), { consoleMessages: config.consoleMessages.map(compileConsoleMessage), includeConsoleMessages: config.includeConsoleMessages.map(compileConsoleMessage) }));
 export const createSpies = (config, console) => {
     var _a;
     let spies = new Map();
@@ -165,10 +198,21 @@ const toConsoleCall = (type, args) => {
 };
 export const getConsoleCallsIncluded = (spies, config) => getConsoleCalls(spies).filter((consoleCall) => isConsoleCallIncluded(consoleCall, config));
 export const isConsoleCallIncluded = (consoleCall, config) => {
+    const consoleMessage = consoleCall.message;
+    if (config.includeConsoleMessages.length > 0) {
+        const consoleMessageIncluded = config.includeConsoleMessages.some((configConsoleMessage) => isConsoleCallMatched(consoleCall, configConsoleMessage, config.debug));
+        if (config.debug) {
+            cypressLogger('consoleMessage_included', {
+                consoleMessage,
+                consoleMessageIncluded,
+            });
+        }
+        if (!consoleMessageIncluded)
+            return false;
+    }
     if (config.consoleMessages.length === 0)
         return true;
-    const consoleMessage = consoleCall.message;
-    const someConsoleMessagesExcluded = config.consoleMessages.some((configConsoleMessage) => isConsoleMessageExcluded(consoleMessage, configConsoleMessage, config.debug));
+    const someConsoleMessagesExcluded = config.consoleMessages.some((configConsoleMessage) => isConsoleCallMatched(consoleCall, configConsoleMessage, config.debug));
     if (config.debug) {
         cypressLogger('consoleMessage_excluded', {
             consoleMessage,
@@ -177,6 +221,11 @@ export const isConsoleCallIncluded = (consoleCall, config) => {
     }
     return !someConsoleMessagesExcluded;
 };
+// a { type, message } pattern only matches calls of its console method
+export const isConsoleCallMatched = (consoleCall, configConsoleMessage, debug) => isTypedConsoleMessage(configConsoleMessage)
+    ? configConsoleMessage.type === consoleCall.type &&
+        isConsoleMessageExcluded(consoleCall.message, configConsoleMessage.message, debug)
+    : isConsoleMessageExcluded(consoleCall.message, configConsoleMessage, debug);
 export const consoleCallsToString = (consoleCalls) => consoleCalls
     .map((consoleCall) => `console.${consoleCall.type}: ${consoleCall.message}`)
     .join('\n');

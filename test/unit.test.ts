@@ -2,10 +2,12 @@ import * as sinon from 'sinon';
 import failOnConsoleError, {
     callToString,
     createConfig,
+    compileConfig,
     consoleCallsToString,
     createSpies,
     getConsoleCalls,
     getConsoleCallsIncluded,
+    isConsoleCallIncluded,
     isConsoleMessageExcluded,
     logConsoleCall,
     resetSpies,
@@ -131,6 +133,7 @@ describe('createConfig()', () => {
 
         expect(given.consoleTypes).to.deep.equal(['error']);
         expect(given.consoleMessages).to.deep.equal([]);
+        expect(given.includeConsoleMessages).to.deep.equal([]);
         expect(given.debug).to.equal(false);
     });
 
@@ -163,15 +166,23 @@ describe('createConfig()', () => {
         expect(given.consoleTypes).to.deep.equal(['error', 'warn']);
     });
 
-    it('WHEN config is created THEN do not share arrays with the given config', () => {
+    it('WHEN config is created THEN do not share arrays or objects with the given config', () => {
         const config: Config = {
-            consoleMessages: ['foo'],
+            consoleMessages: ['foo', { type: 'warn', message: 'bar' }],
+            includeConsoleMessages: ['baz'],
             consoleTypes: ['error'],
         };
 
         const given = createConfig(config);
 
+        expect(given.consoleMessages).to.deep.equal(config.consoleMessages);
         expect(given.consoleMessages).not.to.equal(config.consoleMessages);
+        expect(given.consoleMessages[1]).not.to.equal(
+            config.consoleMessages?.[1]
+        );
+        expect(given.includeConsoleMessages).not.to.equal(
+            config.includeConsoleMessages
+        );
         expect(given.consoleTypes).not.to.equal(config.consoleTypes);
     });
 });
@@ -179,7 +190,8 @@ describe('createConfig()', () => {
 describe('validateConfig()', () => {
     it('WHEN config is valid THEN no assertion error is thrown', () => {
         const config: Config = {
-            consoleMessages: ['foo', /bar/],
+            consoleMessages: ['foo', /bar/, { type: 'warn', message: /baz/ }],
+            includeConsoleMessages: ['qux', { type: 'error', message: 'quux' }],
             consoleTypes: ['error', 'warn'],
             debug: true,
         };
@@ -221,7 +233,7 @@ describe('validateConfig()', () => {
         [
             'consoleMessages',
             { consoleMessages: [42] },
-            'consoleMessages[0] must be a string or RegExp, got number',
+            'consoleMessages[0] must be a string, RegExp or { type, message } object, got number',
         ],
         [
             'consoleMessages',
@@ -231,17 +243,52 @@ describe('validateConfig()', () => {
         [
             'consoleMessages',
             { consoleMessages: [{}] },
-            'consoleMessages[0] must be a string or RegExp, got object',
+            'consoleMessages[0].type must be one of error, warn, info, debug, trace, table, log, assert, got undefined',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [{ type: 'warning', message: 'foo' }] },
+            'consoleMessages[0].type must be one of error, warn, info, debug, trace, table, log, assert, got "warning"',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [{ type: 'warn', message: 42 }] },
+            'consoleMessages[0].message must be a string or RegExp, got number',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [{ type: 'warn', message: '' }] },
+            'consoleMessages[0].message must not be an empty string',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [{ type: 'warn', message: 'Failed (404' }] },
+            'consoleMessages[0].message is not a valid regular expression.',
+        ],
+        [
+            'includeConsoleMessages',
+            { includeConsoleMessages: /foo/ },
+            'includeConsoleMessages must be an array, got RegExp',
+        ],
+        [
+            'includeConsoleMessages',
+            { includeConsoleMessages: ['foo', 42] },
+            'includeConsoleMessages[1] must be a string, RegExp or { type, message } object, got number',
+        ],
+        [
+            'includeConsoleMessages',
+            { includeConsoleMessages: ['Failed (404'] },
+            'includeConsoleMessages[0] is not a valid regular expression.',
         ],
         [
             'consoleMessages',
             { consoleMessages: [null] },
-            'consoleMessages[0] must be a string or RegExp, got null',
+            'consoleMessages[0] must be a string, RegExp or { type, message } object, got null',
         ],
         [
             'consoleMessages',
             { consoleMessages: [['foo']] },
-            'consoleMessages[0] must be a string or RegExp, got array',
+            'consoleMessages[0] must be a string, RegExp or { type, message } object, got array',
         ],
     ];
     invalidConfigs.forEach(([option, config, message]) => {
@@ -475,6 +522,71 @@ describe('getConsoleCallsIncluded()', () => {
         );
 
         expect(consoleCalls).to.deep.equal([]);
+    });
+});
+
+describe('compileConfig()', () => {
+    it('WHEN patterns are strings THEN compile them to RegExps, keeping the type of typed patterns', () => {
+        const given = compileConfig(
+            createConfig({
+                consoleMessages: [
+                    'foo',
+                    /bar/g,
+                    { type: 'warn', message: 'baz' },
+                ],
+                includeConsoleMessages: [{ type: 'error', message: /qux/ }],
+            })
+        );
+
+        expect(given.consoleMessages).to.deep.equal([
+            /foo/,
+            /bar/g,
+            { type: 'warn', message: /baz/ },
+        ]);
+        expect(given.includeConsoleMessages).to.deep.equal([
+            { type: 'error', message: /qux/ },
+        ]);
+    });
+});
+
+describe('isConsoleCallIncluded()', () => {
+    const warn = { type: 'warn' as const, args: [], message: 'same text' };
+    const error = { type: 'error' as const, args: [], message: 'same text' };
+
+    it('WHEN a { type, message } pattern excludes a message THEN only exclude it for that console method', () => {
+        const config = createConfig({
+            consoleMessages: [{ type: 'warn', message: 'same' }],
+        });
+
+        expect(isConsoleCallIncluded(warn, config)).to.be.false;
+        expect(isConsoleCallIncluded(error, config)).to.be.true;
+    });
+
+    it('WHEN includeConsoleMessages is set THEN only include matching messages', () => {
+        const config = createConfig({ includeConsoleMessages: ['other'] });
+
+        expect(isConsoleCallIncluded(warn, config)).to.be.false;
+        expect(
+            isConsoleCallIncluded({ ...warn, message: 'other text' }, config)
+        ).to.be.true;
+    });
+
+    it('WHEN includeConsoleMessages has a { type, message } pattern THEN only include matching messages of that console method', () => {
+        const config = createConfig({
+            includeConsoleMessages: [{ type: 'error', message: /same/ }],
+        });
+
+        expect(isConsoleCallIncluded(warn, config)).to.be.false;
+        expect(isConsoleCallIncluded(error, config)).to.be.true;
+    });
+
+    it('WHEN a message is included and excluded THEN exclude it', () => {
+        const config = createConfig({
+            includeConsoleMessages: ['same'],
+            consoleMessages: ['text'],
+        });
+
+        expect(isConsoleCallIncluded(error, config)).to.be.false;
     });
 });
 

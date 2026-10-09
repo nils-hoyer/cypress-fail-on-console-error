@@ -27,13 +27,14 @@ failOnConsoleError();
 
 ## Config (optional)
 
-| Parameter         | Default     | Description |
-| ----------------- | ----------- | ----------- |
-| `consoleMessages` | `[]`        | Console messages to ignore, as `string` or `RegExp`. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). A string that isn't a valid regular expression throws an error when the config is set. Messages are matched with [`RegExp.test()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test). |
-| `consoleTypes`    | `['error']` | Console methods to watch: `error`, `warn`, `info`, `debug`, `trace`, `table`, `log` or `assert`. `assert` only counts failed assertions, and its message is `Assertion failed: ` followed by the arguments after the condition. |
-| `debug`           | `false`     | Log how each console message was matched to the Cypress command log. See [Debugging](#debugging). |
+| Parameter                | Default     | Description |
+| ------------------------ | ----------- | ----------- |
+| `consoleMessages`        | `[]`        | Console messages to ignore. Each entry is a pattern, as `string` or `RegExp`, or `{ type, message }` to ignore a pattern for one console method only, for example `{ type: 'warn', message: /is deprecated/ }`. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). A string that isn't a valid regular expression throws an error when the config is set. Messages are matched with [`RegExp.test()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test). |
+| `includeConsoleMessages` | `[]`        | If set, only console messages that match one of these patterns fail a test. Takes the same entries as `consoleMessages`. Messages that also match `consoleMessages` are still ignored. |
+| `consoleTypes`           | `['error']` | Console methods to watch: `error`, `warn`, `info`, `debug`, `trace`, `table`, `log` or `assert`. `assert` only counts failed assertions, and its message is `Assertion failed: ` followed by the arguments after the condition. |
+| `debug`                  | `false`     | Log how each console message was matched to the Cypress command log. See [Debugging](#debugging). |
 
-`failOnConsoleError()` and `setConfig()` check the config and throw an error that names the invalid option, for example `cypress-fail-on-console-error: consoleMessages[0] must be a string or RegExp, got number`.
+`failOnConsoleError()` and `setConfig()` check the config and throw an error that names the invalid option, for example `cypress-fail-on-console-error: consoleTypes[1] must be one of error, warn, info, debug, trace, table, log, assert, got "warning"`.
 
 ```ts
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
@@ -42,13 +43,26 @@ const config: Config = {
     consoleMessages: [
         'foo',
         /^bar-regex.*/,
-        // ignore every message that does not contain 'include-console-messages'
-        /^((?!include-console-messages).)*$/,
+        // ignore this warning, but not a console.error with the same text
+        { type: 'warn', message: /is deprecated/ },
     ],
     consoleTypes: ['error', 'warn'],
 };
 
 failOnConsoleError(config);
+```
+
+To fail only on some messages, list them in `includeConsoleMessages`:
+
+```ts
+failOnConsoleError({
+    consoleTypes: ['error', 'warn'],
+    // fail on every console.error, and on warnings that mention React
+    includeConsoleMessages: [
+        { type: 'error', message: /.*/ },
+        { type: 'warn', message: /React/ },
+    ],
+});
 ```
 
 ### How messages are matched
