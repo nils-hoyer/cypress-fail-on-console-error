@@ -1,7 +1,8 @@
 name: Dependabot auto-merge
 
-# Turns on auto-merge for Dependabot's minor and patch updates. GitHub merges them
-# once the required CI check passes. Major updates wait for a review.
+# Merges Dependabot's minor and patch updates once CI passed on the pull request.
+# Major updates wait for a review. This waits for CI itself instead of using required
+# status checks, because those would also block the Release workflow's push to main.
 on: pull_request
 
 permissions: {}
@@ -10,17 +11,34 @@ jobs:
     automerge:
         if: github.event.pull_request.user.login == 'dependabot[bot]'
         runs-on: ubuntu-latest
+        timeout-minutes: 30
         permissions:
+            actions: read
             contents: write
             pull-requests: write
         steps:
             - name: Read the update type
               id: metadata
               uses: dependabot/fetch-metadata@v3
-            - name: Turn on auto-merge
+            - name: Wait for CI and merge
               if: steps.metadata.outputs.update-type != 'version-update:semver-major'
               env:
                   GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
                   PR_URL: ${{ github.event.pull_request.html_url }}
-              # the repository only allows rebase merges
-              run: gh pr merge --auto --rebase "$PR_URL"
+                  SHA: ${{ github.event.pull_request.head.sha }}
+              run: |
+                  # the CI run for this commit may not have started yet
+                  for attempt in $(seq 30); do
+                      run_id=$(gh run list --workflow ci.yml --commit "$SHA" --event pull_request --json databaseId --jq '.[0].databaseId')
+                      [ -n "$run_id" ] && break
+                      sleep 10
+                  done
+                  if [ -z "$run_id" ]; then
+                      echo "No CI run found for $SHA"
+                      exit 1
+                  fi
+                  gh run watch "$run_id" --exit-status --interval 30
+                  # the repository only allows rebase merges. --match-head-commit refuses
+                  # to merge if Dependabot pushed a new commit while CI ran.
+                  gh pr merge --rebase --match-head-commit "$SHA" "$PR_URL"
