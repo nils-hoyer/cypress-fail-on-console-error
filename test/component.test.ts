@@ -49,6 +49,12 @@ describe('Cypress components', () => {
         ]);
     });
 
+    it('WHEN console messages are caught THEN log each to the command log with its arguments', () => {
+        expect(spec('shouldLogConsoleMessages')).to.deep.equal([
+            passed('should log each caught console message to the command log'),
+        ]);
+    });
+
     it('WHEN console.info is called THEN cypress passes', () => {
         expect(spec('shouldPassOnConsoleInfo')).to.deep.equal([
             passed('should pass on console.info'),

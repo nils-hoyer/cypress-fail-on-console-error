@@ -57,6 +57,7 @@ export default function failOnConsoleError(_config: Config = {}) {
 
         if (consoleCalls.length === 0) return;
 
+        consoleCalls.forEach(logConsoleCall);
         throw new AssertionError(
             `cypress-fail-on-console-error:\n${consoleCallsToString(consoleCalls)}`
         );
@@ -309,6 +310,20 @@ const argumentToString = (argument: any): string => {
 
 export const callToString = (calls: any[]): string =>
     calls.map(argumentToString).join(' ').trim();
+
+// clicking the entry prints the original arguments to the browser console, where they can be inspected
+export const logConsoleCall = (consoleCall: ConsoleCall): void => {
+    const name = `console.${consoleCall.type}`;
+    Cypress.log({
+        name,
+        displayName: name,
+        message: consoleCall.message,
+        consoleProps: () => ({
+            'Console method': name,
+            Arguments: consoleCall.args,
+        }),
+    });
+};
 
 export const cypressLogger = (name: string, message: any) => {
     Cypress.log({
