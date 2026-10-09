@@ -2,9 +2,10 @@ import * as sinon from 'sinon';
 import failOnConsoleError, {
     callToString,
     createConfig,
+    consoleCallsToString,
     createSpies,
-    findConsoleMessageIncluded,
-    getConsoleMessageIncluded,
+    getConsoleCalls,
+    getConsoleCallsIncluded,
     isConsoleMessageExcluded,
     resetSpies,
     validateConfig,
@@ -301,92 +302,88 @@ describe('resetSpies()', () => {
     });
 });
 
-describe('getConsoleMessageIncluded()', () => {
-    it('WHEN no spy is called THEN return undefined', () => {
-        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set('error', { called: false } as sinon.SinonSpy);
-        spies.set('warn', { called: false } as sinon.SinonSpy);
+const spyOnConsole = (consoleTypes: ConsoleType[]) => {
+    const console: any = {};
+    consoleTypes.forEach((consoleType) => (console[consoleType] = () => {}));
+    const spies = createSpies(createConfig({ consoleTypes }), console);
+    return { console, spies };
+};
 
-        const consoleMessage = getConsoleMessageIncluded(
-            spies,
-            createConfig({})
-        );
+describe('getConsoleCalls()', () => {
+    it('WHEN no spy is called THEN return no calls', () => {
+        const { spies } = spyOnConsole(['error', 'warn']);
 
-        expect(consoleMessage).to.be.undefined;
+        expect(getConsoleCalls(spies)).to.deep.equal([]);
     });
 
-    it('WHEN console message is excluded THEN return undefined', () => {
-        const config = createConfig({ consoleMessages: ['foo'] });
-        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set('error', {
-            called: true,
-            args: [['foo']],
-        } as sinon.SinonSpy);
+    it('WHEN several console methods are called THEN return all calls in the order they were made', () => {
+        const { console, spies } = spyOnConsole(['error', 'warn']);
 
-        const consoleMessage = getConsoleMessageIncluded(spies, config);
+        console.warn('first', 1);
+        console.error('second');
+        console.warn('third');
 
-        expect(consoleMessage).to.be.undefined;
-    });
-
-    it('WHEN console message is included THEN return call', () => {
-        const config = createConfig({ consoleMessages: ['foo'] });
-        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set('error', {
-            called: true,
-            args: [['bar']],
-        } as sinon.SinonSpy);
-
-        const consoleMessage = getConsoleMessageIncluded(spies, config);
-
-        expect(consoleMessage).to.equal('bar');
+        expect(getConsoleCalls(spies)).to.deep.equal([
+            { type: 'warn', args: ['first', 1], message: 'first 1' },
+            { type: 'error', args: ['second'], message: 'second' },
+            { type: 'warn', args: ['third'], message: 'third' },
+        ]);
     });
 });
 
-describe('findConsoleMessageIncluded()', () => {
-    it('WHEN config.consoleMessages is undefined THEN return first call', () => {
-        const spy: sinon.SinonSpy = {
-            args: [
-                ['foo', 'foo1'],
-                ['foo3', 'foo4'],
-            ],
-        } as sinon.SinonSpy;
+describe('getConsoleCallsIncluded()', () => {
+    it('WHEN config.consoleMessages is empty THEN return every call', () => {
+        const { console, spies } = spyOnConsole(['error']);
+        console.error('foo', 'foo1');
+        console.error('foo3', 'foo4');
 
-        const consoleMessage = findConsoleMessageIncluded(
-            spy,
-            createConfig({})
+        const consoleCalls = getConsoleCallsIncluded(spies, createConfig({}));
+
+        expect(consoleCalls.map((call) => call.message)).to.deep.equal([
+            'foo foo1',
+            'foo3 foo4',
+        ]);
+    });
+
+    it('WHEN some console messages are excluded by config.consoleMessages THEN return the others', () => {
+        const { console, spies } = spyOnConsole(['error', 'warn']);
+        console.error('foo', 'foo1');
+        console.warn('foo3', 'foo4');
+        console.error('bar');
+
+        const consoleCalls = getConsoleCallsIncluded(
+            spies,
+            createConfig({ consoleMessages: ['foo1'] })
         );
 
-        expect(consoleMessage).to.equal('foo foo1');
+        expect(consoleCalls.map((call) => call.message)).to.deep.equal([
+            'foo3 foo4',
+            'bar',
+        ]);
     });
 
-    it('WHEN console message is excluded by config.consoleMessages THEN return first call some is not excluded', () => {
-        const config = createConfig({ consoleMessages: ['foo1'] });
-        const spy: sinon.SinonSpy = {
-            args: [
-                ['foo', 'foo1'],
-                ['foo3', 'foo4'],
-            ],
-        } as sinon.SinonSpy;
+    it('WHEN all console messages are excluded by config.consoleMessages THEN return no calls', () => {
+        const { console, spies } = spyOnConsole(['error']);
+        console.error('foo', 'foo1');
+        console.error('foo3', 'foo4');
 
-        const consoleMessage = findConsoleMessageIncluded(spy, config);
+        const consoleCalls = getConsoleCallsIncluded(
+            spies,
+            createConfig({ consoleMessages: ['foo', 'foo3'] })
+        );
 
-        expect(consoleMessage).to.equal('foo3 foo4');
+        expect(consoleCalls).to.deep.equal([]);
     });
+});
 
-    it('WHEN all console messages are excluded by config.consoleMessages THEN return undefined', () => {
-        const config = createConfig({
-            consoleMessages: ['foo', 'foo3'],
-        });
-        const spy: sinon.SinonSpy = {
-            args: [
-                ['foo', 'foo1'],
-                ['foo3', 'foo4'],
-            ],
-        } as sinon.SinonSpy;
-
-        const consoleMessage = findConsoleMessageIncluded(spy, config);
-
-        expect(consoleMessage).to.be.undefined;
+describe('consoleCallsToString()', () => {
+    it('WHEN calls are given THEN put each on its own line, named after its console method', () => {
+        expect(
+            consoleCallsToString([
+                { type: 'error', args: ['foo'], message: 'foo' },
+                { type: 'warn', args: ['bar', 1], message: 'bar 1' },
+            ])
+        ).to.equal('console.error: foo\nconsole.warn: bar 1');
     });
 });
 

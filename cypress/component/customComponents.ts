@@ -63,4 +63,12 @@ export class WithWarn extends HTMLElement {
     }
 }
 
+export class WithErrorAndWarn extends HTMLElement {
+    connectedCallback() {
+        console.error('errorNotExcluded');
+        console.error('secondErrorExcluded');
+        console.warn('consoleWarnMessage');
+    }
+}
+
 export class WithNoConsole extends HTMLElement {}

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { failed, failedOnConsole, passed, useCypressRun } from './runCypress';
 
 const secondErrorNotExcluded =
-    'secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null';
+    'console.error: secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null';
 
 describe('Cypress e2e', () => {
     const { spec, unchecked } = useCypressRun('e2e');
@@ -11,27 +11,27 @@ describe('Cypress e2e', () => {
         expect(spec('shouldFailOnConsoleMatch')).to.deep.equal([
             failedOnConsole(
                 'should throw AssertionError on console.error',
-                'consoleErrorMessage'
+                'console.error: consoleErrorMessage'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.warn',
-                'consoleWarnMessage'
+                'console.warn: consoleWarnMessage'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.info',
-                'consoleInfoMessage'
+                'console.info: consoleInfoMessage'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.debug',
-                'consoleDebugMessage'
+                'console.debug: consoleDebugMessage'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.trace',
-                'consoleTraceMessage'
+                'console.trace: consoleTraceMessage'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.table',
-                'consoleTableMessage'
+                'console.table: consoleTableMessage'
             ),
         ]);
     });
@@ -49,7 +49,7 @@ describe('Cypress e2e', () => {
         expect(spec('shouldFailOnConsoleErrorFromError')).to.deep.equal([
             failedOnConsole(
                 'should throw AssertionError on console.error from new error',
-                "TypeError: Cannot read properties of undefined (reading 'map')"
+                "console.error: TypeError: Cannot read properties of undefined (reading 'map')"
             ),
         ]);
     });
@@ -62,9 +62,19 @@ describe('Cypress e2e', () => {
             ),
             failedOnConsole(
                 'should throw AssertionError on console.warn',
-                'consoleWarnMessage'
+                'console.warn: consoleWarnMessage'
             ),
             passed('should pass on console.info'),
+        ]);
+    });
+
+    it('WHEN several console messages are not excluded THEN cypress fails listing all of them', () => {
+        expect(spec('shouldFailOnAllConsoleMessages')).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError listing every console message that is not excluded',
+                'console.error: errorNotExcluded',
+                'console.warn: consoleWarnMessage'
+            ),
         ]);
     });
 
@@ -87,14 +97,14 @@ describe('Cypress e2e', () => {
             passed('should pass with getConsoleMessages'),
             failedOnConsole(
                 'should throw AssertionError on console.error with setConsoleMessages',
-                'errorNotExcluded'
+                'console.error: errorNotExcluded'
             ),
             passed(
                 'should pass AssertionError on console.error with addConsoleMessages'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.error with deleteConsoleMessages',
-                'secondErrorExcluded'
+                'console.error: secondErrorExcluded'
             ),
         ]);
     });

@@ -82,11 +82,12 @@ export const failed = (title: string, error: string): TestResult => ({
     error,
 });
 
+// consoleMessages as in the failure message, for example 'console.error: foo'
 export const failedOnConsole = (
     title: string,
-    consoleMessage: string
+    ...consoleMessages: string[]
 ): TestResult =>
     failed(
         title,
-        `AssertionError: cypress-fail-on-console-error:\n${consoleMessage}`
+        `AssertionError: cypress-fail-on-console-error:\n${consoleMessages.join('\n')}`
     );

@@ -48,17 +48,17 @@ export default function failOnConsoleError(_config: Config = {}) {
         if (!spies) return;
 
         // match against the patterns compiled in setConfig
-        const consoleMessage: string | undefined = getConsoleMessageIncluded(
-            spies,
-            { ...config, consoleMessages: consoleMessagePatterns }
-        );
+        const consoleCalls = getConsoleCallsIncluded(spies, {
+            ...config,
+            consoleMessages: consoleMessagePatterns,
+        });
 
         spies = resetSpies(spies);
 
-        if (!consoleMessage) return;
+        if (consoleCalls.length === 0) return;
 
         throw new AssertionError(
-            `cypress-fail-on-console-error:\n${consoleMessage}`
+            `cypress-fail-on-console-error:\n${consoleCallsToString(consoleCalls)}`
         );
     });
 
@@ -174,47 +174,67 @@ export const resetSpies = (
     return spies;
 };
 
-export const getConsoleMessageIncluded = (
+export interface ConsoleCall {
+    type: ConsoleType;
+    args: any[];
+    // the arguments as one string, which consoleMessages are matched against
+    message: string;
+}
+
+// every call since the spies were last reset, in the order the app made them
+export const getConsoleCalls = (
+    spies: Map<ConsoleType, sinon.SinonSpy>
+): ConsoleCall[] =>
+    Array.from(spies.entries())
+        .flatMap(([type, spy]) =>
+            spy.getCalls().map((spyCall) => ({ type, spyCall }))
+        )
+        .sort((a, b) => (a.spyCall.calledBefore(b.spyCall) ? -1 : 1))
+        .map(({ type, spyCall }) => ({
+            type,
+            args: spyCall.args,
+            message: callToString(spyCall.args),
+        }));
+
+export const getConsoleCallsIncluded = (
     spies: Map<ConsoleType, sinon.SinonSpy>,
     config: Required<Config>
-): string | undefined => {
-    let includedConsoleMessage: string | undefined;
-    Array.from(spies.values()).find((spy) => {
-        if (!spy.called) return false;
-        includedConsoleMessage = findConsoleMessageIncluded(spy, config);
-        return includedConsoleMessage !== undefined;
-    });
-    return includedConsoleMessage;
-};
+): ConsoleCall[] =>
+    getConsoleCalls(spies).filter((consoleCall) =>
+        isConsoleCallIncluded(consoleCall, config)
+    );
 
-export const findConsoleMessageIncluded = (
-    spy: sinon.SinonSpy,
+export const isConsoleCallIncluded = (
+    consoleCall: ConsoleCall,
     config: Required<Config>
-): string | undefined => {
-    const consoleMessages = spy.args.map((call: any[]) => callToString(call));
+): boolean => {
+    if (config.consoleMessages.length === 0) return true;
 
-    if (config.consoleMessages.length === 0) {
-        return consoleMessages[0];
-    }
-
-    return consoleMessages.find((consoleMessage: string) => {
-        const someConsoleMessagesExcluded = config.consoleMessages.some(
-            (configConsoleMessage: ConsoleMessage) =>
-                isConsoleMessageExcluded(
-                    consoleMessage,
-                    configConsoleMessage,
-                    config.debug
-                )
-        );
-        if (config.debug) {
-            cypressLogger('consoleMessage_excluded', {
+    const consoleMessage = consoleCall.message;
+    const someConsoleMessagesExcluded = config.consoleMessages.some(
+        (configConsoleMessage: ConsoleMessage) =>
+            isConsoleMessageExcluded(
                 consoleMessage,
-                someConsoleMessagesExcluded,
-            });
-        }
-        return !someConsoleMessagesExcluded;
-    });
+                configConsoleMessage,
+                config.debug
+            )
+    );
+    if (config.debug) {
+        cypressLogger('consoleMessage_excluded', {
+            consoleMessage,
+            someConsoleMessagesExcluded,
+        });
+    }
+    return !someConsoleMessagesExcluded;
 };
+
+export const consoleCallsToString = (consoleCalls: ConsoleCall[]): string =>
+    consoleCalls
+        .map(
+            (consoleCall) =>
+                `console.${consoleCall.type}: ${consoleCall.message}`
+        )
+        .join('\n');
 
 const toRegExp = (consoleMessage: ConsoleMessage): RegExp =>
     consoleMessage instanceof RegExp
