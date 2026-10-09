@@ -156,29 +156,71 @@ describe('validateConfig()', () => {
         expect(() => validateConfig(config)).not.to.throw(chai.AssertionError);
     });
 
-    const consoleTypes = [[], [''], [3], ['NotAValidConsoleType']];
-    consoleTypes.forEach((consoleType: any) => {
-        it(`WHEN consoleTypes is not valid (${JSON.stringify(
-            consoleType
-        )}) THEN throw AssertionError`, () => {
-            const config: Config = {
-                consoleTypes: consoleType,
-            };
-
-            expect(() => validateConfig(config)).to.throw(chai.AssertionError);
-        });
-    });
-
-    const consoleMessages = [[42], [''], [{}], [null]];
-    consoleMessages.forEach((consoleMessage: any) => {
-        it(`WHEN consoleMessages is not valid (${JSON.stringify(
-            consoleMessage
-        )}) THEN throw AssertionError`, () => {
-            const config: Config = {
-                consoleMessages: consoleMessage,
-            };
-
-            expect(() => validateConfig(config)).to.throw(chai.AssertionError);
+    const invalidConfigs: [string, any, string][] = [
+        [
+            'consoleTypes',
+            { consoleTypes: [] },
+            'consoleTypes must not be empty',
+        ],
+        [
+            'consoleTypes',
+            { consoleTypes: 'error' },
+            'consoleTypes must be an array, got string',
+        ],
+        [
+            'consoleTypes',
+            { consoleTypes: ['error', ''] },
+            'consoleTypes[1] must be one of error, warn, info, debug, trace, table, got ""',
+        ],
+        [
+            'consoleTypes',
+            { consoleTypes: [3] },
+            'consoleTypes[0] must be one of error, warn, info, debug, trace, table, got 3',
+        ],
+        [
+            'consoleTypes',
+            { consoleTypes: ['NotAValidConsoleType'] },
+            'consoleTypes[0] must be one of error, warn, info, debug, trace, table, got "NotAValidConsoleType"',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: 'foo' },
+            'consoleMessages must be an array, got string',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [42] },
+            'consoleMessages[0] must be a string or RegExp, got number',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: ['foo', ''] },
+            'consoleMessages[1] must not be an empty string',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [{}] },
+            'consoleMessages[0] must be a string or RegExp, got object',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [null] },
+            'consoleMessages[0] must be a string or RegExp, got null',
+        ],
+        [
+            'consoleMessages',
+            { consoleMessages: [['foo']] },
+            'consoleMessages[0] must be a string or RegExp, got array',
+        ],
+    ];
+    invalidConfigs.forEach(([option, config, message]) => {
+        it(`WHEN ${option} is not valid (${JSON.stringify(
+            config[option]
+        )}) THEN throw AssertionError naming the option`, () => {
+            expect(() => validateConfig(config)).to.throw(
+                chai.AssertionError,
+                `cypress-fail-on-console-error: ${message}`
+            );
         });
     });
 
