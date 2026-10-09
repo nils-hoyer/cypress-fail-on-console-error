@@ -34,4 +34,16 @@ describe('shouldFailOnConsoleMatch', () => {
             cy.visit('./cypress/fixtures/shouldFailOnConsoleMatch.html');
         });
     });
+
+    it('should throw AssertionError on console.log', () => {
+        cy.setConfig({ consoleTypes: ['log'] }).then(() => {
+            cy.visit('./cypress/fixtures/shouldFailOnConsoleMatch.html');
+        });
+    });
+
+    it('should throw AssertionError on a failed console.assert', () => {
+        cy.setConfig({ consoleTypes: ['assert'] }).then(() => {
+            cy.visit('./cypress/fixtures/shouldFailOnConsoleMatch.html');
+        });
+    });
 });

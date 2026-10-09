@@ -33,6 +33,14 @@ describe('Cypress e2e', () => {
                 'should throw AssertionError on console.table',
                 'console.table: consoleTableMessage'
             ),
+            failedOnConsole(
+                'should throw AssertionError on console.log',
+                'console.log: consoleLogMessage'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on a failed console.assert',
+                'console.assert: Assertion failed: consoleAssertMessage'
+            ),
         ]);
     });
 

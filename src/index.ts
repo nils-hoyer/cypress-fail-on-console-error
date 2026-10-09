@@ -3,7 +3,17 @@ import { AssertionError } from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 
-type ConsoleType = 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'table';
+const consoleTypes = [
+    'error',
+    'warn',
+    'info',
+    'debug',
+    'trace',
+    'table',
+    'log',
+    'assert',
+] as const;
+type ConsoleType = (typeof consoleTypes)[number];
 type ConsoleMessage = string | RegExp;
 interface Config {
     consoleMessages?: ConsoleMessage[];
@@ -77,15 +87,6 @@ export default function failOnConsoleError(_config: Config = {}) {
     };
 }
 
-const consoleTypes: ConsoleType[] = [
-    'error',
-    'warn',
-    'info',
-    'debug',
-    'trace',
-    'table',
-];
-
 const typeName = (value: unknown): string => {
     if (value === null) return 'null';
     if (Array.isArray(value)) return 'array';
@@ -138,7 +139,7 @@ export const validateConfig = (config: Config): void => {
             invalidConfig('consoleTypes must not be empty');
         }
         config.consoleTypes.forEach((consoleType, index) => {
-            if (!consoleTypes.includes(consoleType)) {
+            if (!(consoleTypes as readonly unknown[]).includes(consoleType)) {
                 invalidConfig(
                     `consoleTypes[${index}] must be one of ${consoleTypes.join(', ')}, got ${JSON.stringify(consoleType)}`
                 );
@@ -191,11 +192,23 @@ export const getConsoleCalls = (
             spy.getCalls().map((spyCall) => ({ type, spyCall }))
         )
         .sort((a, b) => (a.spyCall.calledBefore(b.spyCall) ? -1 : 1))
-        .map(({ type, spyCall }) => ({
-            type,
-            args: spyCall.args,
-            message: callToString(spyCall.args),
-        }));
+        .map(({ type, spyCall }) => toConsoleCall(type, spyCall.args))
+        .filter((consoleCall) => consoleCall !== undefined);
+
+// console.assert only logs when its first argument is falsy, and logs the remaining arguments
+const toConsoleCall = (
+    type: ConsoleType,
+    args: any[]
+): ConsoleCall | undefined => {
+    if (type !== 'assert') return { type, args, message: callToString(args) };
+    if (args[0]) return undefined;
+    const message = callToString(args.slice(1));
+    return {
+        type,
+        args,
+        message: message ? `Assertion failed: ${message}` : 'Assertion failed',
+    };
+};
 
 export const getConsoleCallsIncluded = (
     spies: Map<ConsoleType, sinon.SinonSpy>,

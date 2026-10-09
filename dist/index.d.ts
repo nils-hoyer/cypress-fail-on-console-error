@@ -1,5 +1,6 @@
 import * as sinon from 'sinon';
-type ConsoleType = 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'table';
+declare const consoleTypes: readonly ['error', 'warn', 'info', 'debug', 'trace', 'table', 'log', 'assert'];
+type ConsoleType = (typeof consoleTypes)[number];
 type ConsoleMessage = string | RegExp;
 interface Config {
     consoleMessages?: ConsoleMessage[];
