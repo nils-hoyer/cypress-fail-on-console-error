@@ -1,36 +1,92 @@
-import { exec as execCallback } from 'child_process';
-import { promisify } from 'util';
-
-const exec = promisify(execCallback);
+import cypress from 'cypress';
+import { beforeAll } from 'vitest';
 
 // VS Code sets ELECTRON_RUN_AS_NODE in its terminals, which stops the Cypress binary from starting
-const env = { ...process.env };
-delete env.ELECTRON_RUN_AS_NODE;
+delete process.env.ELECTRON_RUN_AS_NODE;
 
+export interface TestResult {
+    title: string;
+    state: string;
+    // the error message without the stack trace, undefined for tests that didn't fail
+    error?: string;
+}
+
+const errorMessage = (displayError: string | null): string | undefined =>
+    displayError?.split(/\n\s+at /)[0];
+
+/**
+ * Runs all specs of a testing type in one Cypress run and returns
+ * the results of each spec, keyed by its file name without `.cy.ts`.
+ */
 export async function runCypress(
-    testingType: 'e2e' | 'component',
-    spec: string
-): Promise<string> {
-    const command = [
-        'cypress run',
-        '--browser chrome',
-        '--headless',
-        testingType === 'component' ? '--component' : '',
-        '--config-file ./cypress/cypress.config.ts',
-        `--spec "${spec}"`,
-    ].join(' ');
+    testingType: 'e2e' | 'component'
+): Promise<Map<string, TestResult[]>> {
+    const result = await cypress.run({
+        testingType,
+        browser: 'chrome',
+        configFile: './cypress/cypress.config.ts',
+        quiet: true,
+    });
 
-    // cypress run exits with the number of failed tests, so failing specs reject too
-    const { stdout, stderr } = await exec(command, { env }).catch(
-        (error) => error
-    );
-
-    // Cypress colours its output in CI, which would split '(Run Finished)' with escape codes
-    const output = String(stdout ?? '').replace(/\x1b\[[0-9;]*m/g, '');
-
-    if (!output.includes('(Run Finished)')) {
-        throw new Error(`Cypress did not finish the run:\n${stderr}${output}`);
+    // a run that couldn't start, for example because the config file has an error
+    if (!('runs' in result)) {
+        throw new Error(
+            `Cypress did not finish the run (${result.failures} failures):\n${result.message}`
+        );
     }
 
-    return output;
+    return new Map(
+        result.runs.map((run) => [
+            run.spec.fileName,
+            run.tests.map((test) => ({
+                title: test.title[test.title.length - 1],
+                state: test.state,
+                error: errorMessage(test.displayError),
+            })),
+        ])
+    );
 }
+
+/**
+ * Runs all specs of a testing type once, before the tests of the calling file.
+ * `spec()` returns the results of one spec. `unchecked()` lists the specs
+ * that no test asked for, so a new spec can't be left without checks.
+ */
+export function useCypressRun(testingType: 'e2e' | 'component') {
+    let results = new Map<string, TestResult[]>();
+    const checked = new Set<string>();
+
+    beforeAll(async () => {
+        results = await runCypress(testingType);
+    }, 600_000);
+
+    return {
+        spec: (specName: string): TestResult[] | undefined => {
+            checked.add(specName);
+            return results.get(specName);
+        },
+        unchecked: (): string[] =>
+            [...results.keys()].filter((specName) => !checked.has(specName)),
+    };
+}
+
+export const passed = (title: string): TestResult => ({
+    title,
+    state: 'passed',
+    error: undefined,
+});
+
+export const failed = (title: string, error: string): TestResult => ({
+    title,
+    state: 'failed',
+    error,
+});
+
+export const failedOnConsole = (
+    title: string,
+    consoleMessage: string
+): TestResult =>
+    failed(
+        title,
+        `AssertionError: cypress-fail-on-console-error:\n${consoleMessage}`
+    );

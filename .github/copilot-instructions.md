@@ -29,7 +29,8 @@ When you add or change a config option or public function, update `README.md` to
 - `src/index.ts`: the plugin source
 - `dist/`: compiled output, **committed to git** and published to npm. Rebuild with `npm run build` and commit `dist/` together with any change to `src/`.
 - `test/unit.test.ts`: Vitest unit tests for the helper functions
-- `test/e2e.test.ts`, `test/component.test.ts`: Vitest tests that run `cypress run` as a child process and assert on its stdout (pass/fail counts and error text)
+- `test/runCypress.ts`: runs all specs of one testing type in a single `cypress.run()` (Cypress's Node API) and returns each spec's tests with their state and error message
+- `test/e2e.test.ts`, `test/component.test.ts`: Vitest tests that check each spec's results. The last test fails if a spec has no check.
 - `cypress/e2e/*.cy.ts`, `cypress/component/*.cy.ts`: the Cypress specs run by those tests
 - `cypress/fixtures/*.html`: pages that write to the console, visited by e2e specs
 - `cypress/component/customComponents.ts`: web components that write to the console, mounted by component specs
@@ -69,7 +70,7 @@ Never change `version` in `package.json` or create tags in a pull request. If th
 3. For behaviour that shows up in a real Cypress run, add:
     - an HTML fixture in `cypress/fixtures/` (e2e) or a web component in `cypress/component/customComponents.ts` (component)
     - a spec in `cypress/e2e/` or `cypress/component/`, named after the expected outcome (`shouldFailOn…`, `shouldPassOn…`, `shouldReset…`)
-    - a case in `test/e2e.test.ts` or `test/component.test.ts` that runs the spec and asserts on stdout, for example `'1 of 1 failed'`, `/Failing:.*1/` or the expected error message
+    - a case in `test/e2e.test.ts` or `test/component.test.ts` that lists every test of the spec with `passed(title)`, `failedOnConsole(title, message)` or `failed(title, error)`
 
     If a feature applies to both testing types, cover both.
 
