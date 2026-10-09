@@ -29,3 +29,22 @@ jobs:
             - run: npm run test:ut
             - run: npm run test:e2e
             - run: npm run test:cmp
+
+    # The oldest supported Cypress version. Keep it in sync with peerDependencies.
+    oldest-cypress:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+            - name: Node LTS
+              uses: actions/setup-node@v7
+              with:
+                  node-version: lts/*
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run build
+            # Cypress 14 loads cypress.config.ts and the specs with TypeScript's JS API,
+            # which TypeScript 7 doesn't have, and its dev server can't load Vite 7 and later.
+            - name: Install Cypress 14.0.0
+              run: npm install --no-save cypress@14.0.0 typescript@5 vite@6
+            - run: npm run test:e2e
+            - run: npm run test:cmp
