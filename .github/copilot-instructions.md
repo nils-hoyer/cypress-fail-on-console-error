@@ -50,7 +50,7 @@ When you add or change a config option or public function, update `README.md` to
 
 CI (`.github/workflows/ci.yml`) runs the build, checks that the committed `dist/` matches it, then runs the type check, the Prettier check and all three test suites on Node LTS. A second job, `oldest-cypress`, runs the e2e and component tests with Cypress 14.0.0, the oldest supported version. It installs TypeScript 5 and Vite 6 for that run, because Cypress 14 supports neither TypeScript 7 nor Vite 7 and later.
 
-Dependabot (`.github/dependabot.yml`) opens dependency updates once a month. `.github/workflows/dependabot-automerge.yml` turns on auto-merge for minor and patch updates, so GitHub merges them when CI passes. Major updates need a review.
+Dependabot (`.github/dependabot.yml`) opens dependency updates once a month. `.github/workflows/dependabot-automerge.yml` waits for the CI run of a minor or patch update and merges it if CI passed. Major updates need a review. There are no required status checks on `main`, because they would block the Release workflow's push.
 
 ## Releasing
 
