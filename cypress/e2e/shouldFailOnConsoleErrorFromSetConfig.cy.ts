@@ -27,8 +27,8 @@ describe('shouldFailOnConsoleErrorFromSetConfig', () => {
     it('should throw AssertionError on console.error with deleteConsoleMessages', () => {
         cy.deleteConsoleMessages(['secondErrorExcluded']);
         cy.getConsoleMessages().then((consoleMessages) => {
-            expect(consoleMessages).not.includes('errorNotExcluded');
-            expect(consoleMessages).to.have.length(3);
+            expect(consoleMessages).not.includes('secondErrorExcluded');
+            expect(consoleMessages).to.have.length(2);
         });
         cy.visit('./cypress/fixtures/consoleErrorExcludeMessage.html');
     });
