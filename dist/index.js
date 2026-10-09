@@ -65,6 +65,32 @@ export default function failOnConsoleError(_config = {}) {
         setConfig,
     };
 }
+/**
+ * Registers the commands getConsoleMessages, setConsoleMessages, addConsoleMessages
+ * and deleteConsoleMessages, which read and change consoleMessages for the current test.
+ */
+export const addConsoleMessagesCommands = ({ getConfig, setConfig, }) => {
+    const setConsoleMessages = (consoleMessages) => setConfig(Object.assign(Object.assign({}, getConfig()), { consoleMessages }));
+    Cypress.Commands.addAll({
+        getConsoleMessages: () => cy.wrap(getConfig().consoleMessages, { log: false }),
+        setConsoleMessages,
+        addConsoleMessages: (consoleMessages) => setConsoleMessages([
+            ...getConfig().consoleMessages,
+            ...consoleMessages,
+        ]),
+        deleteConsoleMessages: (consoleMessages) => setConsoleMessages(getConfig().consoleMessages.filter((consoleMessage) => !consoleMessages.some((deleted) => isSameConsoleMessage(consoleMessage, deleted)))),
+    });
+};
+// a string and a RegExp with the same text are different patterns
+const consoleMessageKey = (consoleMessage) => {
+    if (isTypedConsoleMessage(consoleMessage)) {
+        return `${consoleMessage.type}:${consoleMessageKey(consoleMessage.message)}`;
+    }
+    return consoleMessage instanceof RegExp
+        ? `RegExp:${consoleMessage}`
+        : `string:${consoleMessage}`;
+};
+export const isSameConsoleMessage = (a, b) => consoleMessageKey(a) === consoleMessageKey(b);
 const typeName = (value) => {
     if (value === null)
         return 'null';

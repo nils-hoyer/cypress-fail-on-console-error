@@ -1,9 +1,9 @@
 import failOnConsoleError, {
+    addConsoleMessagesCommands,
     Config as FailOnConsoleErrorConfig,
-    ConsoleMessage,
 } from '../../dist/index';
 
-const { getConfig, setConfig } = failOnConsoleError({
+const failOnConsole = failOnConsoleError({
     consoleMessages: [
         /firstErrorExcluded.*/,
         'secondErrorExcluded',
@@ -13,42 +13,14 @@ const { getConfig, setConfig } = failOnConsoleError({
     debug: true,
 });
 
+addConsoleMessagesCommands(failOnConsole);
+
 Cypress.Commands.addAll({
     getConfig: () => {
-        return cy.wrap(getConfig());
+        return cy.wrap(failOnConsole.getConfig());
     },
     setConfig: (config: FailOnConsoleErrorConfig) => {
-        setConfig(config);
-    },
-    getConsoleMessages: () => {
-        const config = getConfig();
-        return cy.wrap(config.consoleMessages);
-    },
-    setConsoleMessages: (consoleMessages: ConsoleMessage[]) => {
-        const config = getConfig();
-        setConfig({ ...config, consoleMessages });
-    },
-    addConsoleMessages: (_consoleMessages: ConsoleMessage[]) => {
-        const config = getConfig();
-        const consoleMessages = [
-            ...config.consoleMessages,
-            ..._consoleMessages,
-        ];
-        setConfig({
-            ...config,
-            consoleMessages,
-        });
-    },
-    deleteConsoleMessages: (_consoleMessages: ConsoleMessage[]) => {
-        const config = getConfig();
-        const consoleMessages = config.consoleMessages.filter(
-            (consoleMessage: ConsoleMessage) =>
-                !_consoleMessages.includes(consoleMessage.toString())
-        );
-        setConfig({
-            ...config,
-            consoleMessages,
-        });
+        failOnConsole.setConfig(config);
     },
 });
 
@@ -57,16 +29,6 @@ declare global {
         interface Chainable {
             getConfig(): Chainable<Required<FailOnConsoleErrorConfig>>;
             setConfig(config: FailOnConsoleErrorConfig): Chainable<void>;
-            getConsoleMessages(): Chainable<any>;
-            setConsoleMessages(
-                consoleMessages: ConsoleMessage[]
-            ): Chainable<void>;
-            addConsoleMessages(
-                consoleMessages: ConsoleMessage[]
-            ): Chainable<void>;
-            deleteConsoleMessages(
-                consoleMessages: ConsoleMessage[]
-            ): Chainable<void>;
         }
     }
 }

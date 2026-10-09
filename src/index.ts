@@ -32,6 +32,24 @@ export { ConsoleType };
 export { ConsoleMessage };
 export { TypedConsoleMessage };
 
+declare global {
+    namespace Cypress {
+        // registered by addConsoleMessagesCommands()
+        interface Chainable {
+            getConsoleMessages(): Chainable<ConsoleMessage[]>;
+            setConsoleMessages(
+                consoleMessages: ConsoleMessage[]
+            ): Chainable<void>;
+            addConsoleMessages(
+                consoleMessages: ConsoleMessage[]
+            ): Chainable<void>;
+            deleteConsoleMessages(
+                consoleMessages: ConsoleMessage[]
+            ): Chainable<void>;
+        }
+    }
+}
+
 chai.should();
 chai.use(sinonChai);
 
@@ -97,6 +115,53 @@ export default function failOnConsoleError(_config: Config = {}) {
         setConfig,
     };
 }
+
+/**
+ * Registers the commands getConsoleMessages, setConsoleMessages, addConsoleMessages
+ * and deleteConsoleMessages, which read and change consoleMessages for the current test.
+ */
+export const addConsoleMessagesCommands = ({
+    getConfig,
+    setConfig,
+}: ReturnType<typeof failOnConsoleError>): void => {
+    const setConsoleMessages = (consoleMessages: ConsoleMessage[]) =>
+        setConfig({ ...getConfig(), consoleMessages });
+
+    Cypress.Commands.addAll({
+        getConsoleMessages: () =>
+            cy.wrap(getConfig().consoleMessages, { log: false }),
+        setConsoleMessages,
+        addConsoleMessages: (consoleMessages: ConsoleMessage[]) =>
+            setConsoleMessages([
+                ...getConfig().consoleMessages,
+                ...consoleMessages,
+            ]),
+        deleteConsoleMessages: (consoleMessages: ConsoleMessage[]) =>
+            setConsoleMessages(
+                getConfig().consoleMessages.filter(
+                    (consoleMessage) =>
+                        !consoleMessages.some((deleted) =>
+                            isSameConsoleMessage(consoleMessage, deleted)
+                        )
+                )
+            ),
+    });
+};
+
+// a string and a RegExp with the same text are different patterns
+const consoleMessageKey = (consoleMessage: ConsoleMessage): string => {
+    if (isTypedConsoleMessage(consoleMessage)) {
+        return `${consoleMessage.type}:${consoleMessageKey(consoleMessage.message)}`;
+    }
+    return consoleMessage instanceof RegExp
+        ? `RegExp:${consoleMessage}`
+        : `string:${consoleMessage}`;
+};
+
+export const isSameConsoleMessage = (
+    a: ConsoleMessage,
+    b: ConsoleMessage
+): boolean => consoleMessageKey(a) === consoleMessageKey(b);
 
 const typeName = (value: unknown): string => {
     if (value === null) return 'null';

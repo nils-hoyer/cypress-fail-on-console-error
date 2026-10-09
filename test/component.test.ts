@@ -146,6 +146,7 @@ describe('Cypress components', () => {
                 'should throw AssertionError on console.error with deleteConsoleMessages',
                 'console.error: secondErrorExcluded'
             ),
+            passed('should pass with deleteConsoleMessages for a RegExp'),
         ]);
     });
 

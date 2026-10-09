@@ -16,10 +16,26 @@ export { Config };
 export { ConsoleType };
 export { ConsoleMessage };
 export { TypedConsoleMessage };
+declare global {
+    namespace Cypress {
+        interface Chainable {
+            getConsoleMessages(): Chainable<ConsoleMessage[]>;
+            setConsoleMessages(consoleMessages: ConsoleMessage[]): Chainable<void>;
+            addConsoleMessages(consoleMessages: ConsoleMessage[]): Chainable<void>;
+            deleteConsoleMessages(consoleMessages: ConsoleMessage[]): Chainable<void>;
+        }
+    }
+}
 export default function failOnConsoleError(_config?: Config): {
     getConfig: () => Required<Config>;
     setConfig: (_config: Config) => void;
 };
+/**
+ * Registers the commands getConsoleMessages, setConsoleMessages, addConsoleMessages
+ * and deleteConsoleMessages, which read and change consoleMessages for the current test.
+ */
+export declare const addConsoleMessagesCommands: ({ getConfig, setConfig, }: ReturnType<typeof failOnConsoleError>) => void;
+export declare const isSameConsoleMessage: (a: ConsoleMessage, b: ConsoleMessage) => boolean;
 export declare const validateConfig: (config: Config) => void;
 export declare const createConfig: (config: Config) => Required<Config>;
 export declare const compileConfig: (config: Required<Config>) => Required<Config>;

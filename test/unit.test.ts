@@ -1,5 +1,6 @@
 import * as sinon from 'sinon';
 import failOnConsoleError, {
+    addConsoleMessagesCommands,
     callToString,
     createConfig,
     compileConfig,
@@ -9,6 +10,7 @@ import failOnConsoleError, {
     getConsoleCallsIncluded,
     isConsoleCallIncluded,
     isConsoleMessageExcluded,
+    isSameConsoleMessage,
     logConsoleCall,
     resetSpies,
     updateSpies,
@@ -122,6 +124,86 @@ describe('setConfig() with consoleTypes', () => {
         expect(console.error).to.equal(original.error);
         expect(console.warn).not.to.equal(original.warn);
         expect((console.warn as sinon.SinonSpy).called).to.be.false;
+    });
+});
+
+describe('addConsoleMessagesCommands()', () => {
+    afterEach(() => {
+        delete (Cypress as any).Commands;
+        vi.unstubAllGlobals();
+    });
+
+    const addCommands = (config: Config) => {
+        const addAll = vi.fn();
+        (Cypress as any).Commands = { addAll };
+        vi.stubGlobal('cy', { wrap: (value: any) => value });
+        const failOnConsole = failOnConsoleError(config);
+        addConsoleMessagesCommands(failOnConsole);
+        return { commands: addAll.mock.calls[0][0], ...failOnConsole };
+    };
+
+    it('WHEN the commands are called THEN read and change consoleMessages only', () => {
+        const { commands, getConfig } = addCommands({
+            consoleMessages: ['foo'],
+            consoleTypes: ['warn'],
+        });
+
+        expect(commands.getConsoleMessages()).to.deep.equal(['foo']);
+        commands.addConsoleMessages([/bar/]);
+        expect(getConfig().consoleMessages).to.deep.equal(['foo', /bar/]);
+        commands.setConsoleMessages(['baz']);
+        expect(getConfig().consoleMessages).to.deep.equal(['baz']);
+        expect(getConfig().consoleTypes).to.deep.equal(['warn']);
+    });
+
+    it('WHEN deleteConsoleMessages is called THEN delete equal strings, RegExps and { type, message } patterns', () => {
+        const { commands, getConfig } = addCommands({
+            consoleMessages: [
+                'foo',
+                /foo/,
+                /bar/g,
+                { type: 'warn', message: /baz/ },
+                { type: 'error', message: /baz/ },
+            ],
+        });
+
+        commands.deleteConsoleMessages([
+            /foo/,
+            /bar/g,
+            { type: 'warn', message: /baz/ },
+        ]);
+
+        expect(getConfig().consoleMessages).to.deep.equal([
+            'foo',
+            { type: 'error', message: /baz/ },
+        ]);
+    });
+});
+
+describe('isSameConsoleMessage()', () => {
+    it('WHEN patterns have the same kind and text THEN they are the same', () => {
+        expect(isSameConsoleMessage('foo', 'foo')).to.be.true;
+        expect(isSameConsoleMessage(/foo/i, /foo/i)).to.be.true;
+        expect(
+            isSameConsoleMessage(
+                { type: 'warn', message: 'foo' },
+                { type: 'warn', message: 'foo' }
+            )
+        ).to.be.true;
+    });
+
+    it('WHEN patterns differ in kind, text, flags or console method THEN they are not the same', () => {
+        expect(isSameConsoleMessage('foo', /foo/)).to.be.false;
+        expect(isSameConsoleMessage(/foo/, /foo/i)).to.be.false;
+        expect(isSameConsoleMessage('foo', 'bar')).to.be.false;
+        expect(
+            isSameConsoleMessage(
+                { type: 'warn', message: 'foo' },
+                { type: 'error', message: 'foo' }
+            )
+        ).to.be.false;
+        expect(isSameConsoleMessage({ type: 'warn', message: 'foo' }, 'foo')).to
+            .be.false;
     });
 });
 

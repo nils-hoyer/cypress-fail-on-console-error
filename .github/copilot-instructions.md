@@ -20,7 +20,7 @@ The whole plugin lives in `src/index.ts`. Keep it a single file, and keep runtim
 
 ## Public API
 
-The default export `failOnConsoleError`, the types `Config`, `ConsoleType`, `ConsoleMessage` and `TypedConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `updateSpies`, `resetSpies`, `getConsoleCalls`, `getConsoleCallsIncluded`, `isConsoleCallIncluded`, `isConsoleCallMatched`, `compileConfig`, `consoleCallsToString`, `logConsoleCall`, `isConsoleMessageExcluded`, `callToString`, `cypressLogger`) are exported so the unit tests can import them.
+The default export `failOnConsoleError`, the opt-in `addConsoleMessagesCommands` with the command declarations in `declare global`, the types `Config`, `ConsoleType`, `ConsoleMessage` and `TypedConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `updateSpies`, `resetSpies`, `getConsoleCalls`, `getConsoleCallsIncluded`, `isConsoleCallIncluded`, `isConsoleCallMatched`, `compileConfig`, `isSameConsoleMessage`, `consoleCallsToString`, `logConsoleCall`, `isConsoleMessageExcluded`, `callToString`, `cypressLogger`) are exported so the unit tests can import them.
 
 When you add or change a config option or public function, update `README.md` too.
 
@@ -34,7 +34,7 @@ When you add or change a config option or public function, update `README.md` to
 - `cypress/e2e/*.cy.ts`, `cypress/component/*.cy.ts`: the Cypress specs run by those tests
 - `cypress/fixtures/*.html`: pages that write to the console, visited by e2e specs
 - `cypress/component/customComponents.ts`: web components that write to the console, mounted by component specs
-- `cypress/support/commands.ts`: registers the plugin with the shared test config and adds the custom commands that specs use (`getConfig`, `setConfig`, `getConsoleMessages`, `setConsoleMessages`, `addConsoleMessages`, `deleteConsoleMessages`)
+- `cypress/support/commands.ts`: registers the plugin with the shared test config, adds the plugin's `getConsoleMessages`, `setConsoleMessages`, `addConsoleMessages` and `deleteConsoleMessages` commands with `addConsoleMessagesCommands`, and adds `getConfig` and `setConfig` commands for the specs
 
 ## Commands
 
