@@ -25,9 +25,12 @@ export async function runCypress(
         (error) => error
     );
 
-    if (!stdout?.includes('(Run Finished)')) {
-        throw new Error(`Cypress did not finish the run:\n${stderr}${stdout}`);
+    // Cypress colours its output in CI, which would split '(Run Finished)' with escape codes
+    const output = String(stdout ?? '').replace(/\x1b\[[0-9;]*m/g, '');
+
+    if (!output.includes('(Run Finished)')) {
+        throw new Error(`Cypress did not finish the run:\n${stderr}${output}`);
     }
 
-    return stdout;
+    return output;
 }
