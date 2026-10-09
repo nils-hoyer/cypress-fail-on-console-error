@@ -2,6 +2,16 @@ import * as chai from 'chai';
 import { AssertionError } from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+const consoleTypes = [
+    'error',
+    'warn',
+    'info',
+    'debug',
+    'trace',
+    'table',
+    'log',
+    'assert',
+];
 chai.should();
 chai.use(sinonChai);
 export default function failOnConsoleError(_config = {}) {
@@ -47,14 +57,6 @@ export default function failOnConsoleError(_config = {}) {
         setConfig,
     };
 }
-const consoleTypes = [
-    'error',
-    'warn',
-    'info',
-    'debug',
-    'trace',
-    'table',
-];
 const typeName = (value) => {
     if (value === null)
         return 'null';
@@ -127,11 +129,21 @@ export const resetSpies = (spies) => {
 export const getConsoleCalls = (spies) => Array.from(spies.entries())
     .flatMap(([type, spy]) => spy.getCalls().map((spyCall) => ({ type, spyCall })))
     .sort((a, b) => (a.spyCall.calledBefore(b.spyCall) ? -1 : 1))
-    .map(({ type, spyCall }) => ({
-    type,
-    args: spyCall.args,
-    message: callToString(spyCall.args),
-}));
+    .map(({ type, spyCall }) => toConsoleCall(type, spyCall.args))
+    .filter((consoleCall) => consoleCall !== undefined);
+// console.assert only logs when its first argument is falsy, and logs the remaining arguments
+const toConsoleCall = (type, args) => {
+    if (type !== 'assert')
+        return { type, args, message: callToString(args) };
+    if (args[0])
+        return undefined;
+    const message = callToString(args.slice(1));
+    return {
+        type,
+        args,
+        message: message ? `Assertion failed: ${message}` : 'Assertion failed',
+    };
+};
 export const getConsoleCallsIncluded = (spies, config) => getConsoleCalls(spies).filter((consoleCall) => isConsoleCallIncluded(consoleCall, config));
 export const isConsoleCallIncluded = (consoleCall, config) => {
     if (config.consoleMessages.length === 0)

@@ -172,17 +172,17 @@ describe('validateConfig()', () => {
         [
             'consoleTypes',
             { consoleTypes: ['error', ''] },
-            'consoleTypes[1] must be one of error, warn, info, debug, trace, table, got ""',
+            'consoleTypes[1] must be one of error, warn, info, debug, trace, table, log, assert, got ""',
         ],
         [
             'consoleTypes',
             { consoleTypes: [3] },
-            'consoleTypes[0] must be one of error, warn, info, debug, trace, table, got 3',
+            'consoleTypes[0] must be one of error, warn, info, debug, trace, table, log, assert, got 3',
         ],
         [
             'consoleTypes',
             { consoleTypes: ['NotAValidConsoleType'] },
-            'consoleTypes[0] must be one of error, warn, info, debug, trace, table, got "NotAValidConsoleType"',
+            'consoleTypes[0] must be one of error, warn, info, debug, trace, table, log, assert, got "NotAValidConsoleType"',
         ],
         [
             'consoleMessages',
@@ -247,7 +247,16 @@ describe('validateConfig()', () => {
 describe('createSpies()', () => {
     it('WHEN consoleTypes THEN create createSpies map', () => {
         const config: Required<Config> = createConfig({
-            consoleTypes: ['info', 'warn', 'error', 'debug', 'trace', 'table'],
+            consoleTypes: [
+                'info',
+                'warn',
+                'error',
+                'debug',
+                'trace',
+                'table',
+                'log',
+                'assert',
+            ],
         });
         const console: any = {
             info: () => true,
@@ -256,6 +265,8 @@ describe('createSpies()', () => {
             debug: () => true,
             trace: () => true,
             table: () => true,
+            log: () => true,
+            assert: () => true,
         };
 
         const spies: Map<ConsoleType, sinon.SinonSpy> = createSpies(
@@ -264,13 +275,7 @@ describe('createSpies()', () => {
         );
 
         const spiesIterator = spies.keys();
-        expect(spies.size).to.equals(6);
-        expect(spiesIterator.next().value).to.equals(config.consoleTypes[0]);
-        expect(spiesIterator.next().value).to.equals(config.consoleTypes[1]);
-        expect(spiesIterator.next().value).to.equals(config.consoleTypes[2]);
-        expect(spiesIterator.next().value).to.equals(config.consoleTypes[3]);
-        expect(spiesIterator.next().value).to.equals(config.consoleTypes[4]);
-        expect(spiesIterator.next().value).to.equals(config.consoleTypes[5]);
+        expect(Array.from(spiesIterator)).to.deep.equal(config.consoleTypes);
     });
 
     it('WHEN consoleTypes contains duplicates THEN create one spy per type', () => {
@@ -328,6 +333,34 @@ describe('getConsoleCalls()', () => {
             { type: 'warn', args: ['first', 1], message: 'first 1' },
             { type: 'error', args: ['second'], message: 'second' },
             { type: 'warn', args: ['third'], message: 'third' },
+        ]);
+    });
+
+    it('WHEN console.log is called THEN return its call', () => {
+        const { console, spies } = spyOnConsole(['log']);
+
+        console.log('foo');
+
+        expect(getConsoleCalls(spies)).to.deep.equal([
+            { type: 'log', args: ['foo'], message: 'foo' },
+        ]);
+    });
+
+    it('WHEN console.assert is called THEN return only failed assertions, with the remaining arguments as message', () => {
+        const { console, spies } = spyOnConsole(['assert']);
+
+        console.assert(true, 'passed');
+        console.assert(1, 'passed');
+        console.assert(false, 'failed', { foo: 1 });
+        console.assert(0);
+
+        expect(getConsoleCalls(spies)).to.deep.equal([
+            {
+                type: 'assert',
+                args: [false, 'failed', { foo: 1 }],
+                message: 'Assertion failed: failed {"foo":1}',
+            },
+            { type: 'assert', args: [0], message: 'Assertion failed' },
         ]);
     });
 });
