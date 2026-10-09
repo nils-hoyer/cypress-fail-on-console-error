@@ -28,4 +28,5 @@ export declare const isConsoleCallIncluded: (consoleCall: ConsoleCall, config: R
 export declare const consoleCallsToString: (consoleCalls: ConsoleCall[]) => string;
 export declare const isConsoleMessageExcluded: (consoleMessage: string, configConsoleMessage: ConsoleMessage, debug: boolean) => boolean;
 export declare const callToString: (calls: any[]) => string;
+export declare const logConsoleCall: (consoleCall: ConsoleCall) => void;
 export declare const cypressLogger: (name: string, message: any) => void;

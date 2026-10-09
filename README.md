@@ -97,6 +97,8 @@ This repository's own tests show a complete example, with TypeScript declaration
 
 ## Debugging
 
+Each console message that fails a test appears in the Cypress command log under the name of its console method, for example `console.error`. Click the entry to print the original arguments to the browser console, where you can inspect logged objects.
+
 Set `debug: true` to log each match between a console message and your `consoleMessages` to the Cypress command log. Click an entry to print its details to the browser console. You can use this to check your patterns and to see the error message a test would fail with.
 
 ![Debug output in the Cypress command log](./docs/debugTrue.png)

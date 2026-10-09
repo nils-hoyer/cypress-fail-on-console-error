@@ -7,6 +7,7 @@ import failOnConsoleError, {
     getConsoleCalls,
     getConsoleCallsIncluded,
     isConsoleMessageExcluded,
+    logConsoleCall,
     resetSpies,
     validateConfig,
     Config,
@@ -514,6 +515,29 @@ describe('callToString()', () => {
         expect(callToString(['state', throwingGetter])).to.equal(
             'state [object Object]'
         );
+    });
+});
+
+describe('logConsoleCall()', () => {
+    afterEach(() => {
+        delete (Cypress as any).log;
+    });
+
+    it('WHEN a console call is logged THEN log its message, with its arguments in consoleProps', () => {
+        const log = vi.fn();
+        (Cypress as any).log = log;
+        const args = ['foo', { bar: 1 }];
+
+        logConsoleCall({ type: 'warn', args, message: 'foo {"bar":1}' });
+
+        const { name, message, consoleProps } = log.mock.calls[0][0];
+        expect(name).to.equal('console.warn');
+        expect(message).to.equal('foo {"bar":1}');
+        expect(consoleProps()).to.deep.equal({
+            'Console method': 'console.warn',
+            Arguments: args,
+        });
+        expect(consoleProps().Arguments[1]).to.equal(args[1]);
     });
 });
 

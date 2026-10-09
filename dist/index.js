@@ -33,6 +33,7 @@ export default function failOnConsoleError(_config = {}) {
         spies = resetSpies(spies);
         if (consoleCalls.length === 0)
             return;
+        consoleCalls.forEach(logConsoleCall);
         throw new AssertionError(`cypress-fail-on-console-error:\n${consoleCallsToString(consoleCalls)}`);
     });
     Cypress.on('test:after:run', () => {
@@ -208,6 +209,19 @@ const argumentToString = (argument) => {
     return stringify((_a = argument === null || argument === void 0 ? void 0 : argument.stack) !== null && _a !== void 0 ? _a : argument);
 };
 export const callToString = (calls) => calls.map(argumentToString).join(' ').trim();
+// clicking the entry prints the original arguments to the browser console, where they can be inspected
+export const logConsoleCall = (consoleCall) => {
+    const name = `console.${consoleCall.type}`;
+    Cypress.log({
+        name,
+        displayName: name,
+        message: consoleCall.message,
+        consoleProps: () => ({
+            'Console method': name,
+            Arguments: consoleCall.args,
+        }),
+    });
+};
 export const cypressLogger = (name, message) => {
     Cypress.log({
         name: name,
