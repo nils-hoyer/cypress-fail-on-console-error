@@ -71,4 +71,18 @@ export class WithErrorAndWarn extends HTMLElement {
     }
 }
 
+export class WithAllConsoleTypes extends HTMLElement {
+    connectedCallback() {
+        console.info('consoleInfoMessage');
+        console.warn('consoleWarnMessage');
+        console.error('consoleErrorMessage');
+        console.debug('consoleDebugMessage');
+        console.trace('consoleTraceMessage');
+        console.table('consoleTableMessage');
+        console.log('consoleLogMessage');
+        console.assert(true, 'consoleAssertPassed');
+        console.assert(false, 'consoleAssertMessage');
+    }
+}
+
 export class WithNoConsole extends HTMLElement {}

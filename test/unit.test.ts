@@ -9,6 +9,7 @@ import failOnConsoleError, {
     isConsoleMessageExcluded,
     logConsoleCall,
     resetSpies,
+    updateSpies,
     validateConfig,
     Config,
     ConsoleType,
@@ -91,6 +92,34 @@ describe('setConfig()', () => {
 
         expect(getConfig().consoleMessages).to.deep.equal(['foo']);
         expect(config.consoleMessages).to.deep.equal(['foo']);
+    });
+});
+
+describe('setConfig() with consoleTypes', () => {
+    afterEach(() => {
+        delete (Cypress as any).testingType;
+        sinon.restore();
+    });
+
+    it('WHEN consoleTypes change after the page loaded THEN spy on the new console types immediately', () => {
+        Cypress.testingType = 'e2e';
+        const on = sinon.spy(Cypress, 'on');
+        const { setConfig } = failOnConsoleError({ consoleTypes: ['error'] });
+        const windowBeforeLoad = on
+            .getCalls()
+            .find((call) => call.args[0] === 'window:before:load')?.args[1] as (
+            window: any
+        ) => void;
+        on.restore();
+        const original = { error: () => {}, warn: () => {} };
+        const console = { ...original };
+        windowBeforeLoad({ console });
+
+        setConfig({ consoleTypes: ['warn'] });
+
+        expect(console.error).to.equal(original.error);
+        expect(console.warn).not.to.equal(original.warn);
+        expect((console.warn as sinon.SinonSpy).called).to.be.false;
     });
 });
 
@@ -287,6 +316,45 @@ describe('createSpies()', () => {
         );
 
         expect(spies.size).to.equal(1);
+    });
+});
+
+describe('updateSpies()', () => {
+    it('WHEN consoleTypes change THEN keep the remaining spies with their calls, restore removed ones and add new ones', () => {
+        const original = {
+            error: () => true,
+            warn: () => true,
+            info: () => true,
+        };
+        const console: any = { ...original };
+        const spies = createSpies(
+            createConfig({ consoleTypes: ['error', 'warn'] }),
+            console
+        );
+        const errorSpy = spies.get('error');
+        console.error('foo');
+
+        const updated = updateSpies(
+            spies,
+            createConfig({ consoleTypes: ['error', 'info'] }),
+            console
+        );
+
+        expect(Array.from(updated.keys())).to.deep.equal(['error', 'info']);
+        expect(updated.get('error')).to.equal(errorSpy);
+        expect(updated.get('error')).to.have.been.calledWith('foo');
+        expect(console.warn).to.equal(original.warn);
+        expect(console.info).to.equal(updated.get('info'));
+    });
+
+    it('WHEN consoleTypes do not change THEN keep all spies', () => {
+        const console: any = { error: () => true };
+        const spies = createSpies(createConfig({}), console);
+
+        const updated = updateSpies(spies, createConfig({}), console);
+
+        expect(updated.get('error')).to.equal(spies.get('error'));
+        expect(console.error).to.equal(spies.get('error'));
     });
 });
 
