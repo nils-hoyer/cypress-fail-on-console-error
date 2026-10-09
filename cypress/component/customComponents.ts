@@ -85,4 +85,11 @@ export class WithAllConsoleTypes extends HTMLElement {
     }
 }
 
+export class WithSameMessage extends HTMLElement {
+    connectedCallback() {
+        console.error('sameMessage');
+        console.warn('sameMessage');
+    }
+}
+
 export class WithNoConsole extends HTMLElement {}

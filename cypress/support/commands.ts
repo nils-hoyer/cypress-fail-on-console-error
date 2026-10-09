@@ -42,7 +42,7 @@ Cypress.Commands.addAll({
     deleteConsoleMessages: (_consoleMessages: ConsoleMessage[]) => {
         const config = getConfig();
         const consoleMessages = config.consoleMessages.filter(
-            (consoleMessage: string | RegExp) =>
+            (consoleMessage: ConsoleMessage) =>
                 !_consoleMessages.includes(consoleMessage.toString())
         );
         setConfig({

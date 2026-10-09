@@ -92,6 +92,32 @@ describe('Cypress components', () => {
         ]);
     });
 
+    it('WHEN consoleMessages has { type, message } patterns THEN cypress ignores the message only for that console method', () => {
+        expect(spec('shouldFailOnConsoleMessagesOfType')).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError on console.error when only console.warn is excluded',
+                'console.error: sameMessage'
+            ),
+            passed(
+                'should pass when the message is excluded for both console methods'
+            ),
+        ]);
+    });
+
+    it('WHEN includeConsoleMessages is set THEN cypress fails only on matching console messages', () => {
+        expect(spec('shouldFailOnIncludedConsoleMessages')).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError only on included console messages that are not excluded',
+                'console.error: errorNotExcluded'
+            ),
+            passed('should pass when no console message is included'),
+            failedOnConsole(
+                'should throw AssertionError only on included console messages of a console method',
+                'console.warn: sameMessage'
+            ),
+        ]);
+    });
+
     it('WHEN console.info is called THEN cypress passes', () => {
         expect(spec('shouldPassOnConsoleInfo')).to.deep.equal([
             passed('should pass on console.info'),
