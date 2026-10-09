@@ -49,6 +49,8 @@ When you add or change a config option or public function, update `README.md` to
 
 CI (`.github/workflows/ci.yml`) runs the build, checks that the committed `dist/` matches it, then runs the type check, the Prettier check and all three test suites on Node LTS.
 
+Dependabot (`.github/dependabot.yml`) opens dependency updates once a month. `.github/workflows/dependabot-automerge.yml` turns on auto-merge for minor and patch updates, so GitHub merges them when CI passes. Major updates need a review.
+
 ## Releasing
 
 Releases are made by the Release workflow (`.github/workflows/release.yml`), which the maintainer starts from the Actions tab on `main` with `patch`, `minor` or `major`. It:

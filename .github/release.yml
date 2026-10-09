@@ -4,6 +4,6 @@ changelog:
         - title: Changes
           labels: ['*']
           exclude:
-              authors: ['renovate', 'renovate[bot]']
+              authors: ['dependabot', 'dependabot[bot]']
         - title: Dependency updates
           labels: ['*']
