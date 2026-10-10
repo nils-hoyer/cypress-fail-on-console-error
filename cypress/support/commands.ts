@@ -1,10 +1,10 @@
 import failOnConsoleError, {
-    addConsoleMessagesCommands,
+    addIgnoredConsoleMessagesCommands,
     Config as FailOnConsoleErrorConfig,
 } from '../../dist/index';
 
 const failOnConsole = failOnConsoleError({
-    consoleMessages: [
+    ignoreConsoleMessages: [
         /firstErrorExcluded.*/,
         'secondErrorExcluded',
         'thirdErrorExcluded.*consoleError.*',
@@ -13,7 +13,7 @@ const failOnConsole = failOnConsoleError({
     debug: true,
 });
 
-addConsoleMessagesCommands(failOnConsole);
+addIgnoredConsoleMessagesCommands(failOnConsole);
 
 Cypress.Commands.addAll({
     getConfig: () => {

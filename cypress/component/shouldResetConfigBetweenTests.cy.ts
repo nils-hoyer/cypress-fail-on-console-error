@@ -10,7 +10,7 @@ describe('shouldResetConfigBetweenTests', () => {
     });
 
     it('should pass AssertionError on console.error', () => {
-        cy.setConsoleMessages([
+        cy.setIgnoredConsoleMessages([
             'firstErrorExcluded',
             'secondErrorNotExcluded',
         ]).then(() => {
