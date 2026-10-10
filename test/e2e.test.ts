@@ -88,11 +88,13 @@ describe('Cypress e2e', () => {
 
     it('WHEN console messages are caught THEN log each to the command log with its arguments', () => {
         expect(spec('shouldLogConsoleMessages')).to.deep.equal([
-            passed('should log each caught console message to the command log'),
+            passed(
+                'should log each caught console message, and with debug each ignored one, to the command log'
+            ),
         ]);
     });
 
-    it('WHEN consoleMessages has { type, message } patterns THEN cypress ignores the message only for that console method', () => {
+    it('WHEN ignoreConsoleMessages has { type, message } patterns THEN cypress ignores the message only for that console method', () => {
         expect(spec('shouldFailOnConsoleMessagesOfType')).to.deep.equal([
             failedOnConsole(
                 'should throw AssertionError on console.error when only console.warn is excluded',
@@ -100,20 +102,6 @@ describe('Cypress e2e', () => {
             ),
             passed(
                 'should pass when the message is excluded for both console methods'
-            ),
-        ]);
-    });
-
-    it('WHEN includeConsoleMessages is set THEN cypress fails only on matching console messages', () => {
-        expect(spec('shouldFailOnIncludedConsoleMessages')).to.deep.equal([
-            failedOnConsole(
-                'should throw AssertionError only on included console messages that are not excluded',
-                'console.error: errorNotExcluded'
-            ),
-            passed('should pass when no console message is included'),
-            failedOnConsole(
-                'should throw AssertionError only on included console messages of a console method',
-                'console.warn: sameMessage'
             ),
         ]);
     });
@@ -134,19 +122,24 @@ describe('Cypress e2e', () => {
 
     it('WHEN run tests with setConfig THEN config will applied to test', () => {
         expect(spec('shouldFailOnConsoleErrorFromSetConfig')).to.deep.equal([
-            passed('should pass with getConsoleMessages'),
+            passed('should pass with getIgnoredConsoleMessages'),
             failedOnConsole(
-                'should throw AssertionError on console.error with setConsoleMessages',
+                'should throw AssertionError on console.error with setIgnoredConsoleMessages',
                 'console.error: errorNotExcluded'
             ),
             passed(
-                'should pass AssertionError on console.error with addConsoleMessages'
+                'should pass AssertionError on console.error with addIgnoredConsoleMessages'
             ),
             failedOnConsole(
-                'should throw AssertionError on console.error with deleteConsoleMessages',
+                'should throw AssertionError on console.error with deleteIgnoredConsoleMessages',
                 'console.error: secondErrorExcluded'
             ),
-            passed('should pass with deleteConsoleMessages for a RegExp'),
+            passed(
+                'should pass with deleteIgnoredConsoleMessages for a RegExp'
+            ),
+            passed(
+                'should pass with the deprecated consoleMessages from getConfig'
+            ),
         ]);
     });
 

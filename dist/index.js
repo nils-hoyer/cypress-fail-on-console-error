@@ -17,8 +17,7 @@ chai.use(sinonChai);
 export default function failOnConsoleError(_config = {}) {
     let originConfig;
     let config;
-    // config with the patterns compiled to RegExps
-    let compiledConfig;
+    let compiledConsoleMessages;
     let spies;
     // the console that the spies were last created on
     let autConsole;
@@ -26,7 +25,7 @@ export default function failOnConsoleError(_config = {}) {
     const setConfig = (_config) => {
         validateConfig(_config);
         config = createConfig(_config);
-        compiledConfig = compileConfig(config);
+        compiledConsoleMessages = compileConsoleMessages(config.ignoreConsoleMessages);
         // a separate copy, so changes to getConfig() don't outlive the test
         originConfig = originConfig !== null && originConfig !== void 0 ? originConfig : createConfig(config);
         if (spies && autConsole) {
@@ -47,11 +46,10 @@ export default function failOnConsoleError(_config = {}) {
     Cypress.on('command:end', () => {
         if (!spies)
             return;
-        const consoleCalls = getConsoleCallsIncluded(spies, compiledConfig);
+        const consoleCalls = checkConsoleCalls(getConsoleCalls(spies), compiledConsoleMessages, config.debug);
         spies = resetSpies(spies);
         if (consoleCalls.length === 0)
             return;
-        consoleCalls.forEach(logConsoleCall);
         throw new AssertionError(`cypress-fail-on-console-error:\n${consoleCallsToString(consoleCalls)}`);
     });
     Cypress.on('test:after:run', () => {
@@ -66,19 +64,19 @@ export default function failOnConsoleError(_config = {}) {
     };
 }
 /**
- * Registers the commands getConsoleMessages, setConsoleMessages, addConsoleMessages
- * and deleteConsoleMessages, which read and change consoleMessages for the current test.
+ * Registers the commands getIgnoredConsoleMessages, setIgnoredConsoleMessages, addIgnoredConsoleMessages
+ * and deleteIgnoredConsoleMessages, which read and change ignoreConsoleMessages for the current test.
  */
-export const addConsoleMessagesCommands = ({ getConfig, setConfig, }) => {
-    const setConsoleMessages = (consoleMessages) => setConfig(Object.assign(Object.assign({}, getConfig()), { consoleMessages }));
+export const addIgnoredConsoleMessagesCommands = ({ getConfig, setConfig, }) => {
+    const setIgnoredConsoleMessages = (ignoreConsoleMessages) => setConfig(Object.assign(Object.assign({}, getConfig()), { ignoreConsoleMessages }));
     Cypress.Commands.addAll({
-        getConsoleMessages: () => cy.wrap(getConfig().consoleMessages, { log: false }),
-        setConsoleMessages,
-        addConsoleMessages: (consoleMessages) => setConsoleMessages([
-            ...getConfig().consoleMessages,
-            ...consoleMessages,
+        getIgnoredConsoleMessages: () => cy.wrap(getConfig().ignoreConsoleMessages, { log: false }),
+        setIgnoredConsoleMessages,
+        addIgnoredConsoleMessages: (ignoreConsoleMessages) => setIgnoredConsoleMessages([
+            ...getConfig().ignoreConsoleMessages,
+            ...ignoreConsoleMessages,
         ]),
-        deleteConsoleMessages: (consoleMessages) => setConsoleMessages(getConfig().consoleMessages.filter((consoleMessage) => !consoleMessages.some((deleted) => isSameConsoleMessage(consoleMessage, deleted)))),
+        deleteIgnoredConsoleMessages: (ignoreConsoleMessages) => setIgnoredConsoleMessages(getConfig().ignoreConsoleMessages.filter((consoleMessage) => !ignoreConsoleMessages.some((deleted) => isSameConsoleMessage(consoleMessage, deleted)))),
     });
 };
 // a string and a RegExp with the same text are different patterns
@@ -148,8 +146,8 @@ const validateConsoleMessages = (option, consoleMessages) => {
     });
 };
 export const validateConfig = (config) => {
+    validateConsoleMessages('ignoreConsoleMessages', config.ignoreConsoleMessages);
     validateConsoleMessages('consoleMessages', config.consoleMessages);
-    validateConsoleMessages('includeConsoleMessages', config.includeConsoleMessages);
     if (config.consoleTypes != null) {
         if (!Array.isArray(config.consoleTypes)) {
             invalidConfig(`consoleTypes must be an array, got ${typeName(config.consoleTypes)}`);
@@ -162,23 +160,31 @@ export const validateConfig = (config) => {
 };
 const copyConsoleMessage = (consoleMessage) => isTypedConsoleMessage(consoleMessage)
     ? Object.assign({}, consoleMessage) : consoleMessage;
+// getConfig().consoleMessages keeps working for code written before the rename.
+// It isn't enumerable, so { ...getConfig(), ignoreConsoleMessages } doesn't copy it.
+const withConsoleMessagesAlias = (config) => Object.defineProperty(config, 'consoleMessages', {
+    get() {
+        return this.ignoreConsoleMessages;
+    },
+    enumerable: false,
+});
 // copies the arrays and objects, so the config doesn't share them with the caller
-export const createConfig = (config) => { var _a; var _b, _c, _d; return ({
-    consoleMessages: ((_b = config.consoleMessages) !== null && _b !== void 0 ? _b : []).map(copyConsoleMessage),
-    includeConsoleMessages: ((_c = config.includeConsoleMessages) !== null && _c !== void 0 ? _c : []).map(copyConsoleMessage),
+export const createConfig = (config) => { var _a; var _b, _c, _d; return withConsoleMessagesAlias({
+    // consoleMessages wins, so setConfig({ ...getConfig(), consoleMessages }) still replaces the list
+    ignoreConsoleMessages: ((_c = (_b = config.consoleMessages) !== null && _b !== void 0 ? _b : config.ignoreConsoleMessages) !== null && _c !== void 0 ? _c : []).map(copyConsoleMessage),
     consoleTypes: ((_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.length)
         ? [...new Set(config.consoleTypes)]
         : ['error'],
     debug: (_d = config.debug) !== null && _d !== void 0 ? _d : false,
 }); };
-const compileConsoleMessage = (consoleMessage) => isTypedConsoleMessage(consoleMessage)
-    ? {
-        type: consoleMessage.type,
-        message: toRegExp(consoleMessage.message),
-    }
-    : toRegExp(consoleMessage);
 // compiles string patterns once, instead of on every check
-export const compileConfig = (config) => (Object.assign(Object.assign({}, config), { consoleMessages: config.consoleMessages.map(compileConsoleMessage), includeConsoleMessages: config.includeConsoleMessages.map(compileConsoleMessage) }));
+export const compileConsoleMessages = (consoleMessages) => consoleMessages.map((consoleMessage) => isTypedConsoleMessage(consoleMessage)
+    ? {
+        consoleMessage,
+        type: consoleMessage.type,
+        regExp: toRegExp(consoleMessage.message),
+    }
+    : { consoleMessage, regExp: toRegExp(consoleMessage) });
 export const createSpies = (config, console) => {
     var _a;
     let spies = new Map();
@@ -222,55 +228,31 @@ const toConsoleCall = (type, args) => {
         message: message ? `Assertion failed: ${message}` : 'Assertion failed',
     };
 };
-export const getConsoleCallsIncluded = (spies, config) => getConsoleCalls(spies).filter((consoleCall) => isConsoleCallIncluded(consoleCall, config));
-export const isConsoleCallIncluded = (consoleCall, config) => {
-    const consoleMessage = consoleCall.message;
-    if (config.includeConsoleMessages.length > 0) {
-        const consoleMessageIncluded = config.includeConsoleMessages.some((configConsoleMessage) => isConsoleCallMatched(consoleCall, configConsoleMessage, config.debug));
-        if (config.debug) {
-            cypressLogger('consoleMessage_included', {
-                consoleMessage,
-                consoleMessageIncluded,
-            });
-        }
-        if (!consoleMessageIncluded)
-            return false;
-    }
-    if (config.consoleMessages.length === 0)
+// the first pattern that matches the call; a { type, message } pattern only matches calls of its console method
+export const findIgnoringConsoleMessage = (consoleCall, compiledConsoleMessages) => { var _a; return (_a = compiledConsoleMessages.find(({ type, regExp }) => (type === undefined || type === consoleCall.type) &&
+    isConsoleMessageExcluded(consoleCall.message, regExp))) === null || _a === void 0 ? void 0 : _a.consoleMessage; };
+// logs each call to the command log and returns the calls that aren't ignored
+export const checkConsoleCalls = (consoleCalls, compiledConsoleMessages, debug) => consoleCalls.filter((consoleCall) => {
+    const ignoredBy = findIgnoringConsoleMessage(consoleCall, compiledConsoleMessages);
+    if (ignoredBy === undefined) {
+        logConsoleCall(consoleCall);
         return true;
-    const someConsoleMessagesExcluded = config.consoleMessages.some((configConsoleMessage) => isConsoleCallMatched(consoleCall, configConsoleMessage, config.debug));
-    if (config.debug) {
-        cypressLogger('consoleMessage_excluded', {
-            consoleMessage,
-            someConsoleMessagesExcluded,
-        });
     }
-    return !someConsoleMessagesExcluded;
-};
-// a { type, message } pattern only matches calls of its console method
-export const isConsoleCallMatched = (consoleCall, configConsoleMessage, debug) => isTypedConsoleMessage(configConsoleMessage)
-    ? configConsoleMessage.type === consoleCall.type &&
-        isConsoleMessageExcluded(consoleCall.message, configConsoleMessage.message, debug)
-    : isConsoleMessageExcluded(consoleCall.message, configConsoleMessage, debug);
+    if (debug)
+        logIgnoredConsoleCall(consoleCall, ignoredBy);
+    return false;
+});
 export const consoleCallsToString = (consoleCalls) => consoleCalls
     .map((consoleCall) => `console.${consoleCall.type}: ${consoleCall.message}`)
     .join('\n');
 const toRegExp = (consoleMessage) => consoleMessage instanceof RegExp
     ? consoleMessage
     : new RegExp(consoleMessage);
-export const isConsoleMessageExcluded = (consoleMessage, configConsoleMessage, debug) => {
+export const isConsoleMessageExcluded = (consoleMessage, configConsoleMessage) => {
     const configConsoleMessageRegExp = toRegExp(configConsoleMessage);
     // test() starts at lastIndex for /g and /y patterns and moves it on a match
     configConsoleMessageRegExp.lastIndex = 0;
-    const consoleMessageExcluded = configConsoleMessageRegExp.test(consoleMessage);
-    if (debug) {
-        cypressLogger('consoleMessage_configConsoleMessage_match', {
-            consoleMessage,
-            configConsoleMessage,
-            consoleMessageExcluded,
-        });
-    }
-    return consoleMessageExcluded;
+    return configConsoleMessageRegExp.test(consoleMessage);
 };
 // JSON.stringify throws on circular references and BigInts, which apps can pass to console methods
 const stringify = (value) => {
@@ -315,25 +297,41 @@ const argumentToString = (argument) => {
     return stringify((_a = argument === null || argument === void 0 ? void 0 : argument.stack) !== null && _a !== void 0 ? _a : argument);
 };
 export const callToString = (calls) => calls.map(argumentToString).join(' ').trim();
+// the reporter renders Cypress.log messages as Markdown, which would format characters like * and _
+export const escapeMarkdown = (text) => text.replace(/[\\`*_~[\]()<>&]/g, '\\$&');
+// a pattern as it is written in the config
+export const consoleMessageToString = (consoleMessage) => {
+    if (isTypedConsoleMessage(consoleMessage)) {
+        return `{ type: '${consoleMessage.type}', message: ${consoleMessageToString(consoleMessage.message)} }`;
+    }
+    return consoleMessage instanceof RegExp
+        ? String(consoleMessage)
+        : `'${consoleMessage.replace(/[\\']/g, '\\$&')}'`;
+};
 // clicking the entry prints the original arguments to the browser console, where they can be inspected
 export const logConsoleCall = (consoleCall) => {
     const name = `console.${consoleCall.type}`;
     Cypress.log({
         name,
         displayName: name,
-        message: consoleCall.message,
+        message: escapeMarkdown(consoleCall.message),
         consoleProps: () => ({
             'Console method': name,
             Arguments: consoleCall.args,
         }),
     });
 };
-export const cypressLogger = (name, message) => {
+// with debug: true, shows which pattern ignored a console call
+export const logIgnoredConsoleCall = (consoleCall, ignoredBy) => {
+    const name = `console.${consoleCall.type}`;
     Cypress.log({
-        name: name,
-        displayName: name,
-        // JSON.stringify turns a RegExp into {}
-        message: JSON.stringify(message, (_key, value) => value instanceof RegExp ? String(value) : value),
-        consoleProps: () => message,
+        name: 'ignored',
+        displayName: 'ignored',
+        message: `**${escapeMarkdown(consoleMessageToString(ignoredBy))}** matched ${name}: ${escapeMarkdown(consoleCall.message)}`,
+        consoleProps: () => ({
+            'Console method': name,
+            Arguments: consoleCall.args,
+            'Ignored by': ignoredBy,
+        }),
     });
 };
