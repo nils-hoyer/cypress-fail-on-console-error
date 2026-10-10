@@ -63,4 +63,33 @@ export class WithWarn extends HTMLElement {
     }
 }
 
+export class WithErrorAndWarn extends HTMLElement {
+    connectedCallback() {
+        console.error('errorNotExcluded');
+        console.error('secondErrorExcluded');
+        console.warn('consoleWarnMessage');
+    }
+}
+
+export class WithAllConsoleTypes extends HTMLElement {
+    connectedCallback() {
+        console.info('consoleInfoMessage');
+        console.warn('consoleWarnMessage');
+        console.error('consoleErrorMessage');
+        console.debug('consoleDebugMessage');
+        console.trace('consoleTraceMessage');
+        console.table('consoleTableMessage');
+        console.log('consoleLogMessage');
+        console.assert(true, 'consoleAssertPassed');
+        console.assert(false, 'consoleAssertMessage');
+    }
+}
+
+export class WithSameMessage extends HTMLElement {
+    connectedCallback() {
+        console.error('sameMessage');
+        console.warn('sameMessage');
+    }
+}
+
 export class WithNoConsole extends HTMLElement {}

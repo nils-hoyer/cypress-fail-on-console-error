@@ -25,23 +25,31 @@ import failOnConsoleError from 'cypress-fail-on-console-error';
 failOnConsoleError();
 ```
 
+When the application calls `console.error()`, the test fails after the current command. The message appears in the command log and in the error:
+
+![A console.error in the Cypress command log and the failed test's error](./docs/commandLog.png)
+
 ## Config (optional)
 
-| Parameter         | Default     | Description |
-| ----------------- | ----------- | ----------- |
-| `consoleMessages` | `[]`        | Console messages to ignore, as `string` or `RegExp`. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). A string that isn't a valid regular expression throws an error when the config is set. Messages are matched with [`RegExp.test()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test). |
-| `consoleTypes`    | `['error']` | Console methods to watch: `error`, `warn`, `info`, `debug`, `trace` or `table`. |
-| `debug`           | `false`     | Log how each console message was matched to the Cypress command log. See [Debugging](#debugging). |
+| Parameter               | Default     | Description |
+| ----------------------- | ----------- | ----------- |
+| `ignoreConsoleMessages` | `[]`        | Console messages to ignore. Each entry is a pattern, as `string` or `RegExp`, or `{ type, message }` to ignore a pattern for one console method only, for example `{ type: 'warn', message: /is deprecated/ }`. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). A string that isn't a valid regular expression throws an error when the config is set. Messages are matched with [`RegExp.test()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test). |
+| `consoleTypes`          | `['error']` | Console methods that fail a test: `error`, `warn`, `info`, `debug`, `trace`, `table`, `log` or `assert`. `assert` only counts failed assertions, and its message is `Assertion failed: ` followed by the arguments after the condition. |
+| `debug`                 | `false`     | Also log each ignored console message, and the pattern that matched it, to the Cypress command log. See [Debugging](#debugging). |
+
+`consoleMessages` is the old name of `ignoreConsoleMessages`. It still works in 5.x and will be removed in 6.0. If both are set, `consoleMessages` is used, so `setConfig({ ...getConfig(), consoleMessages })` still works. `getConfig().consoleMessages` returns `ignoreConsoleMessages`.
+
+`failOnConsoleError()` and `setConfig()` check the config and throw an error that names the invalid option, for example `cypress-fail-on-console-error: consoleTypes[1] must be one of error, warn, info, debug, trace, table, log, assert, got "warning"`.
 
 ```ts
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 
 const config: Config = {
-    consoleMessages: [
+    ignoreConsoleMessages: [
         'foo',
         /^bar-regex.*/,
-        // ignore every message that does not contain 'include-console-messages'
-        /^((?!include-console-messages).)*$/,
+        // ignore this warning, but not a console.error with the same text
+        { type: 'warn', message: /is deprecated/ },
     ],
     consoleTypes: ['error', 'warn'],
 };
@@ -49,49 +57,83 @@ const config: Config = {
 failOnConsoleError(config);
 ```
 
+To fail only on messages that contain some text, ignore every message that doesn't contain it, with a [negative lookahead](https://javascript.info/regexp-lookahead-lookbehind):
+
+```ts
+failOnConsoleError({
+    // ignore every message that doesn't contain React
+    ignoreConsoleMessages: [/^(?![\s\S]*React)/],
+});
+```
+
 ### How messages are matched
 
 - All arguments of a console call are joined with spaces into one message. Non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`. Circular references become `"[Circular]"` and BigInts become `"10n"`.
 - If an argument is an `Error`, its name, message and stack trace are used, so your patterns can match the error name, the message or the file it came from.
-- The plugin checks after each Cypress command. The test fails with `cypress-fail-on-console-error:` followed by the first message that none of the `consoleMessages` patterns matched.
+- The plugin checks after each Cypress command. If any message since the last check isn't ignored, the test fails with every such message, in the order the application logged them, each after the name of its console method:
+
+    ```
+    AssertionError: cypress-fail-on-console-error:
+    console.error: Failed to load resource
+    console.warn: Each child in a list should have a unique "key" prop.
+    ```
 
 ## Set config from a Cypress test
 
 `failOnConsoleError()` returns `getConfig()` and `setConfig()`, which let you change the config inside a test. After each test, the config goes back to the one passed to `failOnConsoleError()`.
 
+To change the ignored messages from a test, pass the result to `addIgnoredConsoleMessagesCommands()`. It adds these Cypress commands:
+
+| Command                                          | Description |
+| ------------------------------------------------ | ----------- |
+| `cy.getIgnoredConsoleMessages()`                 | Yields the current `ignoreConsoleMessages`. |
+| `cy.setIgnoredConsoleMessages(patterns)`         | Replaces `ignoreConsoleMessages`. |
+| `cy.addIgnoredConsoleMessages(patterns)`         | Adds patterns to `ignoreConsoleMessages`. |
+| `cy.deleteIgnoredConsoleMessages(patterns)`      | Removes patterns from `ignoreConsoleMessages`. A pattern is removed if it is the same kind (`string`, `RegExp` or `{ type, message }`) with the same text, flags and console method. |
+
 ```ts
 import failOnConsoleError, {
-    ConsoleMessage,
+    addIgnoredConsoleMessagesCommands,
 } from 'cypress-fail-on-console-error';
 
-const { getConfig, setConfig } = failOnConsoleError(config);
-
-Cypress.Commands.addAll({
-    getConsoleMessages: () => cy.wrap(getConfig().consoleMessages),
-    setConsoleMessages: (consoleMessages: ConsoleMessage[]) =>
-        setConfig({ ...getConfig(), consoleMessages }),
-});
+addIgnoredConsoleMessagesCommands(failOnConsoleError(config));
 ```
 
 ```ts
 describe('example test', () => {
-    it('should set console messages', () => {
-        cy.setConsoleMessages(['foo', 'bar']);
+    it('should ignore console messages that contain foo or bar', () => {
+        cy.addIgnoredConsoleMessages(['foo', /bar/]);
         cy.visit('...');
     });
 });
 ```
 
-This repository's own tests show a complete example, with TypeScript declarations and commands to add and remove messages: see the [commands](./cypress/support/commands.ts) and the [spec that uses them](./cypress/e2e/shouldFailOnConsoleErrorFromSetConfig.cy.ts).
+The commands are opt-in, so they can't replace commands with the same names that you added yourself. Their TypeScript declarations come with the package. To change other options from a test, write your own commands with `getConfig()` and `setConfig()`:
 
-> [!NOTE]
-> Spies for `consoleTypes` are attached when a page loads in e2e tests and once per spec file in component tests. In e2e tests, call `setConfig()` with new `consoleTypes` before `cy.visit()`. In component tests, `setConfig()` can't change which console methods a running spec watches.
+```ts
+const { getConfig, setConfig } = failOnConsoleError(config);
+
+Cypress.Commands.add('setConsoleTypes', (consoleTypes) =>
+    setConfig({ ...getConfig(), consoleTypes })
+);
+```
+
+In TypeScript, [declare your commands](https://docs.cypress.io/app/tooling/typescript-support#Types-for-Custom-Commands) on `Cypress.Chainable`.
 
 ## Debugging
 
-Set `debug: true` to log each match between a console message and your `consoleMessages` to the Cypress command log. Click an entry to print its details to the browser console. You can use this to check your patterns and to see the error message a test would fail with.
+Each console message that fails a test appears in the Cypress command log under the name of its console method, for example `console.error`. Click the entry to print the original arguments to the browser console, where you can inspect logged objects. Ignored messages don't appear.
 
-![Debug output in the Cypress command log](./docs/debugTrue.png)
+Set `debug: true` to also log each ignored message, as an `ignored` entry with the pattern that matched it. Use it to check your patterns. Click an entry to print the console method, the original arguments and the pattern to the browser console.
+
+```ts
+failOnConsoleError({
+    ignoreConsoleMessages: ['ResizeObserver loop'],
+    debug: true,
+});
+```
+
+![An ignored console.error and a failing one in the Cypress command log](./docs/debugTrue.png)
 
 ## Contributing
 
