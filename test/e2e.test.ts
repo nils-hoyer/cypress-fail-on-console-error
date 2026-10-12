@@ -208,6 +208,16 @@ describe('Cypress e2e', () => {
         ]);
     });
 
+    it('WHEN console.error is called after the last command THEN only a command that waits for it fails the test', () => {
+        expect(spec('shouldFailOnConsoleErrorAfterLastCommand')).to.deep.equal([
+            passed('should pass on console.error after the last command'),
+            failedOnConsole(
+                'should throw AssertionError on console.error when a command waits for it',
+                'console.error: errorAfterLoad'
+            ),
+        ]);
+    });
+
     it('WHEN the page logs console.error and navigates during a command THEN cypress fails', () => {
         expect(spec('shouldFailOnConsoleErrorBeforeNavigation')).to.deep.equal([
             failedOnConsole(

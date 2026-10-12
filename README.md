@@ -64,6 +64,10 @@ failOnConsoleError({
 - All arguments of a console call are joined with spaces into one message, and non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`.
 - An `Error` argument becomes its name, message and stack trace. For example, `console.error(new TypeError('user is undefined'))` becomes `TypeError: user is undefined` followed by lines like `at render (app.js:12:5)`, so you can also match the file an error came from.
 
+### When messages are checked
+
+Messages are checked after each Cypress command. A message logged after the last command of a test, for example from a timer, doesn't fail that test. In component tests, it can fail the next test instead. To catch it, end the test with a command that waits for what the app does after logging, such as `cy.get('#result')`.
+
 ## Change the config in a test
 
 To change the ignored messages in a test, register the commands in your support file:

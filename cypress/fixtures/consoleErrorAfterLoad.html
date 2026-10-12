@@ -1,0 +1,11 @@
+<html>
+    <script>
+        window.addEventListener('load', () =>
+            setTimeout(() => {
+                console.error('errorAfterLoad');
+                document.body.innerHTML = '<p id="loaded">loaded</p>';
+            }, 0)
+        );
+    </script>
+    <body></body>
+</html>
