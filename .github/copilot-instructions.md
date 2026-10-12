@@ -4,7 +4,7 @@
 
 `cypress-fail-on-console-error` is a small Cypress plugin published to npm. Users call `failOnConsoleError(config)` from a Cypress support file. The plugin spies on `window.console` of the application under test and fails the running test with an `AssertionError` when a watched console method is called with a message that the config does not exclude. It supports e2e and component testing.
 
-The plugin is two files: `src/index.ts` with the public API, and `src/internal.ts` with the types and helpers behind it. Don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError` in `src/index.ts`, an `Error` named like chai's, so Cypress shows console message failures as `AssertionError: …`. An invalid config is a setup mistake, not a failed check, so `validateConfig` throws a plain `Error`. `peerDependencies` requires Cypress 14 or later, the version the `oldest-cypress` CI job tests. Raise both together.
+The plugin is two files: `src/index.ts` with the public API, and `src/internal.ts` with the types and helpers behind it. Don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError` in `src/index.ts`, an `Error` named like chai's, so Cypress shows console message failures as `AssertionError: …`. An invalid config is a setup mistake, not a failed check, so `validateConfig` throws a plain `Error`. `peerDependencies` requires Cypress 14 or later. CI only tests the Cypress version in `devDependencies`, so only use Cypress APIs that 14 already has, or raise the range.
 
 ## How it works
 
@@ -50,7 +50,7 @@ When you add or change a config option or public function, update `README.md` to
 
 **All tests import from `dist/`, not `src/`.** Run `npm run build` before running tests, or they run stale code.
 
-CI (`.github/workflows/ci.yml`) runs the build, checks that the committed `dist/` matches it, then runs the type check, the Prettier check and all three test suites on Node LTS. A second job, `oldest-cypress`, runs the e2e and component tests with Cypress 14.0.0, the oldest supported version. It installs TypeScript 5 and Vite 6 for that run, because Cypress 14 supports neither TypeScript 7 nor Vite 7 and later.
+CI (`.github/workflows/ci.yml`) runs the build, checks that the committed `dist/` matches it, then runs the type check, the Prettier check and all three test suites on Node LTS.
 
 Dependabot (`.github/dependabot.yml`) opens dependency updates once a month. `.github/workflows/dependabot-automerge.yml` waits for the CI run of a minor or patch update and merges it if CI passed. Major updates need a review. There are no required status checks on `main`, because they would block the Release workflow's push.
 
