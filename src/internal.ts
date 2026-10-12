@@ -20,20 +20,20 @@ export interface TypedConsoleMessage {
 export type ConsoleMessage = string | RegExp | TypedConsoleMessage;
 export interface Config {
     ignoreConsoleMessages?: ConsoleMessage[];
-    /**
-     * @deprecated Renamed to `ignoreConsoleMessages`, removed in 6.0. If both are set, `consoleMessages` is used.
-     */
-    consoleMessages?: ConsoleMessage[];
     consoleTypes?: ConsoleType[];
     debug?: boolean;
 }
 // the config with every option set, as getConfig() returns it
-export type ResolvedConfig = Required<Omit<Config, 'consoleMessages'>> & {
-    /**
-     * @deprecated Use `ignoreConsoleMessages`. The same array, kept for code written before the rename.
-     */
-    readonly consoleMessages: ConsoleMessage[];
-};
+export type ResolvedConfig = Required<Config>;
+const options: readonly (keyof Config)[] = [
+    'ignoreConsoleMessages',
+    'consoleTypes',
+    'debug',
+];
+// options that were renamed, with their new name
+const renamedOptions: ReadonlyMap<string, keyof Config> = new Map([
+    ['consoleMessages', 'ignoreConsoleMessages'],
+]);
 // a pattern compiled once, with the entry it was compiled from
 export interface CompiledConsoleMessage {
     consoleMessage: ConsoleMessage;
@@ -113,18 +113,17 @@ const validatePattern = (name: string, pattern: unknown): void => {
     }
 };
 
-const validateConsoleMessages = (
-    option: string,
-    consoleMessages: unknown
+const validateIgnoreConsoleMessages = (
+    ignoreConsoleMessages: unknown
 ): void => {
-    if (consoleMessages == null) return;
-    if (!Array.isArray(consoleMessages)) {
+    if (ignoreConsoleMessages == null) return;
+    if (!Array.isArray(ignoreConsoleMessages)) {
         invalidConfig(
-            `${option} must be an array, got ${typeName(consoleMessages)}`
+            `ignoreConsoleMessages must be an array, got ${typeName(ignoreConsoleMessages)}`
         );
     }
-    (consoleMessages as unknown[]).forEach((consoleMessage, index) => {
-        const name = `${option}[${index}]`;
+    (ignoreConsoleMessages as unknown[]).forEach((consoleMessage, index) => {
+        const name = `ignoreConsoleMessages[${index}]`;
         if (isTypedConsoleMessage(consoleMessage)) {
             validateConsoleType(`${name}.type`, consoleMessage.type);
             validatePattern(`${name}.message`, consoleMessage.message);
@@ -138,12 +137,31 @@ const validateConsoleMessages = (
     });
 };
 
+// a typo in an option name would otherwise be ignored without notice
+const validateOptionNames = (config: object): void => {
+    Object.keys(config).forEach((key) => {
+        const renamedTo = renamedOptions.get(key);
+        if (renamedTo) {
+            invalidConfig(`${key} was renamed to ${renamedTo}`);
+        }
+        if (!(options as readonly string[]).includes(key)) {
+            invalidConfig(
+                `unknown option ${JSON.stringify(key)}, must be one of ${options.join(', ')}`
+            );
+        }
+    });
+};
+
 export const validateConfig = (config: Config): void => {
-    validateConsoleMessages(
-        'ignoreConsoleMessages',
-        config.ignoreConsoleMessages
-    );
-    validateConsoleMessages('consoleMessages', config.consoleMessages);
+    if (
+        typeof config !== 'object' ||
+        config === null ||
+        Array.isArray(config)
+    ) {
+        invalidConfig(`config must be an object, got ${typeName(config)}`);
+    }
+    validateOptionNames(config);
+    validateIgnoreConsoleMessages(config.ignoreConsoleMessages);
 
     if (config.consoleTypes != null) {
         if (!Array.isArray(config.consoleTypes)) {
@@ -165,32 +183,16 @@ const copyConsoleMessage = (consoleMessage: ConsoleMessage): ConsoleMessage =>
         ? { ...consoleMessage }
         : consoleMessage;
 
-// getConfig().consoleMessages keeps working for code written before the rename.
-// It isn't enumerable, so { ...getConfig(), ignoreConsoleMessages } doesn't copy it.
-const withConsoleMessagesAlias = (
-    config: Omit<ResolvedConfig, 'consoleMessages'>
-): ResolvedConfig =>
-    Object.defineProperty(config, 'consoleMessages', {
-        get(this: ResolvedConfig) {
-            return this.ignoreConsoleMessages;
-        },
-        enumerable: false,
-    }) as ResolvedConfig;
-
 // copies the arrays and objects, so the config doesn't share them with the caller
-export const createConfig = (config: Config): ResolvedConfig =>
-    withConsoleMessagesAlias({
-        // consoleMessages wins, so setConfig({ ...getConfig(), consoleMessages }) still replaces the list
-        ignoreConsoleMessages: (
-            config.consoleMessages ??
-            config.ignoreConsoleMessages ??
-            []
-        ).map(copyConsoleMessage),
-        consoleTypes: config.consoleTypes?.length
-            ? [...new Set(config.consoleTypes)]
-            : ['error'],
-        debug: config.debug ?? false,
-    });
+export const createConfig = (config: Config): ResolvedConfig => ({
+    ignoreConsoleMessages: (config.ignoreConsoleMessages ?? []).map(
+        copyConsoleMessage
+    ),
+    consoleTypes: config.consoleTypes?.length
+        ? [...new Set(config.consoleTypes)]
+        : ['error'],
+    debug: config.debug ?? false,
+});
 
 // compiles string patterns once, instead of on every check
 export const compileConsoleMessages = (

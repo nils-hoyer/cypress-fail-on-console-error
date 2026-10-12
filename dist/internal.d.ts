@@ -7,19 +7,10 @@ export interface TypedConsoleMessage {
 export type ConsoleMessage = string | RegExp | TypedConsoleMessage;
 export interface Config {
     ignoreConsoleMessages?: ConsoleMessage[];
-    /**
-     * @deprecated Renamed to `ignoreConsoleMessages`, removed in 6.0. If both are set, `consoleMessages` is used.
-     */
-    consoleMessages?: ConsoleMessage[];
     consoleTypes?: ConsoleType[];
     debug?: boolean;
 }
-export type ResolvedConfig = Required<Omit<Config, 'consoleMessages'>> & {
-    /**
-     * @deprecated Use `ignoreConsoleMessages`. The same array, kept for code written before the rename.
-     */
-    readonly consoleMessages: ConsoleMessage[];
-};
+export type ResolvedConfig = Required<Config>;
 export interface CompiledConsoleMessage {
     consoleMessage: ConsoleMessage;
     type?: ConsoleType;

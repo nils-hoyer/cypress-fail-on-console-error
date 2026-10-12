@@ -1,4 +1,4 @@
-import { type Config, type ConsoleMessage, type ResolvedConfig } from './internal.js';
+import { type Config, type ConsoleMessage } from './internal.js';
 export type { Config, ConsoleMessage, ConsoleType, TypedConsoleMessage, } from './internal.js';
 declare global {
     namespace Cypress {
@@ -11,7 +11,7 @@ declare global {
     }
 }
 export default function failOnConsoleError(_config?: Config): {
-    getConfig: () => ResolvedConfig;
+    getConfig: () => Required<Config>;
     setConfig: (_config: Config) => void;
 };
 /**
