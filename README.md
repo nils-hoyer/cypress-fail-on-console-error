@@ -40,10 +40,9 @@ import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 
 const config: Config = {
     ignoreConsoleMessages: [
-        'foo',
-        /^bar-regex.*/,
-        // ignore this warning, but not a console.error with the same text
-        { type: 'warn', message: /is deprecated/ },
+        'ResizeObserver loop',
+        /unique "key" prop/,
+        { type: 'warn', message: /is deprecated/ }, // only for console.warn
     ],
     consoleTypes: ['error', 'warn'],
 };
