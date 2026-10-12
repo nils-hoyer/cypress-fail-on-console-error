@@ -352,6 +352,14 @@ describe('validateConfig()', () => {
         expect(() => validateConfig(config)).not.to.throw();
     });
 
+    it('WHEN a RegExp can match an empty string, like a negative lookahead THEN expect no error', () => {
+        const config: Config = {
+            ignoreConsoleMessages: [/^(?![\s\S]*React)/, /^/],
+        };
+
+        expect(() => validateConfig(config)).not.to.throw();
+    });
+
     const invalidConfigs: [string, any, string][] = [
         [
             'consoleTypes',
@@ -392,6 +400,16 @@ describe('validateConfig()', () => {
             'ignoreConsoleMessages',
             { ignoreConsoleMessages: ['foo', ''] },
             'ignoreConsoleMessages[1] must not be an empty string',
+        ],
+        [
+            'ignoreConsoleMessages',
+            { ignoreConsoleMessages: ['foo', new RegExp('')] },
+            'ignoreConsoleMessages[1] must not be an empty RegExp',
+        ],
+        [
+            'ignoreConsoleMessages',
+            { ignoreConsoleMessages: [{ type: 'warn', message: /(?:)/g }] },
+            'ignoreConsoleMessages[0].message must not be an empty RegExp',
         ],
         [
             'ignoreConsoleMessages',
