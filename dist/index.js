@@ -14,6 +14,8 @@ export default function failOnConsoleError(_config = {}) {
     let spies;
     // the console that the spies were last created on
     let autConsole;
+    // calls from pages that unloaded before the check after the command
+    let unloadedConsoleCalls = [];
     const getConfig = () => config;
     const setConfig = (_config) => {
         validateConfig(_config);
@@ -27,6 +29,9 @@ export default function failOnConsoleError(_config = {}) {
     };
     setConfig(_config);
     const setSpies = (window) => {
+        // a page that navigates during a command, for example after a click, logs before the next page loads
+        if (spies)
+            unloadedConsoleCalls.push(...getConsoleCalls(spies));
         autConsole = window.console;
         spies = createSpies(config, window.console);
     };
@@ -39,13 +44,15 @@ export default function failOnConsoleError(_config = {}) {
     Cypress.on('command:end', () => {
         if (!spies)
             return;
-        const consoleCalls = checkConsoleCalls(getConsoleCalls(spies), compiledConsoleMessages, config.debug);
+        const consoleCalls = checkConsoleCalls([...unloadedConsoleCalls, ...getConsoleCalls(spies)], compiledConsoleMessages, config.debug);
+        unloadedConsoleCalls = [];
         spies = resetSpies(spies);
         if (consoleCalls.length === 0)
             return;
         throw new AssertionError(`cypress-fail-on-console-error:\n${consoleCallsToString(consoleCalls)}`);
     });
     Cypress.on('test:after:run', () => {
+        unloadedConsoleCalls = [];
         if (spies) {
             spies = resetSpies(spies);
         }

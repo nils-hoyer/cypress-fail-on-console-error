@@ -208,6 +208,19 @@ describe('Cypress e2e', () => {
         ]);
     });
 
+    it('WHEN the page logs console.error and navigates during a command THEN cypress fails', () => {
+        expect(spec('shouldFailOnConsoleErrorBeforeNavigation')).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError on console.error before a redirect',
+                'console.error: errorBeforeRedirect'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.error when the page unloads',
+                'console.error: errorOnPagehide'
+            ),
+        ]);
+    });
+
     it('WHEN all specs ran THEN each spec is checked by a test above', () => {
         expect(unchecked()).to.deep.equal([]);
     });
