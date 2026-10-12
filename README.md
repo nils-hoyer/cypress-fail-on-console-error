@@ -33,7 +33,7 @@ When the application calls `console.error()`, the test fails after the current c
 | ----------------------- | ----------- | ----------- |
 | `ignoreConsoleMessages` | `[]`        | Console messages that don't fail a test, as `string` or `RegExp`. A message is ignored if it contains a string, but the string is read as a regular expression: escape characters like `(`, `.` or `*`, for example `'Failed \\(404\\)'`. To ignore a message for one console method only, use `{ type, message }`. |
 | `consoleTypes`          | `['error']` | Console methods that fail a test: `error`, `warn`, `info`, `debug`, `trace`, `table`, `log` or `assert`. |
-| `debug`                 | `false`     | Also log ignored console messages to the command log. See [Debugging](#debugging). |
+| `debug`                 | `false`     | Shows which console messages your `ignoreConsoleMessages` ignore. Each ignored message is logged to the command log with the entry that matched it. Without `debug`, only messages that fail the test are logged. See [Debugging](#debugging). |
 
 ```ts
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
