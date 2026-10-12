@@ -106,6 +106,16 @@ describe('Cypress e2e', () => {
         ]);
     });
 
+    it('WHEN the console message has format specifiers THEN they are filled in before matching', () => {
+        expect(spec('shouldFailOnFormattedConsoleMessage')).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError with the format specifiers filled in',
+                'console.error: Warning: componentWillMount is deprecated, use componentDidMount instead.'
+            ),
+            passed('should pass when the filled in message is ignored'),
+        ]);
+    });
+
     it('WHEN console.info is called THEN cypress passes', () => {
         expect(spec('shouldPassOnConsoleInfo')).to.deep.equal([
             passed('should pass on console.info'),

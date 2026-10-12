@@ -234,7 +234,36 @@ const argumentToString = (argument) => {
         return errorToString(argument);
     return stringify((_a = argument === null || argument === void 0 ? void 0 : argument.stack) !== null && _a !== void 0 ? _a : argument);
 };
-export const callToString = (calls) => calls.map(argumentToString).join(' ').trim();
+const formatSpecifierToString = (specifier, argument) => {
+    switch (specifier) {
+        case '%d':
+        case '%i':
+            return typeof argument === 'symbol'
+                ? 'NaN'
+                : String(parseInt(argument, 10));
+        case '%f':
+            return typeof argument === 'symbol'
+                ? 'NaN'
+                : String(parseFloat(argument));
+        // CSS for the browser console, not part of the message
+        case '%c':
+            return '';
+        default:
+            return argumentToString(argument);
+    }
+};
+// fills in format specifiers as the browser does, so console.error('Warning: %s is deprecated', 'componentWillMount')
+// becomes "Warning: componentWillMount is deprecated". Arguments left over are appended.
+const formatArguments = (args) => {
+    const [format, ...rest] = args;
+    if (typeof format !== 'string' || rest.length === 0)
+        return args;
+    const formatted = format.replace(/%[sdifoOc]/g, (specifier) => rest.length === 0
+        ? specifier
+        : formatSpecifierToString(specifier, rest.shift()));
+    return [formatted, ...rest];
+};
+export const callToString = (calls) => formatArguments(calls).map(argumentToString).join(' ').trim();
 // the reporter renders Cypress.log messages as Markdown, which would format characters like * and _
 export const escapeMarkdown = (text) => text.replace(/[\\`*_~[\]()<>&]/g, '\\$&');
 // a pattern as it is written in the config

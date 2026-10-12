@@ -93,3 +93,14 @@ export class WithSameMessage extends HTMLElement {
 }
 
 export class WithNoConsole extends HTMLElement {}
+
+export class WithFormattedError extends HTMLElement {
+    connectedCallback() {
+        console.error(
+            '%cWarning: %s is deprecated, use %s instead.',
+            'color: red',
+            'componentWillMount',
+            'componentDidMount'
+        );
+    }
+}
