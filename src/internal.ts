@@ -100,6 +100,10 @@ const validatePattern = (name: string, pattern: unknown): void => {
     if (pattern === '') {
         invalidConfig(`${name} must not be an empty string`);
     }
+    // new RegExp('') and /(?:)/ match every message
+    if (pattern instanceof RegExp && pattern.source === '(?:)') {
+        invalidConfig(`${name} must not be an empty RegExp`);
+    }
     try {
         toRegExp(pattern as string | RegExp);
     } catch (error) {
