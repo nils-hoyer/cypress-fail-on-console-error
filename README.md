@@ -50,8 +50,6 @@ const config: Config = {
 failOnConsoleError(config);
 ```
 
-`consoleMessages`, the old name of `ignoreConsoleMessages`, still works until 6.0.
-
 To fail only on messages that contain some text, ignore every message that doesn't contain it:
 
 ```ts
