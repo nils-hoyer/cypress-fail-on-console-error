@@ -1,4 +1,12 @@
-import { AssertionError, checkConsoleCalls, compileConsoleMessages, consoleCallsToString, createConfig, createSpies, getConsoleCalls, isSameConsoleMessage, resetSpies, updateSpies, validateConfig, } from './internal.js';
+import { checkConsoleCalls, compileConsoleMessages, consoleCallsToString, createConfig, createSpies, getConsoleCalls, isSameConsoleMessage, resetSpies, updateSpies, validateConfig, } from './internal.js';
+// a console message failed the test, like a failed assertion. Named like chai's
+// AssertionError, so Cypress shows failures as before 6.0.
+class AssertionError extends Error {
+    constructor() {
+        super(...arguments);
+        this.name = 'AssertionError';
+    }
+}
 export default function failOnConsoleError(_config = {}) {
     let originConfig;
     let config;

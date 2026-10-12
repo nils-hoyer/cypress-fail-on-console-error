@@ -1,5 +1,4 @@
 import {
-    AssertionError,
     checkConsoleCalls,
     compileConsoleMessages,
     consoleCallsToString,
@@ -23,6 +22,12 @@ export type {
     ConsoleType,
     TypedConsoleMessage,
 } from './internal.js';
+
+// a console message failed the test, like a failed assertion. Named like chai's
+// AssertionError, so Cypress shows failures as before 6.0.
+class AssertionError extends Error {
+    name = 'AssertionError';
+}
 
 declare global {
     namespace Cypress {

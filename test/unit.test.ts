@@ -33,9 +33,9 @@ chai.use(sinonChai);
 //@ts-ignore
 global['Cypress'] = { on: (f, s) => true, sinon };
 
-// the plugin throws an Error named AssertionError, so Cypress shows it like chai's
-const expectAssertionError = (fn: () => void, message: string | RegExp) =>
-    expect(fn).to.throw(message).with.property('name', 'AssertionError');
+// config mistakes throw a plain Error, not an AssertionError
+const expectConfigError = (fn: () => void, message: string | RegExp) =>
+    expect(fn).to.throw(message).with.property('name', 'Error');
 
 describe('failOnConsoleError()', () => {
     it('WHEN failOnConsoleError is created with Config THEN expect no error', () => {
@@ -129,7 +129,7 @@ describe('setConfig()', () => {
             ignoreConsoleMessages: ['foo'],
         });
 
-        expectAssertionError(
+        expectConfigError(
             () =>
                 setConfig({
                     ...getConfig(),
@@ -433,8 +433,8 @@ describe('validateConfig()', () => {
     invalidConfigs.forEach(([option, config, message]) => {
         it(`WHEN ${option} is not valid (${JSON.stringify(
             config[option]
-        )}) THEN throw AssertionError naming the option`, () => {
-            expectAssertionError(
+        )}) THEN throw an Error naming the option`, () => {
+            expectConfigError(
                 () => validateConfig(config),
                 `cypress-fail-on-console-error: ${message}`
             );
@@ -456,8 +456,8 @@ describe('validateConfig()', () => {
         ],
     ];
     invalidOptionNames.forEach(([config, message]) => {
-        it(`WHEN the config has the option ${Object.keys(config).pop()} THEN throw AssertionError naming it`, () => {
-            expectAssertionError(
+        it(`WHEN the config has the option ${Object.keys(config).pop()} THEN throw an Error naming it`, () => {
+            expectConfigError(
                 () => validateConfig(config),
                 `cypress-fail-on-console-error: ${message}`
             );
@@ -465,8 +465,8 @@ describe('validateConfig()', () => {
     });
 
     [null, ['foo'], 'foo'].forEach((config) => {
-        it(`WHEN the config is ${JSON.stringify(config)} THEN throw AssertionError`, () => {
-            expectAssertionError(
+        it(`WHEN the config is ${JSON.stringify(config)} THEN throw an Error`, () => {
+            expectConfigError(
                 () => validateConfig(config as any),
                 /^cypress-fail-on-console-error: config must be an object, got (null|array|string)$/
             );
@@ -483,19 +483,19 @@ describe('validateConfig()', () => {
         ).not.to.throw();
     });
 
-    it('WHEN an ignoreConsoleMessages string is not a valid RegExp THEN throw AssertionError naming it', () => {
+    it('WHEN an ignoreConsoleMessages string is not a valid RegExp THEN throw an Error naming it', () => {
         const config: Config = {
             ignoreConsoleMessages: ['foo', 'Failed (404'],
         };
 
-        expectAssertionError(
+        expectConfigError(
             () => validateConfig(config),
             /ignoreConsoleMessages\[1\] is not a valid regular expression.*Failed \(404/
         );
     });
 
-    it('WHEN failOnConsoleError is created with an invalid RegExp string THEN throw AssertionError', () => {
-        expectAssertionError(
+    it('WHEN failOnConsoleError is created with an invalid RegExp string THEN throw an Error', () => {
+        expectConfigError(
             () =>
                 failOnConsoleError({ ignoreConsoleMessages: ['Failed (404'] }),
             'cypress-fail-on-console-error: ignoreConsoleMessages[0] is not a valid regular expression.'

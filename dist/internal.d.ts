@@ -16,9 +16,6 @@ export interface CompiledConsoleMessage {
     type?: ConsoleType;
     regExp: RegExp;
 }
-export declare class AssertionError extends Error {
-    name: string;
-}
 export declare const isSameConsoleMessage: (a: ConsoleMessage, b: ConsoleMessage) => boolean;
 export declare const validateConfig: (config: Config) => void;
 export declare const createConfig: (config: Config) => ResolvedConfig;

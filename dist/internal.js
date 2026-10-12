@@ -19,13 +19,6 @@ const options = [
 const renamedOptions = new Map([
     ['consoleMessages', 'ignoreConsoleMessages'],
 ]);
-// named like chai's AssertionError, so Cypress shows failures as before 6.0
-export class AssertionError extends Error {
-    constructor() {
-        super(...arguments);
-        this.name = 'AssertionError';
-    }
-}
 // a string and a RegExp with the same text are different patterns
 const consoleMessageKey = (consoleMessage) => {
     if (isTypedConsoleMessage(consoleMessage)) {
@@ -45,8 +38,9 @@ const typeName = (value) => {
         return 'RegExp';
     return typeof value;
 };
+// a mistake in the config, not a failed check of the app, so a plain Error
 const invalidConfig = (message) => {
-    throw new AssertionError(`cypress-fail-on-console-error: ${message}`);
+    throw new Error(`cypress-fail-on-console-error: ${message}`);
 };
 const isPattern = (value) => typeof value === 'string' || value instanceof RegExp;
 const isTypedConsoleMessage = (consoleMessage) => typeof consoleMessage === 'object' &&
