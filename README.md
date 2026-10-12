@@ -131,7 +131,8 @@ failOnConsoleError({
 - Import from `cypress-fail-on-console-error` only. Imports from paths inside the package, such as `cypress-fail-on-console-error/dist/index`, fail, and internal helpers like `validateConfig` are no longer exported.
 - The plugin no longer depends on `chai`, `sinon`, `sinon-chai` and `type-detect`. If your project imports one of them, add it to your own `devDependencies`.
 - The plugin no longer calls `chai.should()`. If your tests use chai's `should` style on plain values (`value.should.equal(1)`, not `cy.should()`), call `chai.should()` in your support file.
-- Failures are still shown as `AssertionError`, but are no longer instances of chai's `AssertionError` class.
+- Test failures from console messages are still shown as `AssertionError`, but are no longer instances of chai's `AssertionError` class.
+- An invalid config throws an `Error` instead of an `AssertionError`.
 
 ## Contributing
 

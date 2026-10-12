@@ -4,7 +4,7 @@
 
 `cypress-fail-on-console-error` is a small Cypress plugin published to npm. Users call `failOnConsoleError(config)` from a Cypress support file. The plugin spies on `window.console` of the application under test and fails the running test with an `AssertionError` when a watched console method is called with a message that the config does not exclude. It supports e2e and component testing.
 
-The plugin is two files: `src/index.ts` with the public API, and `src/internal.ts` with the types and helpers behind it. Don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError`, an `Error` named like chai's, so Cypress shows failures as `AssertionError: …`. `peerDependencies` requires Cypress 14 or later, the version the `oldest-cypress` CI job tests. Raise both together.
+The plugin is two files: `src/index.ts` with the public API, and `src/internal.ts` with the types and helpers behind it. Don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError` in `src/index.ts`, an `Error` named like chai's, so Cypress shows console message failures as `AssertionError: …`. An invalid config is a setup mistake, not a failed check, so `validateConfig` throws a plain `Error`. `peerDependencies` requires Cypress 14 or later, the version the `oldest-cypress` CI job tests. Raise both together.
 
 ## How it works
 

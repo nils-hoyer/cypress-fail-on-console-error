@@ -43,7 +43,7 @@ describe('shouldFailOnConsoleErrorFromSetConfig', () => {
         });
     });
 
-    it('should throw AssertionError on the renamed consoleMessages option', () => {
+    it('should throw an Error on the renamed consoleMessages option', () => {
         cy.setConfig({ consoleMessages: ['errorNotExcluded'] } as any);
     });
 });
