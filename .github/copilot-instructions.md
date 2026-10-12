@@ -4,7 +4,7 @@
 
 `cypress-fail-on-console-error` is a small Cypress plugin published to npm. Users call `failOnConsoleError(config)` from a Cypress support file. The plugin spies on `window.console` of the application under test and fails the running test with an `AssertionError` when a watched console method is called with a message that the config does not exclude. It supports e2e and component testing.
 
-The whole plugin lives in `src/index.ts`. Keep it a single file, and don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError`, an `Error` named like chai's, so Cypress shows failures as `AssertionError: …`.
+The plugin is two files: `src/index.ts` with the public API, and `src/internal.ts` with the types and helpers behind it. Don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError`, an `Error` named like chai's, so Cypress shows failures as `AssertionError: …`.
 
 ## How it works
 
@@ -21,13 +21,14 @@ The whole plugin lives in `src/index.ts`. Keep it a single file, and don't add r
 
 ## Public API
 
-The default export `failOnConsoleError`, the opt-in `addIgnoredConsoleMessagesCommands` with the command declarations in `declare global`, the types `Config`, `ConsoleType`, `ConsoleMessage` and `TypedConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `updateSpies`, `resetSpies`, `getConsoleCalls`, `compileConsoleMessages`, `findIgnoringConsoleMessage`, `checkConsoleCalls`, `isSameConsoleMessage`, `consoleCallsToString`, `isConsoleMessageExcluded`, `callToString`, `escapeMarkdown`, `consoleMessageToString`, `logConsoleCall`, `logIgnoredConsoleCall`) are exported so the unit tests can import them.
+The default export `failOnConsoleError`, the opt-in `addIgnoredConsoleMessagesCommands` with the command declarations in `declare global`, the types `Config`, `ConsoleType`, `ConsoleMessage` and `TypedConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `updateSpies`, `resetSpies`, `getConsoleCalls`, `compileConsoleMessages`, `findIgnoringConsoleMessage`, `checkConsoleCalls`, `isSameConsoleMessage`, `consoleCallsToString`, `isConsoleMessageExcluded`, `callToString`, `escapeMarkdown`, `consoleMessageToString`, `logConsoleCall`, `logIgnoredConsoleCall`) live in `src/internal.ts`. `exports` in `package.json` only lists `dist/index.js`, so users can't import them and they aren't in `dist/index.d.ts`. The unit tests import them from `dist/internal`. Only export from `src/index.ts` what users should rely on; a unit test checks its runtime exports.
 
 When you add or change a config option or public function, update `README.md` too.
 
 ## Repository layout
 
-- `src/index.ts`: the plugin source
+- `src/index.ts`: the public API: `failOnConsoleError`, `addIgnoredConsoleMessagesCommands`, the command declarations and the public types
+- `src/internal.ts`: the types and helpers behind it, not reachable through `exports`
 - `dist/`: compiled output, **committed to git** and published to npm. Rebuild with `npm run build` and commit `dist/` together with any change to `src/`.
 - `test/unit.test.ts`: Vitest unit tests for the helper functions
 - `test/runCypress.ts`: runs all specs of one testing type in a single `cypress.run()` (Cypress's Node API) and returns each spec's tests with their state and error message
@@ -66,7 +67,7 @@ Never change `version` in `package.json` or create tags in a pull request. If th
 
 ## Adding or changing behaviour
 
-1. Change `src/index.ts`.
+1. Change `src/index.ts` or `src/internal.ts`.
 2. Add or update unit tests in `test/unit.test.ts` for each helper you touch.
 3. For behaviour that shows up in a real Cypress run, add:
     - an HTML fixture in `cypress/fixtures/` (e2e) or a web component in `cypress/component/customComponents.ts` (component)
