@@ -2,6 +2,11 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import failOnConsoleError, {
     addIgnoredConsoleMessagesCommands,
+    Config,
+    ConsoleType,
+} from '../dist/index';
+import * as index from '../dist/index';
+import {
     callToString,
     checkConsoleCalls,
     compileConsoleMessages,
@@ -19,9 +24,7 @@ import failOnConsoleError, {
     resetSpies,
     updateSpies,
     validateConfig,
-    Config,
-    ConsoleType,
-} from '../dist/index';
+} from '../dist/internal';
 
 import { describe, expect, it, afterEach, vi, chai } from 'vitest';
 
@@ -46,6 +49,13 @@ describe('failOnConsoleError()', () => {
 
     it('WHEN failOnConsoleError is created with no Config THEN expect no error', () => {
         failOnConsoleError();
+    });
+
+    it('WHEN the plugin is imported THEN it only exports the public API', () => {
+        expect(Object.keys(index).sort()).to.deep.equal([
+            'addIgnoredConsoleMessagesCommands',
+            'default',
+        ]);
     });
 
     it('WHEN the plugin is imported THEN it does not add should to every object', () => {
