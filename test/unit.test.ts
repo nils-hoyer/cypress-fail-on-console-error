@@ -623,6 +623,7 @@ describe('getConsoleCalls()', () => {
         console.assert(1, 'passed');
         console.assert(false, 'failed', { foo: 1 });
         console.assert(0);
+        console.assert(false, '%s failed', 'login');
 
         expect(getConsoleCalls(spies)).to.deep.equal([
             {
@@ -631,6 +632,11 @@ describe('getConsoleCalls()', () => {
                 message: 'Assertion failed: failed {"foo":1}',
             },
             { type: 'assert', args: [0], message: 'Assertion failed' },
+            {
+                type: 'assert',
+                args: [false, '%s failed', 'login'],
+                message: 'Assertion failed: login failed',
+            },
         ]);
     });
 });
@@ -834,6 +840,43 @@ describe('callToString()', () => {
         expect(callToString(['count', { count: BigInt(10) }])).to.equal(
             'count {"count":"10n"}'
         );
+    });
+
+    it('WHEN the first argument has format specifiers THEN fill them in as the browser does', () => {
+        expect(
+            callToString([
+                'Warning: %s is deprecated in %o',
+                'componentWillMount',
+                { name: 'App' },
+            ])
+        ).to.equal(
+            'Warning: componentWillMount is deprecated in {"name":"App"}'
+        );
+        expect(
+            callToString(['%d items, %i pages, %f%', '42.9px', 7.5, '0.5'])
+        ).to.equal('42 items, 7 pages, 0.5%');
+        expect(callToString(['%d %d', 'abc', Symbol('x')])).to.equal('NaN NaN');
+        expect(
+            callToString(['%cStyled%c text', 'color: red', 'color: blue'])
+        ).to.equal('Styled text');
+    });
+
+    it('WHEN there are more or fewer arguments than format specifiers THEN append the rest or keep the specifiers', () => {
+        expect(callToString(['%s failed', 'Login', 'retrying', 2])).to.equal(
+            'Login failed retrying 2'
+        );
+        expect(callToString(['%s failed with %s', 'Login'])).to.equal(
+            'Login failed with %s'
+        );
+        expect(callToString(['100%s'])).to.equal('100%s');
+    });
+
+    it('WHEN the first argument is not a string THEN do not fill in format specifiers', () => {
+        expect(callToString([1, '%s', 'foo'])).to.equal('1 %s foo');
+    });
+
+    it('WHEN a filled in argument contains a format specifier THEN keep it', () => {
+        expect(callToString(['%s %s', '%s', 'foo'])).to.equal('%s foo');
     });
 
     it('WHEN an argument cannot be stringified THEN fall back to its type', () => {
