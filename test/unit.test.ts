@@ -169,6 +169,53 @@ describe('setConfig() with consoleTypes', () => {
     });
 });
 
+describe('window:before:load', () => {
+    afterEach(() => {
+        delete (Cypress as any).testingType;
+        delete (Cypress as any).log;
+        sinon.restore();
+    });
+
+    // the plugin's listeners, by event name
+    const createPlugin = () => {
+        Cypress.testingType = 'e2e';
+        (Cypress as any).log = () => {};
+        const on = sinon.spy(Cypress, 'on');
+        failOnConsoleError();
+        on.restore();
+        return (event: string) =>
+            on.getCalls().find((call) => call.args[0] === event)?.args[1] as (
+                ...args: any[]
+            ) => void;
+    };
+
+    it('WHEN the page logs and then navigates before the check THEN the check includes the calls of the previous page', () => {
+        const listener = createPlugin();
+        const previousPage = { console: { error: (..._: any[]) => {} } };
+        listener('window:before:load')(previousPage);
+        previousPage.console.error('errorBeforeNavigation');
+
+        listener('window:before:load')({ console: { error: () => {} } });
+
+        expect(() => listener('command:end')()).to.throw(
+            'console.error: errorBeforeNavigation'
+        );
+        expect(() => listener('command:end')()).not.to.throw();
+    });
+
+    it('WHEN the test ends before the check THEN the calls of the previous page are dropped', () => {
+        const listener = createPlugin();
+        const previousPage = { console: { error: (..._: any[]) => {} } };
+        listener('window:before:load')(previousPage);
+        previousPage.console.error('errorBeforeNavigation');
+        listener('window:before:load')({ console: { error: () => {} } });
+
+        listener('test:after:run')();
+
+        expect(() => listener('command:end')()).not.to.throw();
+    });
+});
+
 describe('addIgnoredConsoleMessagesCommands()', () => {
     afterEach(() => {
         delete (Cypress as any).Commands;

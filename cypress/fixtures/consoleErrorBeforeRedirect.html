@@ -1,0 +1,8 @@
+<html>
+    <script>
+        setTimeout(() => {
+            console.error('errorBeforeRedirect');
+            location.href = './noConsole.html?redirected';
+        }, 100);
+    </script>
+</html>
