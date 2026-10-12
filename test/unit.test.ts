@@ -124,22 +124,20 @@ describe('setConfig()', () => {
         expect(config.ignoreConsoleMessages).to.deep.equal(['foo']);
     });
 
-    it('WHEN code written before the rename uses consoleMessages THEN it reads and replaces ignoreConsoleMessages', () => {
+    it('WHEN setConfig is called with an unknown option THEN throw and keep the config', () => {
         const { getConfig, setConfig } = failOnConsoleError({
-            consoleMessages: ['foo'],
+            ignoreConsoleMessages: ['foo'],
         });
+
+        expectAssertionError(
+            () =>
+                setConfig({
+                    ...getConfig(),
+                    consoleMessages: ['bar'],
+                } as Config),
+            'cypress-fail-on-console-error: consoleMessages was renamed to ignoreConsoleMessages'
+        );
         expect(getConfig().ignoreConsoleMessages).to.deep.equal(['foo']);
-        expect(getConfig().consoleMessages).to.deep.equal(['foo']);
-
-        setConfig({
-            ...getConfig(),
-            consoleMessages: [...getConfig().consoleMessages, 'bar'],
-        });
-        expect(getConfig().ignoreConsoleMessages).to.deep.equal(['foo', 'bar']);
-
-        setConfig({ ...getConfig(), ignoreConsoleMessages: ['baz'] });
-        expect(getConfig().ignoreConsoleMessages).to.deep.equal(['baz']);
-        expect(getConfig().consoleMessages).to.deep.equal(['baz']);
     });
 });
 
@@ -283,28 +281,10 @@ describe('createConfig()', () => {
         expect(given.debug).to.deep.equal(true);
     });
 
-    it('WHEN the deprecated consoleMessages is set THEN use it for ignoreConsoleMessages, also over ignoreConsoleMessages', () => {
+    it('WHEN config is created THEN it only has the options', () => {
         expect(
-            createConfig({ consoleMessages: ['foo'] }).ignoreConsoleMessages
-        ).to.deep.equal(['foo']);
-        expect(
-            createConfig({
-                consoleMessages: ['foo'],
-                ignoreConsoleMessages: ['bar'],
-            }).ignoreConsoleMessages
-        ).to.deep.equal(['foo']);
-    });
-
-    it('WHEN config is created THEN consoleMessages is a getter for ignoreConsoleMessages that spreading does not copy', () => {
-        const given = createConfig({ ignoreConsoleMessages: ['foo'] });
-
-        expect(given.consoleMessages).to.equal(given.ignoreConsoleMessages);
-        expect(Object.keys(given)).to.deep.equal([
-            'ignoreConsoleMessages',
-            'consoleTypes',
-            'debug',
-        ]);
-        expect({ ...given }).not.to.have.property('consoleMessages');
+            Object.keys(createConfig({ ignoreConsoleMessages: ['foo'] }))
+        ).to.deep.equal(['ignoreConsoleMessages', 'consoleTypes', 'debug']);
     });
 
     it('WHEN consoleTypes contains duplicates THEN keep each type once', () => {
@@ -344,7 +324,6 @@ describe('validateConfig()', () => {
                 /bar/,
                 { type: 'warn', message: /baz/ },
             ],
-            consoleMessages: ['qux', { type: 'error', message: 'quux' }],
             consoleTypes: ['error', 'warn'],
             debug: true,
         };
@@ -441,21 +420,6 @@ describe('validateConfig()', () => {
             'ignoreConsoleMessages[0].message is not a valid regular expression.',
         ],
         [
-            'consoleMessages',
-            { consoleMessages: /foo/ },
-            'consoleMessages must be an array, got RegExp',
-        ],
-        [
-            'consoleMessages',
-            { consoleMessages: ['foo', 42] },
-            'consoleMessages[1] must be a string, RegExp or { type, message } object, got number',
-        ],
-        [
-            'consoleMessages',
-            { consoleMessages: ['Failed (404'] },
-            'consoleMessages[0] is not a valid regular expression.',
-        ],
-        [
             'ignoreConsoleMessages',
             { ignoreConsoleMessages: [null] },
             'ignoreConsoleMessages[0] must be a string, RegExp or { type, message } object, got null',
@@ -475,6 +439,48 @@ describe('validateConfig()', () => {
                 `cypress-fail-on-console-error: ${message}`
             );
         });
+    });
+
+    const invalidOptionNames: [any, string][] = [
+        [
+            { consoleMessages: ['foo'] },
+            'consoleMessages was renamed to ignoreConsoleMessages',
+        ],
+        [
+            { consoleType: ['warn'] },
+            'unknown option "consoleType", must be one of ignoreConsoleMessages, consoleTypes, debug',
+        ],
+        [
+            { debug: true, toString: () => '' },
+            'unknown option "toString", must be one of ignoreConsoleMessages, consoleTypes, debug',
+        ],
+    ];
+    invalidOptionNames.forEach(([config, message]) => {
+        it(`WHEN the config has the option ${Object.keys(config).pop()} THEN throw AssertionError naming it`, () => {
+            expectAssertionError(
+                () => validateConfig(config),
+                `cypress-fail-on-console-error: ${message}`
+            );
+        });
+    });
+
+    [null, ['foo'], 'foo'].forEach((config) => {
+        it(`WHEN the config is ${JSON.stringify(config)} THEN throw AssertionError`, () => {
+            expectAssertionError(
+                () => validateConfig(config as any),
+                /^cypress-fail-on-console-error: config must be an object, got (null|array|string)$/
+            );
+        });
+    });
+
+    it('WHEN an option is set to undefined THEN expect no error', () => {
+        expect(() =>
+            validateConfig({
+                ignoreConsoleMessages: undefined,
+                consoleTypes: undefined,
+                debug: undefined,
+            })
+        ).not.to.throw();
     });
 
     it('WHEN an ignoreConsoleMessages string is not a valid RegExp THEN throw AssertionError naming it', () => {

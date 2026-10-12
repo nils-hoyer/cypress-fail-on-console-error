@@ -10,6 +10,15 @@ export const consoleTypes = [
     'log',
     'assert',
 ];
+const options = [
+    'ignoreConsoleMessages',
+    'consoleTypes',
+    'debug',
+];
+// options that were renamed, with their new name
+const renamedOptions = new Map([
+    ['consoleMessages', 'ignoreConsoleMessages'],
+]);
 // named like chai's AssertionError, so Cypress shows failures as before 6.0
 export class AssertionError extends Error {
     constructor() {
@@ -67,14 +76,14 @@ const validatePattern = (name, pattern) => {
         invalidConfig(`${name} is not a valid regular expression. ${error.message}. Escape special characters to match them literally.`);
     }
 };
-const validateConsoleMessages = (option, consoleMessages) => {
-    if (consoleMessages == null)
+const validateIgnoreConsoleMessages = (ignoreConsoleMessages) => {
+    if (ignoreConsoleMessages == null)
         return;
-    if (!Array.isArray(consoleMessages)) {
-        invalidConfig(`${option} must be an array, got ${typeName(consoleMessages)}`);
+    if (!Array.isArray(ignoreConsoleMessages)) {
+        invalidConfig(`ignoreConsoleMessages must be an array, got ${typeName(ignoreConsoleMessages)}`);
     }
-    consoleMessages.forEach((consoleMessage, index) => {
-        const name = `${option}[${index}]`;
+    ignoreConsoleMessages.forEach((consoleMessage, index) => {
+        const name = `ignoreConsoleMessages[${index}]`;
         if (isTypedConsoleMessage(consoleMessage)) {
             validateConsoleType(`${name}.type`, consoleMessage.type);
             validatePattern(`${name}.message`, consoleMessage.message);
@@ -87,9 +96,26 @@ const validateConsoleMessages = (option, consoleMessages) => {
         }
     });
 };
+// a typo in an option name would otherwise be ignored without notice
+const validateOptionNames = (config) => {
+    Object.keys(config).forEach((key) => {
+        const renamedTo = renamedOptions.get(key);
+        if (renamedTo) {
+            invalidConfig(`${key} was renamed to ${renamedTo}`);
+        }
+        if (!options.includes(key)) {
+            invalidConfig(`unknown option ${JSON.stringify(key)}, must be one of ${options.join(', ')}`);
+        }
+    });
+};
 export const validateConfig = (config) => {
-    validateConsoleMessages('ignoreConsoleMessages', config.ignoreConsoleMessages);
-    validateConsoleMessages('consoleMessages', config.consoleMessages);
+    if (typeof config !== 'object' ||
+        config === null ||
+        Array.isArray(config)) {
+        invalidConfig(`config must be an object, got ${typeName(config)}`);
+    }
+    validateOptionNames(config);
+    validateIgnoreConsoleMessages(config.ignoreConsoleMessages);
     if (config.consoleTypes != null) {
         if (!Array.isArray(config.consoleTypes)) {
             invalidConfig(`consoleTypes must be an array, got ${typeName(config.consoleTypes)}`);
@@ -102,22 +128,13 @@ export const validateConfig = (config) => {
 };
 const copyConsoleMessage = (consoleMessage) => isTypedConsoleMessage(consoleMessage)
     ? Object.assign({}, consoleMessage) : consoleMessage;
-// getConfig().consoleMessages keeps working for code written before the rename.
-// It isn't enumerable, so { ...getConfig(), ignoreConsoleMessages } doesn't copy it.
-const withConsoleMessagesAlias = (config) => Object.defineProperty(config, 'consoleMessages', {
-    get() {
-        return this.ignoreConsoleMessages;
-    },
-    enumerable: false,
-});
 // copies the arrays and objects, so the config doesn't share them with the caller
-export const createConfig = (config) => { var _a; var _b, _c, _d; return withConsoleMessagesAlias({
-    // consoleMessages wins, so setConfig({ ...getConfig(), consoleMessages }) still replaces the list
-    ignoreConsoleMessages: ((_c = (_b = config.consoleMessages) !== null && _b !== void 0 ? _b : config.ignoreConsoleMessages) !== null && _c !== void 0 ? _c : []).map(copyConsoleMessage),
+export const createConfig = (config) => { var _a; var _b, _c; return ({
+    ignoreConsoleMessages: ((_b = config.ignoreConsoleMessages) !== null && _b !== void 0 ? _b : []).map(copyConsoleMessage),
     consoleTypes: ((_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.length)
         ? [...new Set(config.consoleTypes)]
         : ['error'],
-    debug: (_d = config.debug) !== null && _d !== void 0 ? _d : false,
+    debug: (_c = config.debug) !== null && _c !== void 0 ? _c : false,
 }); };
 // compiles string patterns once, instead of on every check
 export const compileConsoleMessages = (consoleMessages) => consoleMessages.map((consoleMessage) => isTypedConsoleMessage(consoleMessage)

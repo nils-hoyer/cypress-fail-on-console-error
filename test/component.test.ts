@@ -147,8 +147,9 @@ describe('Cypress components', () => {
             passed(
                 'should pass with deleteIgnoredConsoleMessages for a RegExp'
             ),
-            passed(
-                'should pass with the deprecated consoleMessages from getConfig'
+            failed(
+                'should throw AssertionError on the renamed consoleMessages option',
+                'AssertionError: cypress-fail-on-console-error: consoleMessages was renamed to ignoreConsoleMessages'
             ),
         ]);
     });

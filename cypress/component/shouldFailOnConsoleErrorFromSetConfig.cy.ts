@@ -46,16 +46,7 @@ describe('shouldFailOnConsoleErrorFromSetConfig', () => {
         });
     });
 
-    it('should pass with the deprecated consoleMessages from getConfig', () => {
-        cy.getConfig().then((config) =>
-            cy.setConfig({
-                ...config,
-                consoleMessages: [
-                    ...config.consoleMessages,
-                    'errorNotExcluded',
-                ],
-            })
-        );
-        cy.mount(WithErrorNotExcluded, 'with-not-excluded');
+    it('should throw AssertionError on the renamed consoleMessages option', () => {
+        cy.setConfig({ consoleMessages: ['errorNotExcluded'] } as any);
     });
 });
