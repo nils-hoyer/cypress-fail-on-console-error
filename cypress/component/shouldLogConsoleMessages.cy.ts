@@ -27,6 +27,8 @@ describe('shouldLogConsoleMessages', () => {
                         'Console method': 'console.error',
                         Arguments: ['firstErrorExcluded'],
                         'Ignored by': /firstErrorExcluded.*/,
+                        'As RegExp': /firstErrorExcluded.*/,
+                        'Matched against': 'firstErrorExcluded',
                     },
                 },
                 {
@@ -42,6 +44,14 @@ describe('shouldLogConsoleMessages', () => {
                             ['a', 1],
                             undefined,
                             null,
+                        ],
+                        'Matched against':
+                            'secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null',
+                        // the patterns from the support file, as RegExps
+                        'Patterns tried': [
+                            /firstErrorExcluded.*/,
+                            /secondErrorExcluded/,
+                            /thirdErrorExcluded.*consoleError.*/,
                         ],
                     },
                 },

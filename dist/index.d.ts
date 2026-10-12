@@ -62,12 +62,12 @@ export interface ConsoleCall {
     message: string;
 }
 export declare const getConsoleCalls: (spies: Map<ConsoleType, sinon.SinonSpy>) => ConsoleCall[];
-export declare const findIgnoringConsoleMessage: (consoleCall: ConsoleCall, compiledConsoleMessages: CompiledConsoleMessage[]) => ConsoleMessage | undefined;
+export declare const findIgnoringConsoleMessage: (consoleCall: ConsoleCall, compiledConsoleMessages: CompiledConsoleMessage[]) => CompiledConsoleMessage | undefined;
 export declare const checkConsoleCalls: (consoleCalls: ConsoleCall[], compiledConsoleMessages: CompiledConsoleMessage[], debug: boolean) => ConsoleCall[];
 export declare const consoleCallsToString: (consoleCalls: ConsoleCall[]) => string;
 export declare const isConsoleMessageExcluded: (consoleMessage: string, configConsoleMessage: string | RegExp) => boolean;
 export declare const callToString: (calls: any[]) => string;
 export declare const escapeMarkdown: (text: string) => string;
 export declare const consoleMessageToString: (consoleMessage: ConsoleMessage) => string;
-export declare const logConsoleCall: (consoleCall: ConsoleCall) => void;
-export declare const logIgnoredConsoleCall: (consoleCall: ConsoleCall, ignoredBy: ConsoleMessage) => void;
+export declare const logConsoleCall: (consoleCall: ConsoleCall, compiledConsoleMessages: CompiledConsoleMessage[]) => void;
+export declare const logIgnoredConsoleCall: (consoleCall: ConsoleCall, ignoredBy: CompiledConsoleMessage) => void;
