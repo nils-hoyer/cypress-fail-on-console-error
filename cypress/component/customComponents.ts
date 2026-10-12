@@ -104,3 +104,12 @@ export class WithFormattedError extends HTMLElement {
         );
     }
 }
+
+export class WithErrorAfterMount extends HTMLElement {
+    connectedCallback() {
+        setTimeout(() => {
+            console.error('errorAfterMount');
+            this.innerHTML = '<p id="loaded">loaded</p>';
+        }, 0);
+    }
+}
