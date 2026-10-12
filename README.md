@@ -31,7 +31,7 @@ When the application calls `console.error()`, the test fails after the current c
 
 | Option                  | Default     | Description |
 | ----------------------- | ----------- | ----------- |
-| `ignoreConsoleMessages` | `[]`        | Console messages that don't fail a test, as `string` or `RegExp`. Strings are regular expressions too, so [escape special characters](https://javascript.info/regexp-escaping). To ignore a message for one console method only, use `{ type, message }`. |
+| `ignoreConsoleMessages` | `[]`        | Console messages that don't fail a test, as `string` or `RegExp`. A message is ignored if it contains a string, but the string is read as a regular expression: escape characters like `(`, `.` or `*`, for example `'Failed \\(404\\)'`. To ignore a message for one console method only, use `{ type, message }`. |
 | `consoleTypes`          | `['error']` | Console methods that fail a test: `error`, `warn`, `info`, `debug`, `trace`, `table`, `log` or `assert`. |
 | `debug`                 | `false`     | Also log ignored console messages to the command log. See [Debugging](#debugging). |
 
