@@ -1,4 +1,3 @@
-import * as sinon from 'sinon';
 declare const consoleTypes: readonly ['error', 'warn', 'info', 'debug', 'trace', 'table', 'log', 'assert'];
 type ConsoleType = (typeof consoleTypes)[number];
 interface TypedConsoleMessage {

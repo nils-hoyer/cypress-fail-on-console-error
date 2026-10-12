@@ -1,7 +1,3 @@
-import * as chai from 'chai';
-import { AssertionError } from 'chai';
-import * as sinon from 'sinon';
-import sinonChai from 'sinon-chai';
 const consoleTypes = [
     'error',
     'warn',
@@ -12,8 +8,13 @@ const consoleTypes = [
     'log',
     'assert',
 ];
-chai.should();
-chai.use(sinonChai);
+// named like chai's AssertionError, so Cypress shows failures as before 6.0
+class AssertionError extends Error {
+    constructor() {
+        super(...arguments);
+        this.name = 'AssertionError';
+    }
+}
 export default function failOnConsoleError(_config = {}) {
     let originConfig;
     let config;
@@ -190,7 +191,7 @@ export const createSpies = (config, console) => {
     let spies = new Map();
     (_a = config.consoleTypes) === null || _a === void 0 ? void 0 : _a.forEach((consoleType) => {
         //TODO: function table does not exists on node.Console
-        spies.set(consoleType, sinon.spy(console, consoleType));
+        spies.set(consoleType, Cypress.sinon.spy(console, consoleType));
     });
     return spies;
 };
@@ -202,7 +203,7 @@ export const updateSpies = (spies, config, console) => {
     });
     return new Map(config.consoleTypes.map((consoleType) => { var _a; return [
         consoleType,
-        (_a = spies.get(consoleType)) !== null && _a !== void 0 ? _a : sinon.spy(console, consoleType),
+        (_a = spies.get(consoleType)) !== null && _a !== void 0 ? _a : Cypress.sinon.spy(console, consoleType),
     ]; }));
 };
 export const resetSpies = (spies) => {
