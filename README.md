@@ -65,7 +65,7 @@ failOnConsoleError({
 ### How messages are matched
 
 - All arguments of a console call are joined with spaces into one message, and non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`.
-- An `Error` argument becomes its name, message and stack trace.
+- An `Error` argument becomes its name, message and stack trace. For example, `console.error(new TypeError('user is undefined'))` becomes `TypeError: user is undefined` followed by lines like `at render (app.js:12:5)`, so you can also match the file an error came from.
 
 ## Change the config in a test
 
