@@ -4,7 +4,7 @@
 
 `cypress-fail-on-console-error` is a small Cypress plugin published to npm. Users call `failOnConsoleError(config)` from a Cypress support file. The plugin spies on `window.console` of the application under test and fails the running test with an `AssertionError` when a watched console method is called with a message that the config does not exclude. It supports e2e and component testing.
 
-The plugin is two files: `src/index.ts` with the public API, and `src/internal.ts` with the types and helpers behind it. Don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError`, an `Error` named like chai's, so Cypress shows failures as `AssertionError: …`.
+The plugin is two files: `src/index.ts` with the public API, and `src/internal.ts` with the types and helpers behind it. Don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError`, an `Error` named like chai's, so Cypress shows failures as `AssertionError: …`. `peerDependencies` requires Cypress 14 or later, the version the `oldest-cypress` CI job tests. Raise both together.
 
 ## How it works
 
@@ -23,7 +23,7 @@ The plugin is two files: `src/index.ts` with the public API, and `src/internal.t
 
 The default export `failOnConsoleError`, the opt-in `addIgnoredConsoleMessagesCommands` with the command declarations in `declare global`, the types `Config`, `ConsoleType`, `ConsoleMessage` and `TypedConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `updateSpies`, `resetSpies`, `getConsoleCalls`, `compileConsoleMessages`, `findIgnoringConsoleMessage`, `checkConsoleCalls`, `isSameConsoleMessage`, `consoleCallsToString`, `isConsoleMessageExcluded`, `callToString`, `escapeMarkdown`, `consoleMessageToString`, `logConsoleCall`, `logIgnoredConsoleCall`) live in `src/internal.ts`. `exports` in `package.json` only lists `dist/index.js`, so users can't import them and they aren't in `dist/index.d.ts`. The unit tests import them from `dist/internal`. Only export from `src/index.ts` what users should rely on; a unit test checks its runtime exports.
 
-When you add or change a config option or public function, update `README.md` too.
+When you add or change a config option or public function, update `README.md` too. List breaking changes under the README's upgrade section for the next major version.
 
 ## Repository layout
 

@@ -121,10 +121,22 @@ failOnConsoleError({
 
 ![An ignored console.error and a failing one in the Cypress command log](./docs/debugTrue.png)
 
+## Upgrading from 5.x to 6.0
+
+- Cypress 14 or later is required.
+- `consoleMessages` was renamed to `ignoreConsoleMessages`, and the old name now throws. Replace it in your config and in `setConfig()` calls, and replace `getConfig().consoleMessages` with `getConfig().ignoreConsoleMessages`.
+- Unknown options throw, so a typo like `consoleType` no longer goes unnoticed.
+- Format specifiers like `%s` are filled in before matching (see [How messages are matched](#how-messages-are-matched)). A pattern written against the old message, such as `'Warning: %s is deprecated componentWillMount'`, must become `'Warning: componentWillMount is deprecated'`. The CSS arguments of `%c` are no longer part of the message.
+- An empty `RegExp` (`new RegExp('')` or `/(?:)/`) throws, like `''` already did. It ignored every message.
+- Import from `cypress-fail-on-console-error` only. Imports from paths inside the package, such as `cypress-fail-on-console-error/dist/index`, fail, and internal helpers like `validateConfig` are no longer exported.
+- The plugin no longer depends on `chai`, `sinon`, `sinon-chai` and `type-detect`. If your project imports one of them, add it to your own `devDependencies`.
+- The plugin no longer calls `chai.should()`. If your tests use chai's `should` style on plain values (`value.should.equal(1)`, not `cy.should()`), call `chai.should()` in your support file.
+- Failures are still shown as `AssertionError`, but are no longer instances of chai's `AssertionError` class.
+
 ## Contributing
 
 1. Open an issue that describes the problem and the expected behaviour.
 2. Install dependencies with `npm ci`. The e2e and component tests run Cypress in Chrome, so Chrome must be installed.
-3. Make your change in `src/index.ts` and run `npm run build`. The tests run against `dist/`, which is committed.
+3. Make your change in `src/` (`index.ts` for the public API, `internal.ts` for the helpers behind it) and run `npm run build`. The tests run against `dist/`, which is committed.
 4. Run `npm run verify` (build, type check, format check, unit, e2e and component tests). It must pass.
 5. Open a PR with the implementation and tests. Don't change the version in `package.json`: the maintainer releases from GitHub Actions, which increases the version.
