@@ -23,7 +23,7 @@ The plugin is two files: `src/index.ts` with the public API, and `src/internal.t
 
 The default export `failOnConsoleError`, the opt-in `addIgnoredConsoleMessagesCommands` with the command declarations in `declare global`, the types `Config`, `ConsoleType`, `ConsoleMessage` and `TypedConsoleMessage`, and the `{ getConfig, setConfig }` return shape are public API. A breaking change to any of them needs a major version bump. The helper functions (`validateConfig`, `createConfig`, `createSpies`, `updateSpies`, `resetSpies`, `getConsoleCalls`, `compileConsoleMessages`, `findIgnoringConsoleMessage`, `checkConsoleCalls`, `isSameConsoleMessage`, `consoleCallsToString`, `isConsoleMessageExcluded`, `callToString`, `escapeMarkdown`, `consoleMessageToString`, `logConsoleCall`, `logIgnoredConsoleCall`) live in `src/internal.ts`. `exports` in `package.json` only lists `dist/index.js`, so users can't import them and they aren't in `dist/index.d.ts`. The unit tests import them from `dist/internal`. Only export from `src/index.ts` what users should rely on; a unit test checks its runtime exports.
 
-When you add or change a config option or public function, update `README.md` too. List breaking changes under the README's upgrade section for the next major version.
+When you add or change a config option or public function, update `README.md` too.
 
 ## Repository layout
 

@@ -13,8 +13,6 @@ To fail tests on network errors, see [cypress-fail-on-network-error](https://www
 npm install cypress-fail-on-console-error --save-dev
 ```
 
-Requires Cypress 14 or later.
-
 ## Usage
 
 Call `failOnConsoleError()` in your support file: `cypress/support/e2e.js` for e2e tests, `cypress/support/component.js` for component tests, or the `.ts` versions of these files.
@@ -64,7 +62,6 @@ failOnConsoleError({
 ### How messages are matched
 
 - All arguments of a console call are joined with spaces into one message, and non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`.
-- Format specifiers in the first argument are filled in as the browser console does, and `%c` styles are dropped. For example, `console.error('Warning: %s is deprecated', 'componentWillMount')` becomes `Warning: componentWillMount is deprecated`.
 - An `Error` argument becomes its name, message and stack trace. For example, `console.error(new TypeError('user is undefined'))` becomes `TypeError: user is undefined` followed by lines like `at render (app.js:12:5)`, so you can also match the file an error came from.
 
 ## Change the config in a test
@@ -120,19 +117,6 @@ failOnConsoleError({
 ```
 
 ![An ignored console.error and a failing one in the Cypress command log](./docs/debugTrue.png)
-
-## Upgrading from 5.x to 6.0
-
-- Cypress 14 or later is required.
-- `consoleMessages` was renamed to `ignoreConsoleMessages`, and the old name now throws. Replace it in your config and in `setConfig()` calls, and replace `getConfig().consoleMessages` with `getConfig().ignoreConsoleMessages`.
-- Unknown options throw, so a typo like `consoleType` no longer goes unnoticed.
-- Format specifiers like `%s` are filled in before matching (see [How messages are matched](#how-messages-are-matched)). A pattern written against the old message, such as `'Warning: %s is deprecated componentWillMount'`, must become `'Warning: componentWillMount is deprecated'`. The CSS arguments of `%c` are no longer part of the message.
-- An empty `RegExp` (`new RegExp('')` or `/(?:)/`) throws, like `''` already did. It ignored every message.
-- Import from `cypress-fail-on-console-error` only. Imports from paths inside the package, such as `cypress-fail-on-console-error/dist/index`, fail, and internal helpers like `validateConfig` are no longer exported.
-- The plugin no longer depends on `chai`, `sinon`, `sinon-chai` and `type-detect`. If your project imports one of them, add it to your own `devDependencies`.
-- The plugin no longer calls `chai.should()`. If your tests use chai's `should` style on plain values (`value.should.equal(1)`, not `cy.should()`), call `chai.should()` in your support file.
-- Test failures from console messages are still shown as `AssertionError`, but are no longer instances of chai's `AssertionError` class.
-- An invalid config throws an `Error` instead of an `AssertionError`.
 
 ## Contributing
 
