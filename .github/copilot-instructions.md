@@ -2,14 +2,14 @@
 
 ## Project
 
-`cypress-fail-on-console-error` is a small Cypress plugin published to npm. Users call `failOnConsoleError(config)` from a Cypress support file. The plugin spies on `window.console` of the application under test and fails the running test with a chai `AssertionError` when a watched console method is called with a message that the config does not exclude. It supports e2e and component testing.
+`cypress-fail-on-console-error` is a small Cypress plugin published to npm. Users call `failOnConsoleError(config)` from a Cypress support file. The plugin spies on `window.console` of the application under test and fails the running test with an `AssertionError` when a watched console method is called with a message that the config does not exclude. It supports e2e and component testing.
 
-The whole plugin lives in `src/index.ts`. Keep it a single file, and keep runtime `dependencies` limited to `chai`, `sinon`, `sinon-chai` and `type-detect`, because every dependency ships to every user.
+The whole plugin lives in `src/index.ts`. Keep it a single file, and don't add runtime `dependencies`, because every dependency ships to every user. The plugin uses what Cypress already provides: `Cypress.sinon` for the spies, and its own `AssertionError`, an `Error` named like chai's, so Cypress shows failures as `AssertionError: …`.
 
 ## How it works
 
 - `failOnConsoleError(config)` validates the config (`validateConfig`), fills in defaults (`createConfig`), registers Cypress event handlers and returns `{ getConfig, setConfig }`.
-- `createSpies` attaches a sinon spy for each entry in `consoleTypes`:
+- `createSpies` attaches a `Cypress.sinon` spy for each entry in `consoleTypes`:
     - e2e: on every `window:before:load`
     - component: once per spec, in a root `before` hook via `cy.window()`
 - On every `command:end`, `getConsoleCalls` collects the calls of all spies in call order, and `checkConsoleCalls` keeps those that no pattern ignores (`findIgnoringConsoleMessage`). `callToString` joins the arguments of each call with spaces. An argument with a string `stack` (an `Error`) contributes its stack, with `Name: message` put in front when the stack lacks it (Firefox, WebKit). Other non-strings go through `JSON.stringify`, with circular references as `"[Circular]"` and BigInts as `"10n"`. If any calls are left, `consoleCallsToString` lists them one per line as `console.<type>: <message>`, and they are thrown as `AssertionError('cypress-fail-on-console-error:\n<lines>')`. Before that, `logConsoleCall` adds each of them to the command log, with the original arguments in `consoleProps`. The reporter renders log messages as Markdown, so `escapeMarkdown` escapes them. Spy history is reset after every check.
@@ -84,4 +84,4 @@ Never change `version` in `package.json` or create tags in a pull request. If th
 - Prettier: 4-space indent, single quotes, semicolons, `trailingComma: 'es5'`, LF line endings. Run `npm run prettier` instead of formatting by hand.
 - Helpers are exported arrow functions (`export const name = (...) => ...`). The entry point is the default-exported `function failOnConsoleError`.
 - Test names follow `WHEN <condition> THEN <expected result>`.
-- Use chai assertions and sinon spies, like the existing code and tests.
+- Tests use Vitest's chai assertions, sinon spies and sinon-chai, which `test/unit.test.ts` registers. The global `Cypress` mock there provides `sinon`, which the plugin spies with.

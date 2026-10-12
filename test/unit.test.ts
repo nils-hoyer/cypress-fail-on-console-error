@@ -1,4 +1,5 @@
 import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import failOnConsoleError, {
     addIgnoredConsoleMessagesCommands,
     callToString,
@@ -24,8 +25,14 @@ import failOnConsoleError, {
 
 import { describe, expect, it, afterEach, vi, chai } from 'vitest';
 
+chai.use(sinonChai);
+
 //@ts-ignore
-global['Cypress'] = { on: (f, s) => true };
+global['Cypress'] = { on: (f, s) => true, sinon };
+
+// the plugin throws an Error named AssertionError, so Cypress shows it like chai's
+const expectAssertionError = (fn: () => void, message: string | RegExp) =>
+    expect(fn).to.throw(message).with.property('name', 'AssertionError');
 
 describe('failOnConsoleError()', () => {
     it('WHEN failOnConsoleError is created with Config THEN expect no error', () => {
@@ -39,6 +46,12 @@ describe('failOnConsoleError()', () => {
 
     it('WHEN failOnConsoleError is created with no Config THEN expect no error', () => {
         failOnConsoleError();
+    });
+
+    it('WHEN the plugin is imported THEN it does not add should to every object', () => {
+        expect(Object.getOwnPropertyNames(Object.prototype)).not.to.include(
+            'should'
+        );
     });
 
     describe('detection of testingType', () => {
@@ -326,7 +339,7 @@ describe('validateConfig()', () => {
             debug: true,
         };
 
-        expect(() => validateConfig(config)).not.to.throw(chai.AssertionError);
+        expect(() => validateConfig(config)).not.to.throw();
     });
 
     const invalidConfigs: [string, any, string][] = [
@@ -429,8 +442,8 @@ describe('validateConfig()', () => {
         it(`WHEN ${option} is not valid (${JSON.stringify(
             config[option]
         )}) THEN throw AssertionError naming the option`, () => {
-            expect(() => validateConfig(config)).to.throw(
-                chai.AssertionError,
+            expectAssertionError(
+                () => validateConfig(config),
                 `cypress-fail-on-console-error: ${message}`
             );
         });
@@ -441,16 +454,18 @@ describe('validateConfig()', () => {
             ignoreConsoleMessages: ['foo', 'Failed (404'],
         };
 
-        expect(() => validateConfig(config)).to.throw(
-            chai.AssertionError,
+        expectAssertionError(
+            () => validateConfig(config),
             /ignoreConsoleMessages\[1\] is not a valid regular expression.*Failed \(404/
         );
     });
 
     it('WHEN failOnConsoleError is created with an invalid RegExp string THEN throw AssertionError', () => {
-        expect(() =>
-            failOnConsoleError({ ignoreConsoleMessages: ['Failed (404'] })
-        ).to.throw(chai.AssertionError);
+        expectAssertionError(
+            () =>
+                failOnConsoleError({ ignoreConsoleMessages: ['Failed (404'] }),
+            'cypress-fail-on-console-error: ignoreConsoleMessages[0] is not a valid regular expression.'
+        );
     });
 });
 
@@ -479,10 +494,7 @@ describe('createSpies()', () => {
             assert: () => true,
         };
 
-        const spies: Map<ConsoleType, sinon.SinonSpy> = createSpies(
-            config,
-            console
-        );
+        const spies = createSpies(config, console);
 
         const spiesIterator = spies.keys();
         expect(Array.from(spiesIterator)).to.deep.equal(config.consoleTypes);
@@ -549,8 +561,7 @@ describe('resetSpies()', () => {
         expect(spies.get('error')).be.called;
         expect(spies.get('warn')).not.be.called;
 
-        const expectedSpies: Map<ConsoleType, sinon.SinonSpy> =
-            resetSpies(spies);
+        const expectedSpies = resetSpies(spies);
 
         expect(expectedSpies.get('error')).not.be.called;
         expect(expectedSpies.get('warn')).not.be.called;
