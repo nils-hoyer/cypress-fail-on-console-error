@@ -13,6 +13,8 @@ To fail tests on network errors, see [cypress-fail-on-network-error](https://www
 npm install cypress-fail-on-console-error --save-dev
 ```
 
+Requires Cypress 14 or later.
+
 ## Usage
 
 Call `failOnConsoleError()` in your support file: `cypress/support/e2e.js` for e2e tests, `cypress/support/component.js` for component tests, or the `.ts` versions of these files.
