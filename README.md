@@ -76,7 +76,8 @@ import failOnConsoleError, {
     addIgnoredConsoleMessagesCommands,
 } from 'cypress-fail-on-console-error';
 
-addIgnoredConsoleMessagesCommands(failOnConsoleError(config));
+const failOnConsole = failOnConsoleError(config);
+addIgnoredConsoleMessagesCommands(failOnConsole);
 ```
 
 Then use them in a test. Changes last until the end of the test.
