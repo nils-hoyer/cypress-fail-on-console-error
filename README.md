@@ -122,9 +122,13 @@ In TypeScript, [declare your commands](https://docs.cypress.io/app/tooling/types
 
 ## Debugging
 
-Each console message that fails a test appears in the Cypress command log under the name of its console method, for example `console.error`. Click the entry to print the original arguments to the browser console, where you can inspect logged objects. Ignored messages don't appear.
+Each console message that fails a test appears in the Cypress command log under the name of its console method, for example `console.error`. Ignored messages don't appear. Click the entry to print these to the browser console:
 
-Set `debug: true` to also log each ignored message, as an `ignored` entry with the pattern that matched it. Use it to check your patterns. Click an entry to print the console method, the original arguments and the pattern to the browser console.
+- **Arguments**: the original arguments, where you can inspect logged objects.
+- **Matched against**: the message your patterns were tested against, as described in [How messages are matched](#how-messages-are-matched).
+- **Patterns tried**: your `ignoreConsoleMessages` as regular expressions. Strings appear as `new RegExp(string)` made them, so you can see special characters that weren't escaped, for example `'Failed (404)'` as `/Failed (404)/`, which doesn't match the text `Failed (404)`.
+
+Set `debug: true` to also log each ignored message, as an `ignored` entry with the pattern that matched it. Use it to find patterns that ignore more than you meant. Click an entry to print the arguments, the pattern as configured and as a regular expression, and the message it matched.
 
 ```ts
 failOnConsoleError({
@@ -134,6 +138,8 @@ failOnConsoleError({
 ```
 
 ![An ignored console.error and a failing one in the Cypress command log](./docs/debugTrue.png)
+
+To step through the matching, open DevTools in `cypress open` and set a breakpoint in `checkConsoleCalls` in `node_modules/cypress-fail-on-console-error/dist/index.js`.
 
 ## Contributing
 

@@ -644,20 +644,22 @@ describe('findIgnoringConsoleMessage()', () => {
         ).to.be.undefined;
     });
 
-    it('WHEN patterns match THEN return the first matching pattern as configured', () => {
+    it('WHEN patterns match THEN return the first matching pattern', () => {
         expect(
             findIgnoringConsoleMessage(
                 warn,
                 compileConsoleMessages(['other', 'text', /same/])
             )
-        ).to.equal('text');
+        ).to.deep.equal({ consoleMessage: 'text', regExp: /text/ });
     });
 
     it('WHEN a { type, message } pattern matches the text THEN only match calls of that console method', () => {
         const typed = { type: 'warn' as const, message: 'same' };
         const compiled = compileConsoleMessages([typed]);
 
-        expect(findIgnoringConsoleMessage(warn, compiled)).to.equal(typed);
+        expect(findIgnoringConsoleMessage(warn, compiled)).to.equal(
+            compiled[0]
+        );
         expect(findIgnoringConsoleMessage(error, compiled)).to.be.undefined;
     });
 });
@@ -831,12 +833,19 @@ describe('logConsoleCall()', () => {
         delete (Cypress as any).log;
     });
 
-    it('WHEN a console call is logged THEN log its message, with its arguments in consoleProps', () => {
+    it('WHEN a console call is logged THEN log its message, with its arguments, the matched text and the patterns as RegExps in consoleProps', () => {
         const log = vi.fn();
         (Cypress as any).log = log;
         const args = ['foo', { bar: 1 }];
 
-        logConsoleCall({ type: 'warn', args, message: 'foo {"bar":1}' });
+        logConsoleCall(
+            { type: 'warn', args, message: 'foo {"bar":1}' },
+            compileConsoleMessages([
+                'Failed (404)',
+                /baz/i,
+                { type: 'error', message: 'foo' },
+            ])
+        );
 
         const { name, message, consoleProps } = log.mock.calls[0][0];
         expect(name).to.equal('console.warn');
@@ -844,6 +853,12 @@ describe('logConsoleCall()', () => {
         expect(consoleProps()).to.deep.equal({
             'Console method': 'console.warn',
             Arguments: args,
+            'Matched against': 'foo {"bar":1}',
+            'Patterns tried': [
+                /Failed (404)/,
+                /baz/i,
+                { type: 'error', message: /foo/ },
+            ],
         });
         expect(consoleProps().Arguments[1]).to.equal(args[1]);
     });
@@ -852,7 +867,7 @@ describe('logConsoleCall()', () => {
         const log = vi.fn();
         (Cypress as any).log = log;
 
-        logConsoleCall({ type: 'error', args: [], message: 'a_b *c*' });
+        logConsoleCall({ type: 'error', args: [], message: 'a_b *c*' }, []);
 
         expect(log.mock.calls[0][0].message).to.equal('a\\_b \\*c\\*');
     });
@@ -863,26 +878,28 @@ describe('logIgnoredConsoleCall()', () => {
         delete (Cypress as any).log;
     });
 
-    it('WHEN an ignored call is logged THEN log the pattern as configured and the message, with both in consoleProps', () => {
+    it('WHEN an ignored call is logged THEN log the pattern as configured and the message, with the pattern as RegExp and the matched text in consoleProps', () => {
         const log = vi.fn();
         (Cypress as any).log = log;
         const args = ['foo is deprecated'];
-        const ignoredBy = { type: 'warn' as const, message: /is deprecated/ };
+        const ignoredBy = { type: 'warn' as const, message: 'is deprecated' };
 
         logIgnoredConsoleCall(
             { type: 'warn', args, message: 'foo is deprecated' },
-            ignoredBy
+            compileConsoleMessages([ignoredBy])[0]
         );
 
         const { name, message, consoleProps } = log.mock.calls[0][0];
         expect(name).to.equal('ignored');
         expect(message).to.equal(
-            "**{ type: 'warn', message: /is deprecated/ }** matched console.warn: foo is deprecated"
+            "**{ type: 'warn', message: 'is deprecated' }** matched console.warn: foo is deprecated"
         );
         expect(consoleProps()).to.deep.equal({
             'Console method': 'console.warn',
             Arguments: args,
             'Ignored by': ignoredBy,
+            'As RegExp': /is deprecated/,
+            'Matched against': 'foo is deprecated',
         });
     });
 
@@ -892,7 +909,7 @@ describe('logIgnoredConsoleCall()', () => {
 
         logIgnoredConsoleCall(
             { type: 'error', args: [], message: 'a_b *c*' },
-            'a.*c'
+            compileConsoleMessages(['a.*c'])[0]
         );
 
         expect(log.mock.calls[0][0].message).to.equal(

@@ -401,12 +401,12 @@ const toConsoleCall = (
 export const findIgnoringConsoleMessage = (
     consoleCall: ConsoleCall,
     compiledConsoleMessages: CompiledConsoleMessage[]
-): ConsoleMessage | undefined =>
+): CompiledConsoleMessage | undefined =>
     compiledConsoleMessages.find(
         ({ type, regExp }) =>
             (type === undefined || type === consoleCall.type) &&
             isConsoleMessageExcluded(consoleCall.message, regExp)
-    )?.consoleMessage;
+    );
 
 // logs each call to the command log and returns the calls that aren't ignored
 export const checkConsoleCalls = (
@@ -420,7 +420,7 @@ export const checkConsoleCalls = (
             compiledConsoleMessages
         );
         if (ignoredBy === undefined) {
-            logConsoleCall(consoleCall);
+            logConsoleCall(consoleCall, compiledConsoleMessages);
             return true;
         }
         if (debug) logIgnoredConsoleCall(consoleCall, ignoredBy);
@@ -515,8 +515,19 @@ export const consoleMessageToString = (
         : `'${consoleMessage.replace(/[\\']/g, '\\$&')}'`;
 };
 
-// clicking the entry prints the original arguments to the browser console, where they can be inspected
-export const logConsoleCall = (consoleCall: ConsoleCall): void => {
+// a pattern as it is matched: strings become RegExps
+const compiledConsoleMessageToPattern = ({
+    type,
+    regExp,
+}: CompiledConsoleMessage): RegExp | TypedConsoleMessage =>
+    type === undefined ? regExp : { type, message: regExp };
+
+// clicking the entry prints the original arguments, the matched text and the patterns
+// that didn't match to the browser console, where they can be inspected
+export const logConsoleCall = (
+    consoleCall: ConsoleCall,
+    compiledConsoleMessages: CompiledConsoleMessage[]
+): void => {
     const name = `console.${consoleCall.type}`;
     Cypress.log({
         name,
@@ -525,6 +536,10 @@ export const logConsoleCall = (consoleCall: ConsoleCall): void => {
         consoleProps: () => ({
             'Console method': name,
             Arguments: consoleCall.args,
+            'Matched against': consoleCall.message,
+            'Patterns tried': compiledConsoleMessages.map(
+                compiledConsoleMessageToPattern
+            ),
         }),
     });
 };
@@ -532,17 +547,19 @@ export const logConsoleCall = (consoleCall: ConsoleCall): void => {
 // with debug: true, shows which pattern ignored a console call
 export const logIgnoredConsoleCall = (
     consoleCall: ConsoleCall,
-    ignoredBy: ConsoleMessage
+    ignoredBy: CompiledConsoleMessage
 ): void => {
     const name = `console.${consoleCall.type}`;
     Cypress.log({
         name: 'ignored',
         displayName: 'ignored',
-        message: `**${escapeMarkdown(consoleMessageToString(ignoredBy))}** matched ${name}: ${escapeMarkdown(consoleCall.message)}`,
+        message: `**${escapeMarkdown(consoleMessageToString(ignoredBy.consoleMessage))}** matched ${name}: ${escapeMarkdown(consoleCall.message)}`,
         consoleProps: () => ({
             'Console method': name,
             Arguments: consoleCall.args,
-            'Ignored by': ignoredBy,
+            'Ignored by': ignoredBy.consoleMessage,
+            'As RegExp': ignoredBy.regExp,
+            'Matched against': consoleCall.message,
         }),
     });
 };
