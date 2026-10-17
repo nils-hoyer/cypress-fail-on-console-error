@@ -4,9 +4,21 @@
 [![CI](https://github.com/nils-hoyer/cypress-fail-on-console-error/actions/workflows/ci.yml/badge.svg)](https://github.com/nils-hoyer/cypress-fail-on-console-error/actions/workflows/ci.yml)
 [![Sponsor](https://img.shields.io/github/sponsors/nils-hoyer?label=Sponsor&logo=GitHub)](https://github.com/sponsors/nils-hoyer)
 
-Fail Cypress tests when the application under test calls `console.error()`. Works for e2e and component tests.
+Fail Cypress tests when the application under test calls `console.error()`. Set up once in your support file, it checks every test for errors that your app or third-party scripts catch and only log, which Cypress doesn't fail on. Works for e2e and component tests.
 
 To fail tests on network errors, see [cypress-fail-on-network-error](https://www.npmjs.com/package/cypress-fail-on-network-error).
+
+## Why
+
+Cypress fails a test on uncaught exceptions and unhandled promise rejections. Many errors are caught and only logged, so they never fail a test:
+
+- a `catch` block or `.catch()` that calls `console.error()`
+- error boundaries and framework error handlers, which log an error instead of throwing it
+- third-party scripts, such as analytics, consent banners or chat widgets, which catch their own errors
+
+The page often still renders, so assertions on the UI pass and the error goes unnoticed. The plugin checks the console after every command of every test, without an assertion in each test.
+
+It only sees console calls from scripts on the page. Messages that the browser logs itself, such as `Failed to load resource`, and messages from iframes don't fail a test.
 
 ## Installation
 
