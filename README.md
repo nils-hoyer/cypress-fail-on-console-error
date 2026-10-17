@@ -6,7 +6,7 @@
 
 Fail Cypress tests when the application under test calls `console.error()`. Set up once in your support file, it checks every test for errors that your app or third-party scripts catch and only log, which Cypress doesn't fail on. Works for e2e and component tests.
 
-Messages that the browser logs itself, such as `Failed to load resource`, and messages from iframes don't fail a test. To fail tests on network errors, see [cypress-fail-on-network-error](https://www.npmjs.com/package/cypress-fail-on-network-error).
+To fail tests on network errors, see [cypress-fail-on-network-error](https://www.npmjs.com/package/cypress-fail-on-network-error).
 
 ## Installation
 
