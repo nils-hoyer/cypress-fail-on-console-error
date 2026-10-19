@@ -27,6 +27,8 @@ When you add or change a config option or public function, update `README.md` to
 
 ## Repository layout
 
+- `README.md`: the user documentation, published to npm. `docs/commandLog.png` and `docs/debugTrue.png` are its screenshots.
+- `CONTRIBUTING.md`: how to contribute, linked from the README. npm doesn't publish it.
 - `src/index.ts`: the public API: `failOnConsoleError`, `addIgnoredConsoleMessagesCommands`, the command declarations and the public types
 - `src/internal.ts`: the types and helpers behind it, not reachable through `exports`
 - `dist/`: compiled output, **committed to git** and published to npm. Rebuild with `npm run build` and commit `dist/` together with any change to `src/`.
