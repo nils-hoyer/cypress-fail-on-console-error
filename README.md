@@ -26,15 +26,15 @@ failOnConsoleError();
 
 When the application calls `console.error()`, the test fails after the current command:
 
-![A console.error in the Cypress command log and the failed test's error](./docs/commandLog.png)
+<img src="./docs/commandLog.png" width="448" alt="A console.error in the Cypress command log and the failed test's error">
 
-## Config (optional)
+## Configuration
 
 | Option                  | Default     | Description |
 | ----------------------- | ----------- | ----------- |
-| `ignoreConsoleMessages` | `[]`        | Console messages that don't fail a test, as `string`, `RegExp` or `{ type, message }` to ignore a message for one console method only. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping). |
+| `ignoreConsoleMessages` | `[]`        | Console messages that don't fail a test, see [Matching messages](#matching-messages). |
 | `consoleTypes`          | `['error']` | Console methods that fail a test: `error`, `warn`, `info`, `debug`, `trace`, `table`, `log` or `assert`. |
-| `debug`                 | `false`     | Shows which console messages your `ignoreConsoleMessages` ignore. Each ignored message is logged to the command log with the entry that matched it. Without `debug`, only messages that fail the test are logged. See [Debugging](#debugging). |
+| `debug`                 | `false`     | Also logs each message that `ignoreConsoleMessages` ignores, with the entry that matched it. See [Debugging](#debugging). |
 
 ```ts
 import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
@@ -42,8 +42,8 @@ import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
 const config: Config = {
     ignoreConsoleMessages: [
         'ResizeObserver loop',
-        /unique "key" prop/,
-        { type: 'warn', message: /is deprecated/ }, // only for console.warn
+        'unique "key" prop',
+        { type: 'warn', message: 'is deprecated' }, // only for console.warn
     ],
     consoleTypes: ['error', 'warn'],
 };
@@ -60,12 +60,15 @@ failOnConsoleError({
 });
 ```
 
-### How messages are matched
+### Matching messages
 
-- All arguments of a console call are joined with spaces into one message, and non-string arguments are converted with `JSON.stringify`. For example, `console.error('failed', 1, { foo: 'bar' })` becomes `failed 1 {"foo":"bar"}`.
-- An `Error` argument becomes its name, message and stack trace. For example, `console.error(new TypeError('user is undefined'))` becomes `TypeError: user is undefined` followed by lines like `at render (app.js:12:5)`, so you can also match the file an error came from.
+An entry is a `string`, a `RegExp`, or `{ type, message }`, which only ignores calls of that console method. A message that matches any entry is ignored.
 
-## Change the config in a test
+- A string or `RegExp` matches anywhere in the message. Strings are converted with `new RegExp(string)`, so [escape special characters](https://javascript.info/regexp-escaping).
+- The message is all arguments of the console call, joined with spaces. Objects are converted to JSON: `console.error('Failed to load user', { id: 42 })` becomes `Failed to load user {"id":42}`.
+- An `Error` becomes its name, message and stack trace, such as `TypeError: user is undefined` followed by lines like `at render (app.js:12:5)`, so you can also match the file an error came from.
+
+## Ignoring messages in one test
 
 To change the ignored messages in a test, register the commands in your support file:
 
@@ -81,23 +84,23 @@ addIgnoredConsoleMessagesCommands(failOnConsole);
 Then use them in a test. Changes last until the end of the test.
 
 ```ts
-it('should ignore console messages that contain foo or bar', () => {
-    cy.addIgnoredConsoleMessages(['foo', /bar/]);
-    cy.visit('...');
+it('should show the page without recommendations', () => {
+    cy.addIgnoredConsoleMessages(['Failed to load recommendations']);
+    cy.visit('/');
 });
 ```
 
-| Command                                           | Description |
-| ------------------------------------------------- | ----------- |
-| `cy.getIgnoredConsoleMessages()`                  | Yields `ignoreConsoleMessages`. |
-| `cy.setIgnoredConsoleMessages(['foo', /bar/])`    | Replaces `ignoreConsoleMessages`. |
-| `cy.addIgnoredConsoleMessages(['foo', /bar/])`    | Adds to `ignoreConsoleMessages`. |
-| `cy.deleteIgnoredConsoleMessages(['foo', /bar/])` | Removes from `ignoreConsoleMessages`. |
+| Command                                                   | Description |
+| --------------------------------------------------------- | ----------- |
+| `cy.getIgnoredConsoleMessages()`                          | Yields `ignoreConsoleMessages`. |
+| `cy.setIgnoredConsoleMessages(['ResizeObserver loop'])`   | Replaces `ignoreConsoleMessages`. |
+| `cy.addIgnoredConsoleMessages(['is deprecated'])`         | Adds to `ignoreConsoleMessages`. |
+| `cy.deleteIgnoredConsoleMessages(['ResizeObserver loop'])` | Removes from `ignoreConsoleMessages`. |
 
-To change other options, use `getConfig()` and `setConfig()`, which `failOnConsoleError()` returns:
+To change `consoleTypes` or `debug` in a test, use `getConfig()` and `setConfig()`, which `failOnConsoleError()` returns:
 
 ```ts
-const { getConfig, setConfig } = failOnConsoleError(config);
+const { getConfig, setConfig } = failOnConsole;
 
 Cypress.Commands.add('setConsoleTypes', (consoleTypes) =>
     setConfig({ ...getConfig(), consoleTypes })
@@ -108,7 +111,7 @@ Cypress.Commands.add('setConsoleTypes', (consoleTypes) =>
 
 Click a `console.error` entry in the command log to print the original arguments and the message your `ignoreConsoleMessages` were matched against to the browser console.
 
-Set `debug: true` to also log each ignored message, with the entry of `ignoreConsoleMessages` that matched it:
+Set `debug: true` to also log each ignored message, with the entry that matched it:
 
 ```ts
 failOnConsoleError({
@@ -117,12 +120,8 @@ failOnConsoleError({
 });
 ```
 
-![An ignored console.error and a failing one in the Cypress command log](./docs/debugTrue.png)
+<img src="./docs/debugTrue.png" width="448" alt="An ignored console.error and a failing one in the Cypress command log">
 
 ## Contributing
 
-1. Open an issue that describes the problem and the expected behaviour.
-2. Install dependencies with `npm ci`. The e2e and component tests run Cypress in Chrome, so Chrome must be installed.
-3. Make your change in `src/` (`index.ts` for the public API, `internal.ts` for the helpers behind it) and run `npm run build`. The tests run against `dist/`, which is committed.
-4. Run `npm run verify` (build, type check, format check, unit, e2e and component tests). It must pass.
-5. Open a PR with the implementation and tests. Don't change the version in `package.json`: the maintainer releases from GitHub Actions, which increases the version.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
