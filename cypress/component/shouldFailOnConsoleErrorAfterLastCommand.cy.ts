@@ -5,7 +5,7 @@ describe('shouldFailOnConsoleErrorAfterLastCommand', () => {
         cy.mount(WithErrorAfterMount, 'with-error-after-mount');
     });
 
-    it('should throw AssertionError on console.error logged after the previous test ended', () => {
+    it('should pass although the previous test logged after its last command', () => {
         cy.wrap('next test');
     });
 

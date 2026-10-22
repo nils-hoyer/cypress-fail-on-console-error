@@ -3,7 +3,7 @@ describe('shouldFailOnConsoleErrorAfterLastCommand', () => {
         cy.visit('./cypress/fixtures/consoleErrorAfterLoad.html');
     });
 
-    it('should throw AssertionError on console.error logged after the previous test ended', () => {
+    it('should pass although the previous test logged after its last command', () => {
         cy.wrap('next test');
     });
 

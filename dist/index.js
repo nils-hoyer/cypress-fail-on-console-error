@@ -1,4 +1,4 @@
-import { checkConsoleCalls, compileConsoleMessages, consoleCallsToString, createConfig, createSpies, getConsoleCalls, isSameConsoleMessage, resetSpies, updateSpies, validateCommandArgument, validateConfig, } from './internal.js';
+import { checkConsoleCalls, compileConsoleMessages, consoleCallsToString, createConfig, createSpies, findIgnoringConsoleMessage, getConsoleCalls, isSameConsoleMessage, logConsoleCall, resetSpies, updateSpies, validateCommandArgument, validateConfig, } from './internal.js';
 // a console message failed the test, like a failed assertion. Named like chai's
 // AssertionError, so Cypress shows failures as before 6.0.
 class AssertionError extends Error {
@@ -23,8 +23,9 @@ export default function failOnConsoleError(_config = {}) {
     let autConsole;
     // calls from pages that unloaded before the check after the command
     let unloadedConsoleCalls = [];
+    // reported together at the end of the spec, see the after hook below
     let lateConsoleCalls = [];
-    // the test that ended last, until the next test starts
+    // the test that ended last, until the next test starts, with the patterns it ignored
     let endedTest;
     // a copy, so changes to it don't look like they were applied
     const getConfig = () => createConfig(config);
@@ -57,38 +58,45 @@ export default function failOnConsoleError(_config = {}) {
             spies = resetSpies(spies);
         return consoleCalls;
     };
-    // calls after a test's last command belong to that test. A failed test already
-    // shows its own error, so its calls are dropped.
+    // calls after a test's last command belong to that test, and are filtered with its
+    // patterns. A failed test already shows its own error, so its calls are dropped.
     const takeConsoleCallsOfEndedTest = () => {
         if (!endedTest)
             return;
-        const consoleCalls = takeConsoleCalls();
-        if (endedTest.passed && consoleCalls.length > 0) {
-            lateConsoleCalls.push({ title: endedTest.title, consoleCalls });
+        const { title, passed, compiledConsoleMessages } = endedTest;
+        const consoleCalls = takeConsoleCalls().filter((consoleCall) => !findIgnoringConsoleMessage(consoleCall, compiledConsoleMessages));
+        if (passed && consoleCalls.length > 0) {
+            lateConsoleCalls.push({
+                title,
+                consoleCalls,
+                compiledConsoleMessages,
+            });
         }
     };
     const checkConsole = () => {
         if (!spies)
             return;
-        // in a hook after the test, such as the after hook below
-        takeConsoleCallsOfEndedTest();
-        const failedLateConsoleCalls = lateConsoleCalls
-            .map(({ title, consoleCalls }) => ({
-            title,
-            consoleCalls: checkConsoleCalls(consoleCalls, compiledConsoleMessages, config.debug),
-        }))
-            .filter(({ consoleCalls }) => consoleCalls.length > 0);
-        lateConsoleCalls = [];
-        const consoleCalls = checkConsoleCalls(takeConsoleCalls(), compiledConsoleMessages, config.debug);
-        if (consoleCalls.length === 0 && failedLateConsoleCalls.length === 0) {
+        // in a hook after the test: failing it would skip the rest of the suite
+        if (endedTest) {
+            takeConsoleCallsOfEndedTest();
             return;
         }
+        const consoleCalls = checkConsoleCalls(takeConsoleCalls(), compiledConsoleMessages, config.debug);
+        if (consoleCalls.length === 0)
+            return;
+        throw new AssertionError(`cypress-fail-on-console-error:\n${consoleCallsToString(consoleCalls)}`);
+    };
+    const reportLateConsoleCalls = () => {
+        takeConsoleCallsOfEndedTest();
+        const reported = lateConsoleCalls;
+        lateConsoleCalls = [];
+        if (reported.length === 0)
+            return;
+        reported.forEach(({ consoleCalls, compiledConsoleMessages }) => consoleCalls.forEach((consoleCall) => logConsoleCall(consoleCall, compiledConsoleMessages)));
         throw new AssertionError([
             'cypress-fail-on-console-error:',
-            ...(consoleCalls.length > 0
-                ? [consoleCallsToString(consoleCalls)]
-                : []),
-            ...failedLateConsoleCalls.map(({ title, consoleCalls }) => `logged after the test "${title}" ended:\n${consoleCallsToString(consoleCalls)}`),
+            ...reported.map(({ title, consoleCalls }) => `logged after the test "${title}" ended:\n${consoleCallsToString(consoleCalls)}`),
+            'End these tests with an assertion that waits for the page, so that a message fails the test that logged it.',
         ].join('\n'));
     };
     if (Cypress.testingType === 'component') {
@@ -98,24 +106,25 @@ export default function failOnConsoleError(_config = {}) {
         Cypress.on('window:before:load', setSpies);
     }
     Cypress.on('command:end', checkConsole);
-    // a root hook, so it runs after the test's own afterEach hooks
+    // a root hook, so it runs after the afterEach hooks of the spec's suites. Root
+    // afterEach hooks registered later run after it, and only collect calls.
     afterEach(function () {
         var _a, _b;
         var _c;
         endedTest = {
-            title: (_c = (_a = this.currentTest) === null || _a === void 0 ? void 0 : _a.title) !== null && _c !== void 0 ? _c : '',
+            title: (_c = (_a = this.currentTest) === null || _a === void 0 ? void 0 : _a.fullTitle()) !== null && _c !== void 0 ? _c : '',
             passed: ((_b = this.currentTest) === null || _b === void 0 ? void 0 : _b.state) === 'passed',
+            compiledConsoleMessages,
         };
     });
-    // the next test's first check reports what the previous test logged after its last command
     Cypress.on('test:before:run', () => {
         takeConsoleCallsOfEndedTest();
         endedTest = undefined;
     });
-    // no test follows the last one, so check its calls here. A failed after hook
-    // at the end of the spec doesn't skip any tests.
+    // the calls of all tests after their last command, reported once at the end of the
+    // spec: Cypress doesn't retry an after hook, and no tests are left to skip
     after(() => {
-        cy.wrap(null, { log: false });
+        cy.then(reportLateConsoleCalls);
     });
     Cypress.on('test:after:run', () => {
         setConfig(originConfig);

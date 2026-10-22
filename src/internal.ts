@@ -216,68 +216,60 @@ export const compileConsoleMessages = (
             : { consoleMessage, regExp: toRegExp(consoleMessage) }
     );
 
-// the watched console methods, with the calls made since the last reset
+// the plugin's functions on one console, with the calls made since the last reset
 export interface ConsoleSpies {
-    // puts back the original method of each watched console type
-    restores: Map<ConsoleType, () => void>;
+    // the console types whose calls are recorded
+    watched: Set<ConsoleType>;
+    // the console types that have the plugin's function, for the life of the console
+    wrapped: Set<ConsoleType>;
     // the calls of all watched methods, in the order the app made them
     calls: { type: ConsoleType; args: any[] }[];
 }
 
 // a plain function, not a sinon spy: sinon refuses to wrap a method twice, so
 // users couldn't cy.spy() or cy.stub() the console. A cy.spy() on top calls
-// through to this function, a cy.stub() replaces it.
+// through to this function, a cy.stub() replaces it. It is never removed:
+// restoring a user's spy puts back the function that was there when the spy
+// was created, which would drop any function the plugin added later.
 const spyOn = (
     spies: ConsoleSpies,
     console: Console,
     consoleType: ConsoleType
-): (() => void) => {
+): void => {
     const original = console[consoleType] as (...args: any[]) => void;
-    let watching = true;
-    const spy = function (this: unknown, ...args: any[]) {
-        if (watching) spies.calls.push({ type: consoleType, args });
+    (console as any)[consoleType] = function (this: unknown, ...args: any[]) {
+        if (spies.watched.has(consoleType)) {
+            spies.calls.push({ type: consoleType, args });
+        }
         return original?.apply(this, args);
     };
-    (console as any)[consoleType] = spy;
-    return () => {
-        watching = false;
-        // a spy that was put on top still calls this one, so leave it in place
-        if (console[consoleType] === spy) {
-            (console as any)[consoleType] = original;
-        }
-    };
+    spies.wrapped.add(consoleType);
 };
 
-export const createSpies = (
-    config: ResolvedConfig,
-    console: Console
-): ConsoleSpies => {
-    const spies: ConsoleSpies = { restores: new Map(), calls: [] };
-    config.consoleTypes.forEach((consoleType) => {
-        spies.restores.set(consoleType, spyOn(spies, console, consoleType));
-    });
-    return spies;
-};
-
-// keeps the spies, and their calls, of the console types that are still watched
+// records the calls of config.consoleTypes, keeping the calls of the types that are still watched
 export const updateSpies = (
     spies: ConsoleSpies,
     config: ResolvedConfig,
     console: Console
 ): ConsoleSpies => {
-    spies.restores.forEach((restore, consoleType) => {
-        if (!config.consoleTypes.includes(consoleType)) {
-            restore();
-            spies.restores.delete(consoleType);
-        }
-    });
+    spies.watched = new Set(config.consoleTypes);
     config.consoleTypes.forEach((consoleType) => {
-        if (!spies.restores.has(consoleType)) {
-            spies.restores.set(consoleType, spyOn(spies, console, consoleType));
+        if (!spies.wrapped.has(consoleType)) {
+            spyOn(spies, console, consoleType);
         }
     });
     return spies;
 };
+
+export const createSpies = (
+    config: ResolvedConfig,
+    console: Console
+): ConsoleSpies =>
+    updateSpies(
+        { watched: new Set(), wrapped: new Set(), calls: [] },
+        config,
+        console
+    );
 
 export const resetSpies = (spies: ConsoleSpies): ConsoleSpies => {
     spies.calls = [];
@@ -370,31 +362,37 @@ const isMap = (value: unknown): value is Map<unknown, unknown> =>
     Object.prototype.toString.call(value) === '[object Map]';
 const isSet = (value: unknown): value is Set<unknown> =>
     Object.prototype.toString.call(value) === '[object Set]';
+// cloneNode, so that data like { nodeType: 1 } isn't taken for a node
 const isNode = (value: any): value is Node =>
-    typeof value?.nodeType === 'number' && typeof value?.nodeName === 'string';
+    typeof value?.nodeType === 'number' &&
+    typeof value?.nodeName === 'string' &&
+    typeof value?.cloneNode === 'function';
 
-// an element as its opening tag, as the browser console shows it collapsed: <div id="app">
+// a node as the browser console shows it collapsed: an element as its opening
+// tag, <div id="app">, text as a string and a comment as <!--…-->
 const nodeToString = (node: Node): string => {
-    if (node.nodeType !== 1) return node.nodeName;
-    const attributes = Array.from(
-        (node as Element).attributes,
-        ({ name, value }) => ` ${name}="${value}"`
-    ).join('');
-    return `<${node.nodeName.toLowerCase()}${attributes}>`;
+    switch (node.nodeType) {
+        case 1:
+            return `<${node.nodeName.toLowerCase()}${Array.from(
+                (node as Element).attributes,
+                ({ name, value }) =>
+                    ` ${name}="${value.replace(/"/g, '&quot;')}"`
+            ).join('')}>`;
+        case 3:
+            return JSON.stringify(node.textContent);
+        case 8:
+            return `<!--${node.textContent}-->`;
+        default:
+            return node.nodeName;
+    }
 };
 
-// JSON.stringify turns Maps, Sets and DOM nodes into {}
+// JSON.stringify turns Maps, Sets and DOM nodes into {}. A Map becomes its
+// entries, so keys keep their order and type and go through the same
+// detection of circular references as values.
 const toJsonValue = (value: object): unknown => {
     if (isNode(value)) return nodeToString(value);
-    if (isMap(value)) {
-        return Object.fromEntries(
-            Array.from(value, ([key, entry]) => [
-                typeof key === 'string' ? key : stringify(key),
-                entry,
-            ])
-        );
-    }
-    if (isSet(value)) return Array.from(value);
+    if (isMap(value) || isSet(value)) return Array.from(value);
     return value;
 };
 
@@ -445,11 +443,20 @@ const errorToString = (error: Error & { stack: string }): string => {
 
 const argumentToString = (argument: any): string => {
     if (typeof argument === 'string') return argument;
-    if (typeof argument?.stack === 'string') return errorToString(argument);
-    if (isNode(argument)) return nodeToString(argument);
-    if (isMap(argument)) return `Map(${argument.size}) ${stringify(argument)}`;
-    if (isSet(argument)) return `Set(${argument.size}) ${stringify(argument)}`;
-    return stringify(argument?.stack ?? argument);
+    // a value that only looks like a node, Map or Set, such as a Proxy, can throw
+    try {
+        if (typeof argument?.stack === 'string') return errorToString(argument);
+        if (isNode(argument)) return nodeToString(argument);
+        if (isMap(argument)) {
+            return `Map(${argument.size}) ${stringify(argument)}`;
+        }
+        if (isSet(argument)) {
+            return `Set(${argument.size}) ${stringify(argument)}`;
+        }
+        return stringify(argument?.stack ?? argument);
+    } catch {
+        return Object.prototype.toString.call(argument);
+    }
 };
 
 const formatSpecifierToString = (specifier: string, argument: any): string => {
