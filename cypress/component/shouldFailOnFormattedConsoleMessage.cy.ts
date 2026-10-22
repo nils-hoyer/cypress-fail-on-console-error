@@ -1,4 +1,4 @@
-import { WithFormattedError } from './customComponents';
+import { WithFormattedError, WithValuesError } from './customComponents';
 
 describe('shouldFailOnFormattedConsoleMessage', () => {
     it('should throw AssertionError with the format specifiers filled in', () => {
@@ -12,5 +12,9 @@ describe('shouldFailOnFormattedConsoleMessage', () => {
             ],
         });
         cy.mount(WithFormattedError, 'with-formatted-error');
+    });
+
+    it('should throw AssertionError with %%, DOM elements, Maps and Sets as the browser shows them', () => {
+        cy.mount(WithValuesError, 'with-values-error');
     });
 });

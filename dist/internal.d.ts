@@ -17,18 +17,26 @@ export interface CompiledConsoleMessage {
     regExp: RegExp;
 }
 export declare const isSameConsoleMessage: (a: ConsoleMessage, b: ConsoleMessage) => boolean;
+export declare const validateCommandArgument: (command: string, ignoreConsoleMessages: unknown) => void;
 export declare const validateConfig: (config: Config) => void;
 export declare const createConfig: (config: Config) => ResolvedConfig;
 export declare const compileConsoleMessages: (consoleMessages: ConsoleMessage[]) => CompiledConsoleMessage[];
-export declare const createSpies: (config: ResolvedConfig, console: Console) => Map<ConsoleType, sinon.SinonSpy>;
-export declare const updateSpies: (spies: Map<ConsoleType, sinon.SinonSpy>, config: ResolvedConfig, console: Console) => Map<ConsoleType, sinon.SinonSpy>;
-export declare const resetSpies: (spies: Map<ConsoleType, sinon.SinonSpy>) => Map<ConsoleType, sinon.SinonSpy>;
+export interface ConsoleSpies {
+    restores: Map<ConsoleType, () => void>;
+    calls: {
+        type: ConsoleType;
+        args: any[];
+    }[];
+}
+export declare const createSpies: (config: ResolvedConfig, console: Console) => ConsoleSpies;
+export declare const updateSpies: (spies: ConsoleSpies, config: ResolvedConfig, console: Console) => ConsoleSpies;
+export declare const resetSpies: (spies: ConsoleSpies) => ConsoleSpies;
 export interface ConsoleCall {
     type: ConsoleType;
     args: any[];
     message: string;
 }
-export declare const getConsoleCalls: (spies: Map<ConsoleType, sinon.SinonSpy>) => ConsoleCall[];
+export declare const getConsoleCalls: (spies: ConsoleSpies) => ConsoleCall[];
 export declare const findIgnoringConsoleMessage: (consoleCall: ConsoleCall, compiledConsoleMessages: CompiledConsoleMessage[]) => CompiledConsoleMessage | undefined;
 export declare const checkConsoleCalls: (consoleCalls: ConsoleCall[], compiledConsoleMessages: CompiledConsoleMessage[], debug: boolean) => ConsoleCall[];
 export declare const consoleCallsToString: (consoleCalls: ConsoleCall[]) => string;

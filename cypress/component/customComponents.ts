@@ -105,6 +105,17 @@ export class WithFormattedError extends HTMLElement {
     }
 }
 
+export class WithValuesError extends HTMLElement {
+    connectedCallback() {
+        console.error(
+            'Upload: 100%% done',
+            this,
+            new Map([['user', 42]]),
+            new Set(['a'])
+        );
+    }
+}
+
 export class WithErrorAfterMount extends HTMLElement {
     connectedCallback() {
         setTimeout(() => {
