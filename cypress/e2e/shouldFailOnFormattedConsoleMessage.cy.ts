@@ -11,4 +11,8 @@ describe('shouldFailOnFormattedConsoleMessage', () => {
         });
         cy.visit('./cypress/fixtures/consoleErrorWithFormat.html');
     });
+
+    it('should throw AssertionError with %%, DOM elements, Maps and Sets as the browser shows them', () => {
+        cy.visit('./cypress/fixtures/consoleErrorWithValues.html');
+    });
 });

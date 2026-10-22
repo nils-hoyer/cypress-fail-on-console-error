@@ -1,3 +1,5 @@
+import failOnConsoleError from '../../dist/index';
+
 describe('shouldFailOnConsoleErrorFromSetConfig', () => {
     it('should pass with getIgnoredConsoleMessages', () => {
         cy.getIgnoredConsoleMessages().then((ignoreConsoleMessages) => {
@@ -45,5 +47,17 @@ describe('shouldFailOnConsoleErrorFromSetConfig', () => {
 
     it('should throw an Error on the renamed consoleMessages option', () => {
         cy.setConfig({ consoleMessages: ['errorNotExcluded'] } as any);
+    });
+
+    it('should throw an Error when addIgnoredConsoleMessages gets a string', () => {
+        cy.addIgnoredConsoleMessages('errorNotExcluded' as any);
+    });
+
+    it('should throw an Error when deleteIgnoredConsoleMessages gets a string', () => {
+        cy.deleteIgnoredConsoleMessages('secondErrorExcluded' as any);
+    });
+
+    it('should throw an Error when failOnConsoleError is called twice', () => {
+        failOnConsoleError();
     });
 });

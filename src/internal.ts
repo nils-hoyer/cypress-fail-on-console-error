@@ -68,6 +68,18 @@ const invalidConfig = (message: string): never => {
     throw new Error(`cypress-fail-on-console-error: ${message}`);
 };
 
+// plain JavaScript can pass a string, which would be spread into single characters
+export const validateCommandArgument = (
+    command: string,
+    ignoreConsoleMessages: unknown
+): void => {
+    if (!Array.isArray(ignoreConsoleMessages)) {
+        invalidConfig(
+            `cy.${command}() expects an array, got ${typeName(ignoreConsoleMessages)}`
+        );
+    }
+};
+
 const isPattern = (value: unknown): value is string | RegExp =>
     typeof value === 'string' || value instanceof RegExp;
 
@@ -204,39 +216,71 @@ export const compileConsoleMessages = (
             : { consoleMessage, regExp: toRegExp(consoleMessage) }
     );
 
+// the watched console methods, with the calls made since the last reset
+export interface ConsoleSpies {
+    // puts back the original method of each watched console type
+    restores: Map<ConsoleType, () => void>;
+    // the calls of all watched methods, in the order the app made them
+    calls: { type: ConsoleType; args: any[] }[];
+}
+
+// a plain function, not a sinon spy: sinon refuses to wrap a method twice, so
+// users couldn't cy.spy() or cy.stub() the console. A cy.spy() on top calls
+// through to this function, a cy.stub() replaces it.
+const spyOn = (
+    spies: ConsoleSpies,
+    console: Console,
+    consoleType: ConsoleType
+): (() => void) => {
+    const original = console[consoleType] as (...args: any[]) => void;
+    let watching = true;
+    const spy = function (this: unknown, ...args: any[]) {
+        if (watching) spies.calls.push({ type: consoleType, args });
+        return original?.apply(this, args);
+    };
+    (console as any)[consoleType] = spy;
+    return () => {
+        watching = false;
+        // a spy that was put on top still calls this one, so leave it in place
+        if (console[consoleType] === spy) {
+            (console as any)[consoleType] = original;
+        }
+    };
+};
+
 export const createSpies = (
     config: ResolvedConfig,
     console: Console
-): Map<ConsoleType, sinon.SinonSpy> => {
-    let spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-    config.consoleTypes?.forEach((consoleType) => {
-        //TODO: function table does not exists on node.Console
-        spies.set(consoleType, Cypress.sinon.spy(console, consoleType as any));
+): ConsoleSpies => {
+    const spies: ConsoleSpies = { restores: new Map(), calls: [] };
+    config.consoleTypes.forEach((consoleType) => {
+        spies.restores.set(consoleType, spyOn(spies, console, consoleType));
     });
     return spies;
 };
 
 // keeps the spies, and their calls, of the console types that are still watched
 export const updateSpies = (
-    spies: Map<ConsoleType, sinon.SinonSpy>,
+    spies: ConsoleSpies,
     config: ResolvedConfig,
     console: Console
-): Map<ConsoleType, sinon.SinonSpy> => {
-    spies.forEach((spy, consoleType) => {
-        if (!config.consoleTypes.includes(consoleType)) spy.restore();
+): ConsoleSpies => {
+    spies.restores.forEach((restore, consoleType) => {
+        if (!config.consoleTypes.includes(consoleType)) {
+            restore();
+            spies.restores.delete(consoleType);
+        }
     });
-    return new Map(
-        config.consoleTypes.map((consoleType) => [
-            consoleType,
-            spies.get(consoleType) ?? Cypress.sinon.spy(console, consoleType),
-        ])
-    );
+    config.consoleTypes.forEach((consoleType) => {
+        if (!spies.restores.has(consoleType)) {
+            spies.restores.set(consoleType, spyOn(spies, console, consoleType));
+        }
+    });
+    return spies;
 };
 
-export const resetSpies = (
-    spies: Map<ConsoleType, sinon.SinonSpy>
-): Map<ConsoleType, sinon.SinonSpy> => {
-    spies.forEach((spy) => spy.resetHistory());
+export const resetSpies = (spies: ConsoleSpies): ConsoleSpies => {
+    spies.calls = [];
     return spies;
 };
 
@@ -248,15 +292,9 @@ export interface ConsoleCall {
 }
 
 // every call since the spies were last reset, in the order the app made them
-export const getConsoleCalls = (
-    spies: Map<ConsoleType, sinon.SinonSpy>
-): ConsoleCall[] =>
-    Array.from(spies.entries())
-        .flatMap(([type, spy]) =>
-            spy.getCalls().map((spyCall) => ({ type, spyCall }))
-        )
-        .sort((a, b) => (a.spyCall.calledBefore(b.spyCall) ? -1 : 1))
-        .map(({ type, spyCall }) => toConsoleCall(type, spyCall.args))
+export const getConsoleCalls = (spies: ConsoleSpies): ConsoleCall[] =>
+    spies.calls
+        .map(({ type, args }) => toConsoleCall(type, args))
         .filter((consoleCall) => consoleCall !== undefined);
 
 // console.assert only logs when its first argument is falsy, and logs the remaining arguments
@@ -327,9 +365,44 @@ export const isConsoleMessageExcluded = (
     return configConsoleMessageRegExp.test(consoleMessage);
 };
 
+// instanceof doesn't work for values from the application's window, which is another realm
+const isMap = (value: unknown): value is Map<unknown, unknown> =>
+    Object.prototype.toString.call(value) === '[object Map]';
+const isSet = (value: unknown): value is Set<unknown> =>
+    Object.prototype.toString.call(value) === '[object Set]';
+const isNode = (value: any): value is Node =>
+    typeof value?.nodeType === 'number' && typeof value?.nodeName === 'string';
+
+// an element as its opening tag, as the browser console shows it collapsed: <div id="app">
+const nodeToString = (node: Node): string => {
+    if (node.nodeType !== 1) return node.nodeName;
+    const attributes = Array.from(
+        (node as Element).attributes,
+        ({ name, value }) => ` ${name}="${value}"`
+    ).join('');
+    return `<${node.nodeName.toLowerCase()}${attributes}>`;
+};
+
+// JSON.stringify turns Maps, Sets and DOM nodes into {}
+const toJsonValue = (value: object): unknown => {
+    if (isNode(value)) return nodeToString(value);
+    if (isMap(value)) {
+        return Object.fromEntries(
+            Array.from(value, ([key, entry]) => [
+                typeof key === 'string' ? key : stringify(key),
+                entry,
+            ])
+        );
+    }
+    if (isSet(value)) return Array.from(value);
+    return value;
+};
+
 // JSON.stringify throws on circular references and BigInts, which apps can pass to console methods
 const stringify = (value: unknown): string => {
+    // the objects on the path to the current value, as JSON.stringify sees them and as they were passed
     const ancestors: unknown[] = [];
+    const originals: unknown[] = [];
     try {
         return String(
             JSON.stringify(
@@ -345,10 +418,13 @@ const stringify = (value: unknown): string => {
                         ancestors[ancestors.length - 1] !== this
                     ) {
                         ancestors.pop();
+                        originals.pop();
                     }
-                    if (ancestors.indexOf(_value) !== -1) return '[Circular]';
-                    ancestors.push(_value);
-                    return _value;
+                    if (originals.indexOf(_value) !== -1) return '[Circular]';
+                    const jsonValue = toJsonValue(_value);
+                    ancestors.push(jsonValue);
+                    originals.push(_value);
+                    return jsonValue;
                 }
             )
         );
@@ -370,6 +446,9 @@ const errorToString = (error: Error & { stack: string }): string => {
 const argumentToString = (argument: any): string => {
     if (typeof argument === 'string') return argument;
     if (typeof argument?.stack === 'string') return errorToString(argument);
+    if (isNode(argument)) return nodeToString(argument);
+    if (isMap(argument)) return `Map(${argument.size}) ${stringify(argument)}`;
+    if (isSet(argument)) return `Set(${argument.size}) ${stringify(argument)}`;
     return stringify(argument?.stack ?? argument);
 };
 
@@ -393,15 +472,17 @@ const formatSpecifierToString = (specifier: string, argument: any): string => {
 };
 
 // fills in format specifiers as the browser does, so console.error('Warning: %s is deprecated', 'componentWillMount')
-// becomes "Warning: componentWillMount is deprecated". Arguments left over are appended.
+// becomes "Warning: componentWillMount is deprecated". Arguments left over are appended. Like DevTools,
+// %% becomes % even without arguments.
 const formatArguments = (args: any[]): any[] => {
     const [format, ...rest] = args;
-    if (typeof format !== 'string' || rest.length === 0) return args;
-    const formatted = format.replace(/%[sdifoOc]/g, (specifier) =>
-        rest.length === 0
+    if (typeof format !== 'string') return args;
+    const formatted = format.replace(/%[%sdifoOc]/g, (specifier) => {
+        if (specifier === '%%') return '%';
+        return rest.length === 0
             ? specifier
-            : formatSpecifierToString(specifier, rest.shift())
-    );
+            : formatSpecifierToString(specifier, rest.shift());
+    });
     return [formatted, ...rest];
 };
 

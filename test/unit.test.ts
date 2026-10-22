@@ -23,15 +23,29 @@ import {
     logIgnoredConsoleCall,
     resetSpies,
     updateSpies,
+    validateCommandArgument,
     validateConfig,
 } from '../dist/internal';
 
-import { describe, expect, it, afterEach, vi, chai } from 'vitest';
+import { describe, expect, it, afterEach, beforeEach, vi, chai } from 'vitest';
 
 chai.use(sinonChai);
 
 //@ts-ignore
 global['Cypress'] = { on: (f, s) => true, sinon };
+
+// Mocha's root hooks, which the plugin registers from the support file
+const hooks = new Map<string, ((this: any) => void)[]>();
+['before', 'afterEach', 'after'].forEach((name) => {
+    (globalThis as any)[name] = (fn: () => void) =>
+        hooks.set(name, [...(hooks.get(name) ?? []), fn]);
+});
+
+// failOnConsoleError() may only be called once per spec
+beforeEach(() => {
+    delete (Cypress as any)[Symbol.for('cypress-fail-on-console-error')];
+    hooks.clear();
+});
 
 // config mistakes throw a plain Error, not an AssertionError
 const expectConfigError = (fn: () => void, message: string | RegExp) =>
@@ -49,6 +63,15 @@ describe('failOnConsoleError()', () => {
 
     it('WHEN failOnConsoleError is created with no Config THEN expect no error', () => {
         failOnConsoleError();
+    });
+
+    it('WHEN failOnConsoleError is called twice THEN throw', () => {
+        failOnConsoleError();
+
+        expectConfigError(
+            () => failOnConsoleError(),
+            'cypress-fail-on-console-error: failOnConsoleError() was called more than once. Call it once, in your support file.'
+        );
     });
 
     it('WHEN the plugin is imported THEN it only exports the public API', () => {
@@ -107,21 +130,33 @@ describe('setConfig()', () => {
         expect(givenConfig.debug).to.deep.equal(true);
     });
 
-    it('WHEN getConfig().ignoreConsoleMessages is changed in a test THEN restore the config after the test', () => {
-        const on = sinon.spy(Cypress, 'on');
+    it('WHEN the config returned by getConfig is changed THEN neither the config nor the object passed in change', () => {
         const config: Config = { ignoreConsoleMessages: ['foo'] };
         const { getConfig } = failOnConsoleError(config);
+
+        getConfig().ignoreConsoleMessages.push('bar');
+        getConfig().consoleTypes.push('warn');
+
+        expect(getConfig().ignoreConsoleMessages).to.deep.equal(['foo']);
+        expect(getConfig().consoleTypes).to.deep.equal(['error']);
+        expect(config.ignoreConsoleMessages).to.deep.equal(['foo']);
+    });
+
+    it('WHEN setConfig is called in a test THEN restore the config after the test', () => {
+        const on = sinon.spy(Cypress, 'on');
+        const { getConfig, setConfig } = failOnConsoleError({
+            ignoreConsoleMessages: ['foo'],
+        });
         const testAfterRun = on
             .getCalls()
             .find((call) => call.args[0] === 'test:after:run')
             ?.args[1] as () => void;
         on.restore();
 
-        getConfig().ignoreConsoleMessages.push('bar');
+        setConfig({ ignoreConsoleMessages: ['bar'] });
         testAfterRun();
 
         expect(getConfig().ignoreConsoleMessages).to.deep.equal(['foo']);
-        expect(config.ignoreConsoleMessages).to.deep.equal(['foo']);
     });
 
     it('WHEN setConfig is called with an unknown option THEN throw and keep the config', () => {
@@ -165,37 +200,41 @@ describe('setConfig() with consoleTypes', () => {
 
         expect(console.error).to.equal(original.error);
         expect(console.warn).not.to.equal(original.warn);
-        expect((console.warn as sinon.SinonSpy).called).to.be.false;
     });
 });
 
-describe('window:before:load', () => {
+describe('checks between commands and tests', () => {
     afterEach(() => {
         delete (Cypress as any).testingType;
         delete (Cypress as any).log;
+        vi.unstubAllGlobals();
         sinon.restore();
     });
 
     // the plugin's listeners, by event name
-    const createPlugin = () => {
+    const createPlugin = (config: Config = {}) => {
         Cypress.testingType = 'e2e';
         (Cypress as any).log = () => {};
         const on = sinon.spy(Cypress, 'on');
-        failOnConsoleError();
+        failOnConsoleError(config);
         on.restore();
         return (event: string) =>
             on.getCalls().find((call) => call.args[0] === event)?.args[1] as (
                 ...args: any[]
             ) => void;
     };
+    const createPage = () => ({ console: { error: (..._: any[]) => {} } });
+    // runs the plugin's root afterEach hook for a test
+    const endTest = (title: string, state: 'passed' | 'failed') =>
+        hooks.get('afterEach')![0].call({ currentTest: { title, state } });
 
     it('WHEN the page logs and then navigates before the check THEN the check includes the calls of the previous page', () => {
         const listener = createPlugin();
-        const previousPage = { console: { error: (..._: any[]) => {} } };
+        const previousPage = createPage();
         listener('window:before:load')(previousPage);
         previousPage.console.error('errorBeforeNavigation');
 
-        listener('window:before:load')({ console: { error: () => {} } });
+        listener('window:before:load')(createPage());
 
         expect(() => listener('command:end')()).to.throw(
             'console.error: errorBeforeNavigation'
@@ -203,16 +242,92 @@ describe('window:before:load', () => {
         expect(() => listener('command:end')()).not.to.throw();
     });
 
-    it('WHEN the test ends before the check THEN the calls of the previous page are dropped', () => {
+    it('WHEN a passed test logs after its last check THEN the first check of the next test fails with the title of that test', () => {
         const listener = createPlugin();
-        const previousPage = { console: { error: (..._: any[]) => {} } };
-        listener('window:before:load')(previousPage);
-        previousPage.console.error('errorBeforeNavigation');
-        listener('window:before:load')({ console: { error: () => {} } });
+        const page = createPage();
+        listener('window:before:load')(page);
+        page.console.error('errorAfterLastCommand');
+        endTest('should load', 'passed');
+        page.console.error('errorBetweenTests');
 
-        listener('test:after:run')();
+        listener('test:before:run')();
+
+        expect(() => listener('command:end')()).to.throw(
+            'cypress-fail-on-console-error:\nlogged after the test "should load" ended:\nconsole.error: errorAfterLastCommand\nconsole.error: errorBetweenTests'
+        );
+        expect(() => listener('command:end')()).not.to.throw();
+    });
+
+    it('WHEN the next test logs too THEN list its calls before those of the previous test', () => {
+        const listener = createPlugin();
+        const page = createPage();
+        listener('window:before:load')(page);
+        page.console.error('errorAfterLastCommand');
+        endTest('should load', 'passed');
+        listener('test:before:run')();
+
+        page.console.error('errorInNextTest');
+
+        expect(() => listener('command:end')()).to.throw(
+            'cypress-fail-on-console-error:\nconsole.error: errorInNextTest\nlogged after the test "should load" ended:\nconsole.error: errorAfterLastCommand'
+        );
+    });
+
+    it('WHEN a passed test logs after its last check from a page that unloaded THEN the next test reports it', () => {
+        const listener = createPlugin();
+        const page = createPage();
+        listener('window:before:load')(page);
+        page.console.error('errorAfterLastCommand');
+        endTest('should load', 'passed');
+
+        listener('window:before:load')(createPage());
+        listener('test:before:run')();
+
+        expect(() => listener('command:end')()).to.throw(
+            'logged after the test "should load" ended:\nconsole.error: errorAfterLastCommand'
+        );
+    });
+
+    it('WHEN the calls after the last check are ignored THEN the next test does not fail', () => {
+        const listener = createPlugin({ ignoreConsoleMessages: ['ignored'] });
+        const page = createPage();
+        listener('window:before:load')(page);
+        page.console.error('ignored');
+        endTest('should load', 'passed');
+        listener('test:before:run')();
 
         expect(() => listener('command:end')()).not.to.throw();
+    });
+
+    it('WHEN a test fails before the check THEN its remaining calls are dropped', () => {
+        const listener = createPlugin();
+        const previousPage = createPage();
+        listener('window:before:load')(previousPage);
+        previousPage.console.error('errorBeforeNavigation');
+        listener('window:before:load')(createPage());
+        previousPage.console.error('errorAfterNavigation');
+
+        endTest('should load', 'failed');
+        listener('test:before:run')();
+
+        expect(() => listener('command:end')()).not.to.throw();
+    });
+
+    it('WHEN the last test logs after its last check THEN the after hook fails with the title of that test', () => {
+        const wrap = vi.fn();
+        vi.stubGlobal('cy', { wrap });
+        const listener = createPlugin();
+        const page = createPage();
+        listener('window:before:load')(page);
+        page.console.error('errorAfterLastCommand');
+        endTest('should load', 'passed');
+
+        hooks.get('after')![0]();
+
+        expect(wrap).toHaveBeenCalledWith(null, { log: false });
+        expect(() => listener('command:end')()).to.throw(
+            'cypress-fail-on-console-error:\nlogged after the test "should load" ended:\nconsole.error: errorAfterLastCommand'
+        );
     });
 });
 
@@ -238,6 +353,8 @@ describe('addIgnoredConsoleMessagesCommands()', () => {
         });
 
         expect(commands.getIgnoredConsoleMessages()).to.deep.equal(['foo']);
+        commands.getIgnoredConsoleMessages().push('changed');
+        expect(getConfig().ignoreConsoleMessages).to.deep.equal(['foo']);
         commands.addIgnoredConsoleMessages([/bar/]);
         expect(getConfig().ignoreConsoleMessages).to.deep.equal(['foo', /bar/]);
         commands.setIgnoredConsoleMessages(['baz']);
@@ -266,6 +383,37 @@ describe('addIgnoredConsoleMessagesCommands()', () => {
             'foo',
             { type: 'error', message: /baz/ },
         ]);
+    });
+
+    it('WHEN a command is called with a string instead of an array THEN throw and keep the config', () => {
+        const { commands, getConfig } = addCommands({
+            ignoreConsoleMessages: ['foo'],
+        });
+
+        [
+            'setIgnoredConsoleMessages',
+            'addIgnoredConsoleMessages',
+            'deleteIgnoredConsoleMessages',
+        ].forEach((command) =>
+            expectConfigError(
+                () => commands[command]('Database exploded'),
+                `cypress-fail-on-console-error: cy.${command}() expects an array, got string`
+            )
+        );
+        expect(getConfig().ignoreConsoleMessages).to.deep.equal(['foo']);
+    });
+});
+
+describe('validateCommandArgument()', () => {
+    it('WHEN the argument is an array THEN do not throw', () => {
+        validateCommandArgument('addIgnoredConsoleMessages', []);
+    });
+
+    it('WHEN the argument is not an array THEN name the command and the type', () => {
+        expectConfigError(
+            () => validateCommandArgument('addIgnoredConsoleMessages', null),
+            'cypress-fail-on-console-error: cy.addIgnoredConsoleMessages() expects an array, got null'
+        );
     });
 });
 
@@ -551,7 +699,7 @@ describe('validateConfig()', () => {
 });
 
 describe('createSpies()', () => {
-    it('WHEN consoleTypes THEN create createSpies map', () => {
+    it('WHEN consoleTypes THEN watch each console method and record its calls', () => {
         const config = createConfig({
             consoleTypes: [
                 'info',
@@ -564,32 +712,72 @@ describe('createSpies()', () => {
                 'assert',
             ],
         });
-        const console: any = {
-            info: () => true,
-            warn: () => true,
-            error: () => true,
-            debug: () => true,
-            trace: () => true,
-            table: () => true,
-            log: () => true,
-            assert: () => true,
-        };
+        const original = vi.fn();
+        const console: any = {};
+        config.consoleTypes.forEach((type) => (console[type] = original));
 
         const spies = createSpies(config, console);
+        config.consoleTypes.forEach((type) => console[type](type));
 
-        const spiesIterator = spies.keys();
-        expect(Array.from(spiesIterator)).to.deep.equal(config.consoleTypes);
+        expect(Array.from(spies.restores.keys())).to.deep.equal(
+            config.consoleTypes
+        );
+        expect(spies.calls).to.deep.equal(
+            config.consoleTypes.map((type) => ({ type, args: [type] }))
+        );
+        expect(original).toHaveBeenCalledTimes(config.consoleTypes.length);
     });
 
-    it('WHEN consoleTypes contains duplicates THEN create one spy per type', () => {
+    it('WHEN the console method is called THEN call the original with the same this and arguments and return its result', () => {
+        const console: any = {
+            error(this: unknown, ...args: any[]) {
+                return { self: this, args };
+            },
+        };
+        createSpies(createConfig({}), console);
+
+        expect(console.error('foo', 1)).to.deep.equal({
+            self: console,
+            args: ['foo', 1],
+        });
+    });
+
+    it('WHEN consoleTypes contains duplicates THEN watch each method once', () => {
         const console: any = { error: () => true };
 
         const spies = createSpies(
             createConfig({ consoleTypes: ['error', 'error'] }),
             console
         );
+        console.error('foo');
 
-        expect(spies.size).to.equal(1);
+        expect(spies.restores.size).to.equal(1);
+        expect(spies.calls).to.have.length(1);
+    });
+
+    it('WHEN a sinon spy wraps the console method THEN it calls through and the call is recorded', () => {
+        const console: any = { error: () => true };
+        const spies = createSpies(createConfig({}), console);
+
+        const userSpy = sinon.spy(console, 'error');
+        console.error('foo');
+
+        expect(userSpy).to.have.been.calledWith('foo');
+        expect(spies.calls).to.deep.equal([{ type: 'error', args: ['foo'] }]);
+        userSpy.restore();
+    });
+
+    it('WHEN a sinon stub replaces the console method THEN the call is not recorded', () => {
+        const console: any = { error: () => true };
+        const spies = createSpies(createConfig({}), console);
+
+        const userStub = sinon.stub(console, 'error');
+        console.error('foo');
+        userStub.restore();
+        console.error('bar');
+
+        expect(userStub).to.have.been.calledWith('foo');
+        expect(spies.calls).to.deep.equal([{ type: 'error', args: ['bar'] }]);
     });
 });
 
@@ -605,7 +793,7 @@ describe('updateSpies()', () => {
             createConfig({ consoleTypes: ['error', 'warn'] }),
             console
         );
-        const errorSpy = spies.get('error');
+        const errorSpy = console.error;
         console.error('foo');
 
         const updated = updateSpies(
@@ -613,39 +801,60 @@ describe('updateSpies()', () => {
             createConfig({ consoleTypes: ['error', 'info'] }),
             console
         );
+        console.warn('not watched');
+        console.info('bar');
 
-        expect(Array.from(updated.keys())).to.deep.equal(['error', 'info']);
-        expect(updated.get('error')).to.equal(errorSpy);
-        expect(updated.get('error')).to.have.been.calledWith('foo');
+        expect(Array.from(updated.restores.keys())).to.deep.equal([
+            'error',
+            'info',
+        ]);
+        expect(console.error).to.equal(errorSpy);
         expect(console.warn).to.equal(original.warn);
-        expect(console.info).to.equal(updated.get('info'));
+        expect(console.info).not.to.equal(original.info);
+        expect(updated.calls).to.deep.equal([
+            { type: 'error', args: ['foo'] },
+            { type: 'info', args: ['bar'] },
+        ]);
+    });
+
+    it('WHEN a removed console method was wrapped by another spy THEN keep that spy and stop recording', () => {
+        const console: any = { error: () => true, warn: () => true };
+        const spies = createSpies(createConfig({}), console);
+        const userSpy = sinon.spy(console, 'error');
+
+        updateSpies(spies, createConfig({ consoleTypes: ['warn'] }), console);
+        console.error('foo');
+
+        expect(console.error).to.equal(userSpy);
+        expect(userSpy).to.have.been.calledWith('foo');
+        expect(spies.calls).to.deep.equal([]);
+        userSpy.restore();
     });
 
     it('WHEN consoleTypes do not change THEN keep all spies', () => {
         const console: any = { error: () => true };
         const spies = createSpies(createConfig({}), console);
+        const errorSpy = console.error;
 
-        const updated = updateSpies(spies, createConfig({}), console);
+        updateSpies(spies, createConfig({}), console);
 
-        expect(updated.get('error')).to.equal(spies.get('error'));
-        expect(console.error).to.equal(spies.get('error'));
+        expect(console.error).to.equal(errorSpy);
     });
 });
 
 describe('resetSpies()', () => {
-    it('when resetHistory is called then spies should be resetted', () => {
-        const objectToSpy: any = { error: () => true, warn: () => true };
-        const spies: Map<ConsoleType, sinon.SinonSpy> = new Map();
-        spies.set('error', sinon.spy(objectToSpy, 'error'));
-        spies.set('warn', sinon.spy(objectToSpy, 'warn'));
-        objectToSpy.error();
-        expect(spies.get('error')).be.called;
-        expect(spies.get('warn')).not.be.called;
+    it('WHEN resetSpies is called THEN forget the recorded calls and keep recording', () => {
+        const console: any = { error: () => true, warn: () => true };
+        const spies = createSpies(
+            createConfig({ consoleTypes: ['error', 'warn'] }),
+            console
+        );
+        console.error('foo');
 
-        const expectedSpies = resetSpies(spies);
+        resetSpies(spies);
+        console.warn('bar');
 
-        expect(expectedSpies.get('error')).not.be.called;
-        expect(expectedSpies.get('warn')).not.be.called;
+        expect(spies.calls).to.deep.equal([{ type: 'warn', args: ['bar'] }]);
     });
 });
 
@@ -940,6 +1149,55 @@ describe('callToString()', () => {
             'Login failed with %s'
         );
         expect(callToString(['100%s'])).to.equal('100%s');
+    });
+
+    it('WHEN the first argument contains %% THEN print a single % as DevTools does, with or without arguments', () => {
+        expect(callToString(['100%% done'])).to.equal('100% done');
+        expect(callToString(['%s: 100%%', 'Upload'])).to.equal('Upload: 100%');
+        expect(callToString(['100%%s', 'foo'])).to.equal('100%s foo');
+        expect(callToString([1, '100%%'])).to.equal('1 100%%');
+    });
+
+    it('WHEN an argument is a DOM node THEN print an element as its opening tag and other nodes by name', () => {
+        const element = {
+            nodeType: 1,
+            nodeName: 'DIV',
+            attributes: [
+                { name: 'id', value: 'app' },
+                { name: 'class', value: 'list empty' },
+            ],
+        };
+        const text = { nodeType: 3, nodeName: '#text' };
+
+        expect(callToString(['Failed to render', element, text])).to.equal(
+            'Failed to render <div id="app" class="list empty"> #text'
+        );
+        expect(callToString([{ target: element }])).to.equal(
+            '{"target":"<div id=\\"app\\" class=\\"list empty\\">"}'
+        );
+    });
+
+    it('WHEN an argument is a Map or a Set THEN print its entries', () => {
+        const map = new Map<unknown, unknown>([
+            ['a', 1],
+            [2, { b: true }],
+        ]);
+
+        expect(callToString(['state', map])).to.equal(
+            'state Map(2) {"2":{"b":true},"a":1}'
+        );
+        expect(callToString([new Set(['a', 1])])).to.equal('Set(2) ["a",1]');
+        expect(callToString([{ ids: new Set([1]) }])).to.equal('{"ids":[1]}');
+    });
+
+    it('WHEN a Map or Set contains itself THEN replace it with [Circular]', () => {
+        const map = new Map<string, unknown>();
+        map.set('self', map);
+        const set = new Set<unknown>();
+        set.add(set);
+
+        expect(callToString([map])).to.equal('Map(1) {"self":"[Circular]"}');
+        expect(callToString([set])).to.equal('Set(1) ["[Circular]"]');
     });
 
     it('WHEN the first argument is not a string THEN do not fill in format specifiers', () => {

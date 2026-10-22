@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { failed, failedOnConsole, passed, useCypressRun } from './runCypress';
+import {
+    failed,
+    failedInAfterHook,
+    failedOnConsole,
+    passed,
+    useCypressRun,
+} from './runCypress';
 
 const secondErrorNotExcluded =
     'console.error: secondErrorNotExcluded 1 {"foo":"bar"} ["a",1] undefined null';
@@ -113,6 +119,10 @@ describe('Cypress e2e', () => {
                 'console.error: Warning: componentWillMount is deprecated, use componentDidMount instead.'
             ),
             passed('should pass when the filled in message is ignored'),
+            failedOnConsole(
+                'should throw AssertionError with %%, DOM elements, Maps and Sets as the browser shows them',
+                'console.error: Upload: 100% done <div id="app" class="list"> Map(1) {"user":42} Set(1) ["a"]'
+            ),
         ]);
     });
 
@@ -150,6 +160,18 @@ describe('Cypress e2e', () => {
             failed(
                 'should throw an Error on the renamed consoleMessages option',
                 'Error: cypress-fail-on-console-error: consoleMessages was renamed to ignoreConsoleMessages'
+            ),
+            failed(
+                'should throw an Error when addIgnoredConsoleMessages gets a string',
+                'Error: cypress-fail-on-console-error: cy.addIgnoredConsoleMessages() expects an array, got string'
+            ),
+            failed(
+                'should throw an Error when deleteIgnoredConsoleMessages gets a string',
+                'Error: cypress-fail-on-console-error: cy.deleteIgnoredConsoleMessages() expects an array, got string'
+            ),
+            failed(
+                'should throw an Error when failOnConsoleError is called twice',
+                'Error: cypress-fail-on-console-error: failOnConsoleError() was called more than once. Call it once, in your support file.'
             ),
         ]);
     });
@@ -208,12 +230,56 @@ describe('Cypress e2e', () => {
         ]);
     });
 
-    it('WHEN console.error is called after the last command THEN only a command that waits for it fails the test', () => {
+    it('WHEN console.error is called after the last command THEN the next check fails and names the test that logged it', () => {
+        const lastTest =
+            'should throw AssertionError in the after hook on console.error after the last command of the last test';
         expect(spec('shouldFailOnConsoleErrorAfterLastCommand')).to.deep.equal([
             passed('should pass on console.error after the last command'),
             failedOnConsole(
+                'should throw AssertionError on console.error logged after the previous test ended',
+                'logged after the test "should pass on console.error after the last command" ended:',
+                'console.error: errorAfterLoad'
+            ),
+            failedOnConsole(
                 'should throw AssertionError on console.error when a command waits for it',
                 'console.error: errorAfterLoad'
+            ),
+            failedInAfterHook(
+                failedOnConsole(
+                    lastTest,
+                    `logged after the test "${lastTest}" ended:`,
+                    'console.error: errorAfterLoad'
+                )
+            ),
+        ]);
+    });
+
+    it('WHEN tests share the page without test isolation THEN console.error after the last command fails the next test and names the test that logged it', () => {
+        expect(
+            spec('shouldFailOnConsoleErrorWithoutTestIsolation')
+        ).to.deep.equal([
+            passed('should pass on console.error after the last command'),
+            failedOnConsole(
+                'should throw AssertionError on console.error logged after the previous test ended',
+                'logged after the test "should pass on console.error after the last command" ended:',
+                'console.error: errorAfterLoad'
+            ),
+            passed('should pass on the same page without console.error'),
+        ]);
+    });
+
+    it('WHEN cy.spy or cy.stub wrap console.error THEN they work, a spy calls through and a stub silences the message', () => {
+        expect(spec('shouldAllowSpiesOnConsole')).to.deep.equal([
+            passed('should pass with cy.spy on console.error in onBeforeLoad'),
+            failedOnConsole(
+                'should throw AssertionError on console.error with cy.spy in onBeforeLoad',
+                'console.error: errorNotExcluded'
+            ),
+            passed('should pass with cy.stub on console.error in onBeforeLoad'),
+            passed('should pass with cy.spy on console.error after cy.visit'),
+            failedOnConsole(
+                'should throw AssertionError on console.error with cy.spy after cy.visit',
+                'console.error: errorNotExcluded'
             ),
         ]);
     });

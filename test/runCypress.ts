@@ -82,6 +82,13 @@ export const failed = (title: string, error: string): TestResult => ({
     error,
 });
 
+// a test whose root after hook failed, which Cypress reports with a note appended
+export const failedInAfterHook = ({ title, error }: TestResult): TestResult =>
+    failed(
+        title,
+        `${error}\n\nBecause this error occurred during a \`after all\` hook we are skipping all of the remaining tests.`
+    );
+
 // consoleMessages as in the failure message, for example 'console.error: foo'
 export const failedOnConsole = (
     title: string,
