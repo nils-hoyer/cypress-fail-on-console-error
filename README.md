@@ -24,6 +24,8 @@ import failOnConsoleError from 'cypress-fail-on-console-error';
 failOnConsoleError();
 ```
 
+With CommonJS, use `require('cypress-fail-on-console-error').default`.
+
 When the application calls `console.error()`, the test fails after the current command:
 
 <img src="./docs/commandLog.png" width="448" alt="A console.error in the Cypress command log and the failed test's error">
@@ -37,7 +39,7 @@ When the application calls `console.error()`, the test fails after the current c
 | `debug`                 | `false`     | Also logs each message that `ignoreConsoleMessages` ignores, with the entry that matched it. See [Debugging](#debugging). |
 
 ```ts
-import failOnConsoleError, { Config } from 'cypress-fail-on-console-error';
+import failOnConsoleError, { type Config } from 'cypress-fail-on-console-error';
 
 const config: Config = {
     ignoreConsoleMessages: [
@@ -100,11 +102,21 @@ it('should show the page without recommendations', () => {
 To change `consoleTypes` or `debug` in a test, use `getConfig()` and `setConfig()`, which `failOnConsoleError()` returns:
 
 ```ts
+import { type ConsoleType } from 'cypress-fail-on-console-error';
+
 const { getConfig, setConfig } = failOnConsole;
 
-Cypress.Commands.add('setConsoleTypes', (consoleTypes) =>
+Cypress.Commands.add('setConsoleTypes', (consoleTypes: ConsoleType[]) =>
     setConfig({ ...getConfig(), consoleTypes })
 );
+
+declare global {
+    namespace Cypress {
+        interface Chainable {
+            setConsoleTypes(consoleTypes: ConsoleType[]): Chainable<void>;
+        }
+    }
+}
 ```
 
 ## Debugging
@@ -121,6 +133,14 @@ failOnConsoleError({
 ```
 
 <img src="./docs/debugTrue.png" width="448" alt="An ignored console.error and a failing one in the Cypress command log">
+
+## Limitations
+
+- **Messages after the last command.** Messages are checked after each command. A message logged after a test's last command, for example when React renders after `cy.mount()`, fails the next test, or the `after all` hook after the last test, as `logged after the test "…" ended`. End each test with an assertion such as `cy.contains('Saved')`, so a message fails the test that caused it.
+- **Spies and stubs.** `cy.spy(win.console, 'error')` calls through, so the message still fails the test unless it's ignored. `cy.stub(win.console, 'error')` replaces the method, so the message doesn't fail the test.
+- **Other windows.** Pages in `cy.origin()`, iframes inside the application and web workers have their own console, which isn't watched.
+- **Messages from the browser.** Failed requests and Content Security Policy violations are printed by the browser, not with `console.error()`. For failed requests, see [cypress-fail-on-network-error](https://www.npmjs.com/package/cypress-fail-on-network-error).
+- **Spec code in component tests.** The spec and the component share a window, so `console.error()` in spec code fails the test too. In e2e tests, the spec runs in a separate window.
 
 ## Contributing
 
