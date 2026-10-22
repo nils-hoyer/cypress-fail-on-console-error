@@ -1,0 +1,18 @@
+<html>
+    <body>
+        <script>
+            fetch('/api/users/42').then(async (response) => {
+                if (!response.ok) {
+                    console.error('Failed to load user', {
+                        id: 42,
+                        status: response.status,
+                    });
+                    document.body.innerHTML = '<p>Could not load the user</p>';
+                    return;
+                }
+                const user = await response.json();
+                document.body.innerHTML = `<p>${user.name}</p>`;
+            });
+        </script>
+    </body>
+</html>
