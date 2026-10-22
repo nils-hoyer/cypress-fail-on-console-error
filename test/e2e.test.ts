@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     failed,
-    failedInAfterHook,
     failedOnConsole,
+    failedOnLateConsole,
+    loggedAfter,
     passed,
     skipped,
     useCypressRun,
@@ -122,7 +123,7 @@ describe('Cypress e2e', () => {
             passed('should pass when the filled in message is ignored'),
             failedOnConsole(
                 'should throw AssertionError with %%, DOM elements, Maps and Sets as the browser shows them',
-                'console.error: Upload: 100% done <div id="app" class="list"> Map(1) {"user":42} Set(1) ["a"]'
+                'console.error: Upload: 100% done <div id="app" class="list"> Map(1) [["user",42]] Set(1) ["a"]'
             ),
         ]);
     });
@@ -231,41 +232,79 @@ describe('Cypress e2e', () => {
         ]);
     });
 
-    it('WHEN console.error is called after the last command THEN the next check fails and names the test that logged it', () => {
+    it('WHEN console.error is called after the last command THEN the after hook at the end of the spec fails and names each test that logged it', () => {
+        const name = 'shouldFailOnConsoleErrorAfterLastCommand';
         const lastTest =
             'should throw AssertionError in the after hook on console.error after the last command of the last test';
-        expect(spec('shouldFailOnConsoleErrorAfterLastCommand')).to.deep.equal([
+        expect(spec(name)).to.deep.equal([
             passed('should pass on console.error after the last command'),
-            failedOnConsole(
-                'should throw AssertionError on console.error logged after the previous test ended',
-                'logged after the test "should pass on console.error after the last command" ended:',
-                'console.error: errorAfterLoad'
+            passed(
+                'should pass although the previous test logged after its last command'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.error when a command waits for it',
                 'console.error: errorAfterLoad'
             ),
-            failedInAfterHook(
-                failedOnConsole(
-                    lastTest,
-                    `logged after the test "${lastTest}" ended:`,
+            failedOnLateConsole(
+                lastTest,
+                ...loggedAfter(
+                    name,
+                    'should pass on console.error after the last command',
+                    'console.error: errorAfterLoad'
+                ),
+                ...loggedAfter(name, lastTest, 'console.error: errorAfterLoad')
+            ),
+        ]);
+    });
+
+    it('WHEN tests share the page without test isolation THEN console.error after the last command is reported at the end of the spec', () => {
+        const name = 'shouldFailOnConsoleErrorWithoutTestIsolation';
+        expect(spec(name)).to.deep.equal([
+            passed('should pass on console.error after the last command'),
+            passed(
+                'should pass although the previous test logged after its last command'
+            ),
+            failedOnLateConsole(
+                'should get the after all hook failure for the console.error of the first test',
+                ...loggedAfter(
+                    name,
+                    'should pass on console.error after the last command',
                     'console.error: errorAfterLoad'
                 )
             ),
         ]);
     });
 
-    it('WHEN tests share the page without test isolation THEN console.error after the last command fails the next test and names the test that logged it', () => {
-        expect(
-            spec('shouldFailOnConsoleErrorWithoutTestIsolation')
-        ).to.deep.equal([
-            passed('should pass on console.error after the last command'),
-            failedOnConsole(
-                'should throw AssertionError on console.error logged after the previous test ended',
-                'logged after the test "should pass on console.error after the last command" ended:',
+    it('WHEN tests log after their last command THEN the following beforeEach hooks and retries are not affected, and messages a test ignored are not reported', () => {
+        const name = 'shouldReportConsoleErrorsAfterLastCommandAtSpecEnd';
+        const lastTest =
+            'should get the after all hook failure for the console.errors after the last command';
+        const { error } = failedOnLateConsole(
+            lastTest,
+            ...loggedAfter(
+                name,
+                'should pass on console.error after the last command',
                 'console.error: errorAfterLoad'
             ),
-            passed('should pass on the same page without console.error'),
+            ...loggedAfter(
+                name,
+                'with retries should pass on console.error after the last command',
+                'console.error: errorAfterLoad'
+            )
+        );
+        expect(spec(name)).to.deep.equal([
+            passed('should pass on console.error after the last command'),
+            passed(
+                'should pass on console.error after the last command that the test ignores'
+            ),
+            passed(
+                'should run its beforeEach hook although the previous tests logged after their last command'
+            ),
+            passed('should pass on console.error after the last command'),
+            failed(
+                lastTest,
+                `${error}\n\nAlthough you have test retries enabled, we do not retry tests when \`before all\` or \`after all\` hooks fail`
+            ),
         ]);
     });
 

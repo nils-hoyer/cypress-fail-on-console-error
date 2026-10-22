@@ -182,24 +182,32 @@ describe('setConfig() with consoleTypes', () => {
         sinon.restore();
     });
 
-    it('WHEN consoleTypes change after the page loaded THEN spy on the new console types immediately', () => {
+    it('WHEN consoleTypes change after the page loaded THEN record the new console types immediately and stop recording removed ones', () => {
         Cypress.testingType = 'e2e';
+        (Cypress as any).log = () => {};
         const on = sinon.spy(Cypress, 'on');
         const { setConfig } = failOnConsoleError({ consoleTypes: ['error'] });
-        const windowBeforeLoad = on
-            .getCalls()
-            .find((call) => call.args[0] === 'window:before:load')?.args[1] as (
-            window: any
-        ) => void;
+        const listener = (event: string) =>
+            on.getCalls().find((call) => call.args[0] === event)?.args[1] as (
+                ...args: any[]
+            ) => void;
         on.restore();
-        const original = { error: () => {}, warn: () => {} };
+        const original = {
+            error: (..._: any[]) => {},
+            warn: (..._: any[]) => {},
+        };
         const console = { ...original };
-        windowBeforeLoad({ console });
+        listener('window:before:load')({ console });
 
         setConfig({ consoleTypes: ['warn'] });
+        console.error('notWatched');
+        console.warn('watched');
 
-        expect(console.error).to.equal(original.error);
         expect(console.warn).not.to.equal(original.warn);
+        expect(() => listener('command:end')()).to.throw(
+            'cypress-fail-on-console-error:\nconsole.warn: watched'
+        );
+        delete (Cypress as any).log;
     });
 });
 
@@ -211,22 +219,36 @@ describe('checks between commands and tests', () => {
         sinon.restore();
     });
 
-    // the plugin's listeners, by event name
+    // the plugin's listeners, by event name, and its getConfig and setConfig
     const createPlugin = (config: Config = {}) => {
         Cypress.testingType = 'e2e';
         (Cypress as any).log = () => {};
         const on = sinon.spy(Cypress, 'on');
-        failOnConsoleError(config);
+        const plugin = failOnConsoleError(config);
         on.restore();
-        return (event: string) =>
+        const listener = (event: string) =>
             on.getCalls().find((call) => call.args[0] === event)?.args[1] as (
                 ...args: any[]
             ) => void;
+        return Object.assign(listener, plugin);
     };
     const createPage = () => ({ console: { error: (..._: any[]) => {} } });
     // runs the plugin's root afterEach hook for a test
     const endTest = (title: string, state: 'passed' | 'failed') =>
-        hooks.get('afterEach')![0].call({ currentTest: { title, state } });
+        hooks
+            .get('afterEach')![0]
+            .call({ currentTest: { fullTitle: () => title, state } });
+    // runs the plugin's root after hook, whose cy.then() callback reports the late calls
+    const endSpec = () => {
+        vi.stubGlobal('cy', { then: (fn: () => void) => fn() });
+        hooks.get('after')![0]();
+    };
+    const lateCallsMessage = (...lines: string[]) =>
+        [
+            'cypress-fail-on-console-error:',
+            ...lines,
+            'End these tests with an assertion that waits for the page, so that a message fails the test that logged it.',
+        ].join('\n');
 
     it('WHEN the page logs and then navigates before the check THEN the check includes the calls of the previous page', () => {
         const listener = createPlugin();
@@ -242,38 +264,58 @@ describe('checks between commands and tests', () => {
         expect(() => listener('command:end')()).not.to.throw();
     });
 
-    it('WHEN a passed test logs after its last check THEN the first check of the next test fails with the title of that test', () => {
+    it('WHEN a passed test logs after its last check THEN the next test does not fail and the after hook reports the calls with the full title of the test', () => {
         const listener = createPlugin();
         const page = createPage();
         listener('window:before:load')(page);
         page.console.error('errorAfterLastCommand');
-        endTest('should load', 'passed');
+        endTest('Profile should load', 'passed');
         page.console.error('errorBetweenTests');
-
         listener('test:before:run')();
 
-        expect(() => listener('command:end')()).to.throw(
-            'cypress-fail-on-console-error:\nlogged after the test "should load" ended:\nconsole.error: errorAfterLastCommand\nconsole.error: errorBetweenTests'
-        );
         expect(() => listener('command:end')()).not.to.throw();
+        expect(endSpec).to.throw(
+            lateCallsMessage(
+                'logged after the test "Profile should load" ended:',
+                'console.error: errorAfterLastCommand',
+                'console.error: errorBetweenTests'
+            )
+        );
     });
 
-    it('WHEN the next test logs too THEN list its calls before those of the previous test', () => {
+    it('WHEN several tests log after their last check THEN the after hook lists the calls of each test', () => {
         const listener = createPlugin();
         const page = createPage();
         listener('window:before:load')(page);
-        page.console.error('errorAfterLastCommand');
-        endTest('should load', 'passed');
+        page.console.error('errorOfFirstTest');
+        endTest('first', 'passed');
         listener('test:before:run')();
+        page.console.error('errorOfLastTest');
+        endTest('last', 'passed');
 
-        page.console.error('errorInNextTest');
-
-        expect(() => listener('command:end')()).to.throw(
-            'cypress-fail-on-console-error:\nconsole.error: errorInNextTest\nlogged after the test "should load" ended:\nconsole.error: errorAfterLastCommand'
+        expect(endSpec).to.throw(
+            lateCallsMessage(
+                'logged after the test "first" ended:',
+                'console.error: errorOfFirstTest',
+                'logged after the test "last" ended:',
+                'console.error: errorOfLastTest'
+            )
         );
+        expect(endSpec).not.to.throw();
     });
 
-    it('WHEN a passed test logs after its last check from a page that unloaded THEN the next test reports it', () => {
+    it('WHEN a command runs in a hook after the test THEN its check collects the calls instead of failing the hook', () => {
+        const listener = createPlugin();
+        const page = createPage();
+        listener('window:before:load')(page);
+        endTest('should load', 'passed');
+        page.console.error('errorInAfterHook');
+
+        expect(() => listener('command:end')()).not.to.throw();
+        expect(endSpec).to.throw('console.error: errorInAfterHook');
+    });
+
+    it('WHEN a passed test logs after its last check from a page that unloaded THEN the after hook reports it', () => {
         const listener = createPlugin();
         const page = createPage();
         listener('window:before:load')(page);
@@ -283,20 +325,35 @@ describe('checks between commands and tests', () => {
         listener('window:before:load')(createPage());
         listener('test:before:run')();
 
-        expect(() => listener('command:end')()).to.throw(
+        expect(endSpec).to.throw(
             'logged after the test "should load" ended:\nconsole.error: errorAfterLastCommand'
         );
     });
 
-    it('WHEN the calls after the last check are ignored THEN the next test does not fail', () => {
-        const listener = createPlugin({ ignoreConsoleMessages: ['ignored'] });
+    it('WHEN the test ignored a message THEN its late call is not reported after the config is restored', () => {
+        const listener = createPlugin();
         const page = createPage();
         listener('window:before:load')(page);
-        page.console.error('ignored');
+        listener.setConfig({ ignoreConsoleMessages: ['ignoredInTest'] });
+        page.console.error('ignoredInTest');
         endTest('should load', 'passed');
+        listener('test:after:run')();
+        page.console.error('ignoredInTest');
         listener('test:before:run')();
 
-        expect(() => listener('command:end')()).not.to.throw();
+        expect(endSpec).not.to.throw();
+    });
+
+    it('WHEN the next test ignores a message THEN the late call of the previous test is still reported', () => {
+        const listener = createPlugin();
+        const page = createPage();
+        listener('window:before:load')(page);
+        page.console.error('lateError');
+        endTest('should load', 'passed');
+        listener('test:before:run')();
+        listener.setConfig({ ignoreConsoleMessages: ['lateError'] });
+
+        expect(endSpec).to.throw('console.error: lateError');
     });
 
     it('WHEN a test fails before the check THEN its remaining calls are dropped', () => {
@@ -311,23 +368,15 @@ describe('checks between commands and tests', () => {
         listener('test:before:run')();
 
         expect(() => listener('command:end')()).not.to.throw();
+        expect(endSpec).not.to.throw();
     });
 
-    it('WHEN the last test logs after its last check THEN the after hook fails with the title of that test', () => {
-        const wrap = vi.fn();
-        vi.stubGlobal('cy', { wrap });
+    it('WHEN no test logged after its last check THEN the after hook passes', () => {
         const listener = createPlugin();
-        const page = createPage();
-        listener('window:before:load')(page);
-        page.console.error('errorAfterLastCommand');
+        listener('window:before:load')(createPage());
         endTest('should load', 'passed');
 
-        hooks.get('after')![0]();
-
-        expect(wrap).toHaveBeenCalledWith(null, { log: false });
-        expect(() => listener('command:end')()).to.throw(
-            'cypress-fail-on-console-error:\nlogged after the test "should load" ended:\nconsole.error: errorAfterLastCommand'
-        );
+        expect(endSpec).not.to.throw();
     });
 });
 
@@ -719,9 +768,7 @@ describe('createSpies()', () => {
         const spies = createSpies(config, console);
         config.consoleTypes.forEach((type) => console[type](type));
 
-        expect(Array.from(spies.restores.keys())).to.deep.equal(
-            config.consoleTypes
-        );
+        expect(Array.from(spies.watched)).to.deep.equal(config.consoleTypes);
         expect(spies.calls).to.deep.equal(
             config.consoleTypes.map((type) => ({ type, args: [type] }))
         );
@@ -751,7 +798,7 @@ describe('createSpies()', () => {
         );
         console.error('foo');
 
-        expect(spies.restores.size).to.equal(1);
+        expect(spies.wrapped.size).to.equal(1);
         expect(spies.calls).to.have.length(1);
     });
 
@@ -782,7 +829,7 @@ describe('createSpies()', () => {
 });
 
 describe('updateSpies()', () => {
-    it('WHEN consoleTypes change THEN keep the remaining spies with their calls, restore removed ones and add new ones', () => {
+    it('WHEN consoleTypes change THEN keep the calls of the remaining types, stop recording removed ones and add new ones', () => {
         const original = {
             error: () => true,
             warn: () => true,
@@ -804,12 +851,8 @@ describe('updateSpies()', () => {
         console.warn('not watched');
         console.info('bar');
 
-        expect(Array.from(updated.restores.keys())).to.deep.equal([
-            'error',
-            'info',
-        ]);
+        expect(Array.from(updated.watched)).to.deep.equal(['error', 'info']);
         expect(console.error).to.equal(errorSpy);
-        expect(console.warn).to.equal(original.warn);
         expect(console.info).not.to.equal(original.info);
         expect(updated.calls).to.deep.equal([
             { type: 'error', args: ['foo'] },
@@ -817,28 +860,32 @@ describe('updateSpies()', () => {
         ]);
     });
 
-    it('WHEN a removed console method was wrapped by another spy THEN keep that spy and stop recording', () => {
+    it('WHEN a console type is removed and added again THEN record with the same function instead of wrapping the method again', () => {
+        const console: any = { error: () => true, warn: () => true };
+        const spies = createSpies(createConfig({}), console);
+        const errorSpy = console.error;
+
+        updateSpies(spies, createConfig({ consoleTypes: ['warn'] }), console);
+        updateSpies(spies, createConfig({}), console);
+        console.error('foo');
+
+        expect(console.error).to.equal(errorSpy);
+        expect(spies.calls).to.deep.equal([{ type: 'error', args: ['foo'] }]);
+    });
+
+    it('WHEN a user spy is on top while a console type is removed and added again THEN record its calls after the spy is restored', () => {
         const console: any = { error: () => true, warn: () => true };
         const spies = createSpies(createConfig({}), console);
         const userSpy = sinon.spy(console, 'error');
 
         updateSpies(spies, createConfig({ consoleTypes: ['warn'] }), console);
+        console.error('notWatched');
+        updateSpies(spies, createConfig({}), console);
+        userSpy.restore();
         console.error('foo');
 
-        expect(console.error).to.equal(userSpy);
-        expect(userSpy).to.have.been.calledWith('foo');
-        expect(spies.calls).to.deep.equal([]);
-        userSpy.restore();
-    });
-
-    it('WHEN consoleTypes do not change THEN keep all spies', () => {
-        const console: any = { error: () => true };
-        const spies = createSpies(createConfig({}), console);
-        const errorSpy = console.error;
-
-        updateSpies(spies, createConfig({}), console);
-
-        expect(console.error).to.equal(errorSpy);
+        expect(userSpy).to.have.been.calledWith('notWatched');
+        expect(spies.calls).to.deep.equal([{ type: 'error', args: ['foo'] }]);
     });
 });
 
@@ -1158,46 +1205,85 @@ describe('callToString()', () => {
         expect(callToString([1, '100%%'])).to.equal('1 100%%');
     });
 
-    it('WHEN an argument is a DOM node THEN print an element as its opening tag and other nodes by name', () => {
-        const element = {
+    // the parts of a DOM node that the plugin reads, as an object from the application's window looks to it
+    const createNode = (node: Record<string, unknown>) => ({
+        cloneNode: () => node,
+        ...node,
+    });
+
+    it('WHEN an argument is a DOM node THEN print it as the browser console shows it collapsed', () => {
+        const element = createNode({
             nodeType: 1,
             nodeName: 'DIV',
             attributes: [
                 { name: 'id', value: 'app' },
-                { name: 'class', value: 'list empty' },
+                { name: 'title', value: 'say "hi"' },
             ],
-        };
-        const text = { nodeType: 3, nodeName: '#text' };
+        });
+        const text = createNode({
+            nodeType: 3,
+            nodeName: '#text',
+            textContent: 'Hello',
+        });
+        const comment = createNode({
+            nodeType: 8,
+            nodeName: '#comment',
+            textContent: ' note ',
+        });
+        const document = createNode({ nodeType: 9, nodeName: '#document' });
 
-        expect(callToString(['Failed to render', element, text])).to.equal(
-            'Failed to render <div id="app" class="list empty"> #text'
+        expect(
+            callToString(['Failed to render', element, text, comment, document])
+        ).to.equal(
+            'Failed to render <div id="app" title="say &quot;hi&quot;"> "Hello" <!-- note --> #document'
         );
-        expect(callToString([{ target: element }])).to.equal(
-            '{"target":"<div id=\\"app\\" class=\\"list empty\\">"}'
+        expect(callToString([{ target: text }])).to.equal(
+            '{"target":"\\"Hello\\""}'
         );
     });
 
-    it('WHEN an argument is a Map or a Set THEN print its entries', () => {
+    it('WHEN an object only looks like a DOM node THEN print it as JSON', () => {
+        expect(callToString([{ nodeType: 1, nodeName: 'Foo' }])).to.equal(
+            '{"nodeType":1,"nodeName":"Foo"}'
+        );
+    });
+
+    it('WHEN an argument is a Map or a Set THEN print its entries in order, with the types of the keys', () => {
         const map = new Map<unknown, unknown>([
             ['a', 1],
             [2, { b: true }],
+            ['2', 'string key'],
         ]);
 
         expect(callToString(['state', map])).to.equal(
-            'state Map(2) {"2":{"b":true},"a":1}'
+            'state Map(3) [["a",1],[2,{"b":true}],["2","string key"]]'
         );
         expect(callToString([new Set(['a', 1])])).to.equal('Set(2) ["a",1]');
         expect(callToString([{ ids: new Set([1]) }])).to.equal('{"ids":[1]}');
     });
 
-    it('WHEN a Map or Set contains itself THEN replace it with [Circular]', () => {
-        const map = new Map<string, unknown>();
+    it('WHEN a Map or Set contains itself, also as a key THEN replace it with [Circular]', () => {
+        const map = new Map<unknown, unknown>();
         map.set('self', map);
+        map.set(map, 1);
+        const keyMap = new Map<unknown, unknown>();
+        keyMap.set({ graph: keyMap }, 1);
         const set = new Set<unknown>();
         set.add(set);
 
-        expect(callToString([map])).to.equal('Map(1) {"self":"[Circular]"}');
+        expect(callToString([map])).to.equal(
+            'Map(2) [["self","[Circular]"],["[Circular]",1]]'
+        );
+        expect(callToString([keyMap])).to.equal(
+            'Map(1) [[{"graph":"[Circular]"},1]]'
+        );
         expect(callToString([set])).to.equal('Set(1) ["[Circular]"]');
+    });
+
+    it('WHEN reading an argument throws THEN print its type', () => {
+        expect(callToString(['state', new Proxy(new Map(), {})])).to.equal(
+            'state [object Map]'
+        );
     });
 
     it('WHEN the first argument is not a string THEN do not fill in format specifiers', () => {

@@ -51,7 +51,7 @@ describe('shouldFailOnReactErrors', () => {
         mount(createElement(NutList));
     });
 
-    it('should throw AssertionError on the missing key of the previous test', () => {
+    it('should get the after all hook failure for the missing key of the previous test', () => {
         cy.wrap('next test');
     });
 });

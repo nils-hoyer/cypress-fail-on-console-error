@@ -89,12 +89,31 @@ export const skipped = (title: string): TestResult => ({
     error: undefined,
 });
 
-// a test whose root after hook failed, which Cypress reports with a note appended
-export const failedInAfterHook = ({ title, error }: TestResult): TestResult =>
+// the last test of a spec, on which Cypress reports the failure of the plugin's root after hook
+export const failedOnLateConsole = (
+    title: string,
+    ...lines: string[]
+): TestResult =>
     failed(
         title,
-        `${error}\n\nBecause this error occurred during a \`after all\` hook we are skipping all of the remaining tests.`
+        [
+            'AssertionError: cypress-fail-on-console-error:',
+            ...lines,
+            'End these tests with an assertion that waits for the page, so that a message fails the test that logged it.',
+            '',
+            'Because this error occurred during a `after all` hook we are skipping all of the remaining tests.',
+        ].join('\n')
     );
+
+// the lines of the root after hook's failure for one test
+export const loggedAfter = (
+    spec: string,
+    test: string,
+    ...consoleMessages: string[]
+): string[] => [
+    `logged after the test "${spec} ${test}" ended:`,
+    ...consoleMessages,
+];
 
 // consoleMessages as in the failure message, for example 'console.error: foo'
 export const failedOnConsole = (

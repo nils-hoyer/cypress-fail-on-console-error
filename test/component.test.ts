@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     failed,
-    failedInAfterHook,
     failedOnConsole,
+    failedOnLateConsole,
+    loggedAfter,
     passed,
     useCypressRun,
 } from './runCypress';
@@ -121,7 +122,7 @@ describe('Cypress components', () => {
             passed('should pass when the filled in message is ignored'),
             failedOnConsole(
                 'should throw AssertionError with %%, DOM elements, Maps and Sets as the browser shows them',
-                'console.error: Upload: 100% done <with-values-error id="root"> Map(1) {"user":42} Set(1) ["a"]'
+                'console.error: Upload: 100% done <with-values-error id="root"> Map(1) [["user",42]] Set(1) ["a"]'
             ),
         ]);
     });
@@ -230,26 +231,27 @@ describe('Cypress components', () => {
         ]);
     });
 
-    it('WHEN console.error is called after the last command THEN the next check fails and names the test that logged it', () => {
+    it('WHEN console.error is called after the last command THEN the after hook at the end of the spec fails and names each test that logged it', () => {
+        const name = 'shouldFailOnConsoleErrorAfterLastCommand';
         const lastTest =
             'should throw AssertionError in the after hook on console.error after the last command of the last test';
-        expect(spec('shouldFailOnConsoleErrorAfterLastCommand')).to.deep.equal([
+        expect(spec(name)).to.deep.equal([
             passed('should pass on console.error after the last command'),
-            failedOnConsole(
-                'should throw AssertionError on console.error logged after the previous test ended',
-                'logged after the test "should pass on console.error after the last command" ended:',
-                'console.error: errorAfterMount'
+            passed(
+                'should pass although the previous test logged after its last command'
             ),
             failedOnConsole(
                 'should throw AssertionError on console.error when a command waits for it',
                 'console.error: errorAfterMount'
             ),
-            failedInAfterHook(
-                failedOnConsole(
-                    lastTest,
-                    `logged after the test "${lastTest}" ended:`,
+            failedOnLateConsole(
+                lastTest,
+                ...loggedAfter(
+                    name,
+                    'should pass on console.error after the last command',
                     'console.error: errorAfterMount'
-                )
+                ),
+                ...loggedAfter(name, lastTest, 'console.error: errorAfterMount')
             ),
         ]);
     });
@@ -261,14 +263,22 @@ describe('Cypress components', () => {
                 'should throw AssertionError on console.error with cy.spy',
                 'console.error: errorNotExcluded'
             ),
+            passed(
+                'should pass on console.error with cy.spy while console.error is not watched'
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.error after a test that spied on it and stopped watching it',
+                'console.error: errorNotExcluded'
+            ),
             passed('should pass with cy.stub on console.error'),
         ]);
     });
 
     it('WHEN a React component logs THEN cypress fails, also when the test only mounts', () => {
+        const name = 'shouldFailOnReactErrors';
         const missingKey = (component: string) =>
             `console.error: Each child in a list should have a unique "key" prop.\n\nCheck the render method of \`${component}\`. See https://react.dev/link/warning-keys for more information.`;
-        expect(spec('shouldFailOnReactErrors')).to.deep.equal([
+        expect(spec(name)).to.deep.equal([
             failedOnConsole(
                 'should throw AssertionError on a missing key when the test checks the list',
                 missingKey('FruitList')
@@ -279,10 +289,13 @@ describe('Cypress components', () => {
             ),
             passed('should pass when the missing key warning is ignored'),
             passed('should pass on a missing key when the test only mounts'),
-            failedOnConsole(
-                'should throw AssertionError on the missing key of the previous test',
-                'logged after the test "should pass on a missing key when the test only mounts" ended:',
-                missingKey('NutList')
+            failedOnLateConsole(
+                'should get the after all hook failure for the missing key of the previous test',
+                ...loggedAfter(
+                    name,
+                    'should pass on a missing key when the test only mounts',
+                    missingKey('NutList')
+                )
             ),
         ]);
     });

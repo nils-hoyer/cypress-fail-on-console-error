@@ -6,11 +6,11 @@ describe(
             cy.visit('./cypress/fixtures/consoleErrorAfterLoad.html');
         });
 
-        it('should throw AssertionError on console.error logged after the previous test ended', () => {
+        it('should pass although the previous test logged after its last command', () => {
             cy.get('#loaded');
         });
 
-        it('should pass on the same page without console.error', () => {
+        it('should get the after all hook failure for the console.error of the first test', () => {
             cy.get('#loaded');
         });
     }

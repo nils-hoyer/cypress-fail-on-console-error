@@ -15,6 +15,16 @@ describe('shouldAllowSpiesOnConsole', () => {
         cy.mount(WithErrorNotExcluded, 'with-not-excluded');
     });
 
+    it('should pass on console.error with cy.spy while console.error is not watched', () => {
+        cy.spy(console, 'error');
+        cy.setConfig({ consoleTypes: ['warn'] });
+        cy.mount(WithErrorNotExcluded, 'with-not-excluded');
+    });
+
+    it('should throw AssertionError on console.error after a test that spied on it and stopped watching it', () => {
+        cy.mount(WithErrorNotExcluded, 'with-not-excluded');
+    });
+
     it('should pass with cy.stub on console.error', () => {
         cy.stub(console, 'error').as('consoleError');
         cy.mount(WithErrorNotExcluded, 'with-not-excluded');

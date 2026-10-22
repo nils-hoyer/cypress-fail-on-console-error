@@ -22,14 +22,15 @@ export declare const validateConfig: (config: Config) => void;
 export declare const createConfig: (config: Config) => ResolvedConfig;
 export declare const compileConsoleMessages: (consoleMessages: ConsoleMessage[]) => CompiledConsoleMessage[];
 export interface ConsoleSpies {
-    restores: Map<ConsoleType, () => void>;
+    watched: Set<ConsoleType>;
+    wrapped: Set<ConsoleType>;
     calls: {
         type: ConsoleType;
         args: any[];
     }[];
 }
-export declare const createSpies: (config: ResolvedConfig, console: Console) => ConsoleSpies;
 export declare const updateSpies: (spies: ConsoleSpies, config: ResolvedConfig, console: Console) => ConsoleSpies;
+export declare const createSpies: (config: ResolvedConfig, console: Console) => ConsoleSpies;
 export declare const resetSpies: (spies: ConsoleSpies) => ConsoleSpies;
 export interface ConsoleCall {
     type: ConsoleType;
