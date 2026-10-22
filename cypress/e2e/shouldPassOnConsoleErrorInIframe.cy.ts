@@ -1,4 +1,4 @@
-// pins a documented limitation: iframes have their own console, which isn't watched (#540)
+// pins a known limitation: iframes have their own console, which isn't watched (#540)
 describe('shouldPassOnConsoleErrorInIframe', () => {
     it('should pass on console.error in a same-origin iframe', () => {
         cy.visit('./cypress/fixtures/consoleErrorInIframe.html');
