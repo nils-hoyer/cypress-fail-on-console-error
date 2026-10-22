@@ -82,6 +82,13 @@ export const failed = (title: string, error: string): TestResult => ({
     error,
 });
 
+// a test that didn't run because a hook before it failed
+export const skipped = (title: string): TestResult => ({
+    title,
+    state: 'skipped',
+    error: undefined,
+});
+
 // a test whose root after hook failed, which Cypress reports with a note appended
 export const failedInAfterHook = ({ title, error }: TestResult): TestResult =>
     failed(

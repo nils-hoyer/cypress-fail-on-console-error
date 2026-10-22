@@ -38,7 +38,7 @@ When you add or change a config option or public function, update `README.md` to
 - `test/e2e.test.ts`, `test/component.test.ts`: Vitest tests that check each spec's results. The last test fails if a spec has no check.
 - `cypress/e2e/*.cy.ts`, `cypress/component/*.cy.ts`: the Cypress specs run by those tests
 - `cypress/fixtures/*.html`: pages that write to the console, visited by e2e specs
-- `cypress/component/customComponents.ts`: web components that write to the console, mounted by component specs
+- `cypress/component/customComponents.ts`: web components that write to the console, mounted by component specs. `shouldFailOnReactErrors` mounts real React components with `cypress/react` instead, because React renders after `mount` returns. React only warns about missing keys once per parent element type, so give each test's list another one.
 - `cypress/support/commands.ts`: registers the plugin (once: a second `failOnConsoleError()` call throws) with the shared test config, adds the plugin's `getIgnoredConsoleMessages`, `setIgnoredConsoleMessages`, `addIgnoredConsoleMessages` and `deleteIgnoredConsoleMessages` commands with `addIgnoredConsoleMessagesCommands`, and adds `getConfig` and `setConfig` commands for the specs
 
 ## Commands
@@ -77,7 +77,7 @@ Never change `version` in `package.json` or create tags in a pull request. If th
     - a spec in `cypress/e2e/` or `cypress/component/`, named after the expected outcome (`shouldFailOn…`, `shouldPassOn…`, `shouldReset…`)
     - a case in `test/e2e.test.ts` or `test/component.test.ts` that lists every test of the spec with `passed(title)`, `failedOnConsole(title, message)` or `failed(title, error)`
 
-    If a feature applies to both testing types, cover both.
+    If a feature applies to both testing types, cover both. Also test how users combine the plugin with their own tests: `cy.spy`/`cy.stub` on the console, `cy.visit` in `beforeEach`, retries, `testIsolation: false`, and tests that end without an assertion. Bugs in these combinations went unnoticed for years because every spec tested one plugin feature on its own.
 
 4. Specs run with the shared config from `cypress/support/commands.ts`. It excludes `/firstErrorExcluded.*/`, `'secondErrorExcluded'` and `'thirdErrorExcluded.*consoleError.*'`, and it watches `error` and `warn`. Name fixture messages so they match or miss those patterns on purpose.
 5. Run `npm run build`, then `npm run verify`.

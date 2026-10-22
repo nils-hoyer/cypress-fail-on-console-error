@@ -4,6 +4,7 @@ import {
     failedInAfterHook,
     failedOnConsole,
     passed,
+    skipped,
     useCypressRun,
 } from './runCypress';
 
@@ -293,6 +294,50 @@ describe('Cypress e2e', () => {
             failedOnConsole(
                 'should throw AssertionError on console.error when the page unloads',
                 'console.error: errorOnPagehide'
+            ),
+        ]);
+    });
+
+    it('WHEN the app logs a failed request THEN cypress fails unless the test ignores it', () => {
+        expect(
+            spec('shouldFailOnConsoleErrorAfterFailedRequest')
+        ).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError when the app logs a failed request',
+                'console.error: Failed to load user {"id":42,"status":500}'
+            ),
+            passed('should pass when the test ignores the failed request'),
+            passed('should pass when the request succeeds'),
+        ]);
+    });
+
+    it('WHEN console.error is called during cy.visit in a beforeEach hook THEN the hook fails and the remaining tests are skipped', () => {
+        expect(spec('shouldFailOnConsoleErrorInBeforeEachHook')).to.deep.equal([
+            failed(
+                'should throw AssertionError on console.error in the beforeEach hook',
+                'AssertionError: cypress-fail-on-console-error:\nconsole.error: errorNotExcluded\n\nBecause this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `shouldFailOnConsoleErrorInB...`'
+            ),
+            skipped('should be skipped after the failed beforeEach hook'),
+        ]);
+    });
+
+    it('WHEN tests are retried THEN a retry without console.error passes and a failed attempt does not affect the next test', () => {
+        expect(spec('shouldFailOnConsoleErrorWithRetries')).to.deep.equal([
+            passed('should pass when the retry has no console.error'),
+            failedOnConsole(
+                'should throw AssertionError when every attempt logs console.error',
+                'console.error: errorNotExcluded'
+            ),
+            passed('should pass after a test that failed every attempt'),
+        ]);
+    });
+
+    it('WHEN console.error is called in an iframe THEN cypress passes, and the page is still watched', () => {
+        expect(spec('shouldPassOnConsoleErrorInIframe')).to.deep.equal([
+            passed('should pass on console.error in a same-origin iframe'),
+            failedOnConsole(
+                'should still throw AssertionError on console.error of the page after the iframe loaded',
+                'console.error: errorNotExcluded'
             ),
         ]);
     });

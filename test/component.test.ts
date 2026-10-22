@@ -265,6 +265,28 @@ describe('Cypress components', () => {
         ]);
     });
 
+    it('WHEN a React component logs THEN cypress fails, also when the test only mounts', () => {
+        const missingKey = (component: string) =>
+            `console.error: Each child in a list should have a unique "key" prop.\n\nCheck the render method of \`${component}\`. See https://react.dev/link/warning-keys for more information.`;
+        expect(spec('shouldFailOnReactErrors')).to.deep.equal([
+            failedOnConsole(
+                'should throw AssertionError on a missing key when the test checks the list',
+                missingKey('FruitList')
+            ),
+            failedOnConsole(
+                'should throw AssertionError on console.error in useEffect when the test checks the component',
+                'console.error: Failed to load user {"id":42,"status":500}'
+            ),
+            passed('should pass when the missing key warning is ignored'),
+            passed('should pass on a missing key when the test only mounts'),
+            failedOnConsole(
+                'should throw AssertionError on the missing key of the previous test',
+                'logged after the test "should pass on a missing key when the test only mounts" ended:',
+                missingKey('NutList')
+            ),
+        ]);
+    });
+
     it('WHEN all specs ran THEN each spec is checked by a test above', () => {
         expect(unchecked()).to.deep.equal([]);
     });
